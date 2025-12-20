@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AppConfig, UserSession } from '@stacks/auth';
 import { showConnect, openContractCall } from '@stacks/connect';
-import { StacksMainnet } from '@stacks/network';
+import { defineCustomElements } from '@stacks/connect-ui/loader';
+import { STACKS_MAINNET, createNetwork } from '@stacks/network';
 import {
     boolCV,
-    callReadOnlyFunction,
     cvToJSON,
+    fetchCallReadOnlyFunction,
     intCV,
     principalCV,
     stringAsciiCV,
@@ -15,7 +16,7 @@ import {
 
 const CONTRACT_ADDRESS = 'SP1G4ZDXED8XM2XJ4Q4GJ7F4PG4EJQ1KKXRCD0S3K';
 const CONTRACT_NAME = 'atmos';
-const network = new StacksMainnet();
+const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 const userSession = new UserSession({ appConfig });
 
@@ -51,34 +52,43 @@ type RegisterFormState = {
 };
 
 const defaultRegisterForm: RegisterFormState = {
-    name: '',
-    description: '',
-    dataType: '',
-    collectionDate: '',
-    altitudeMin: '',
-    altitudeMax: '',
-    latitude: '',
-    longitude: '',
-    ipfsHash: '',
+    name: 'Demo Stratosphere Scan',
+    description: 'Sample atmospheric dataset for UI testing.',
+    dataType: 'atmospheric',
+    collectionDate: '1704067200',
+    altitudeMin: '1000',
+    altitudeMax: '5000',
+    latitude: '37.7749',
+    longitude: '-122.4194',
+    ipfsHash: 'QmTestHash123',
     isPublic: true,
 };
 
 const unwrapResponseOk = (cv: unknown) => {
     const json = cvToJSON(cv as any) as any;
-    if (json.type !== 'response') {
-        return json;
+    if (json.success === true && json.value !== undefined) {
+        return json.value;
     }
-    if (json.value.type !== 'ok') {
+    if (json.success === false) {
         throw new Error('Read-only call returned err');
     }
-    return json.value.value;
+    if (json.type === 'response') {
+        if (json.value?.type !== 'ok') {
+            throw new Error('Read-only call returned err');
+        }
+        return json.value.value;
+    }
+    return json;
 };
 
 const parseTuple = (tuple: any, id: number): Dataset | null => {
-    if (!tuple || tuple.type !== 'tuple') {
+    if (!tuple) {
         return null;
     }
-    const data = tuple.value ?? {};
+    const type = tuple.type ?? '';
+    const data = type === 'tuple' || (typeof type === 'string' && type.startsWith('(tuple'))
+        ? (tuple.value ?? {})
+        : (tuple.value ?? {});
     const getString = (key: string) => String(data[key]?.value ?? '');
     const getBool = (key: string) => Boolean(data[key]?.value ?? false);
     const getNum = (key: string) => Number.parseInt(String(data[key]?.value ?? '0'), 10);
@@ -104,8 +114,27 @@ const parseTuple = (tuple: any, id: number): Dataset | null => {
 
 const formatCoord = (value: number) => (value / 1_000_000).toFixed(3);
 
+const resetInvalidSession = () => {
+    try {
+        userSession.store?.deleteSessionData();
+    } catch {
+        if (typeof window !== 'undefined') {
+            window.localStorage.removeItem('blockstack-session');
+        }
+    }
+};
+
+const safeIsSignedIn = () => {
+    try {
+        return userSession.isUserSignedIn();
+    } catch {
+        resetInvalidSession();
+        return false;
+    }
+};
+
 const getUserAddress = () => {
-    if (!userSession.isUserSignedIn()) {
+    if (!safeIsSignedIn()) {
         return '';
     }
     try {
@@ -123,6 +152,20 @@ const getAppIcon = () => {
     } catch {
         return '';
     }
+};
+
+const ensureConnectUi = async () => {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+    if (!window.customElements?.get('connect-modal')) {
+        try {
+            await defineCustomElements(window);
+        } catch {
+            return false;
+        }
+    }
+    return Boolean(window.customElements?.get('connect-modal'));
 };
 
 function App() {
@@ -164,7 +207,7 @@ function App() {
     const activeDatasets = activeTab === 'explore' ? latestDatasets : myDatasets;
 
     const fetchDataset = async (datasetId: number) => {
-        const response = await callReadOnlyFunction({
+        const response = await fetchCallReadOnlyFunction({
             contractAddress: CONTRACT_ADDRESS,
             contractName: CONTRACT_NAME,
             functionName: 'get-dataset',
@@ -181,7 +224,7 @@ function App() {
         setLoading(true);
         setStatusMessage('');
         try {
-            const countResponse = await callReadOnlyFunction({
+            const countResponse = await fetchCallReadOnlyFunction({
                 contractAddress: CONTRACT_ADDRESS,
                 contractName: CONTRACT_NAME,
                 functionName: 'get-dataset-count',
@@ -211,7 +254,7 @@ function App() {
         setStatusMessage('');
         setLoading(true);
         try {
-            const response = await callReadOnlyFunction({
+            const response = await fetchCallReadOnlyFunction({
                 contractAddress: CONTRACT_ADDRESS,
                 contractName: CONTRACT_NAME,
                 functionName: 'get-datasets-by-owner',
@@ -220,13 +263,17 @@ function App() {
                 network,
             });
             const json = cvToJSON(response as any) as any;
-            if (json.type !== 'list') {
+            const listValue = json.success === true ? json.value : json;
+            const listType = listValue?.type ?? '';
+            if (!(listType === 'list' || (typeof listType === 'string' && listType.startsWith('(list')))) {
                 setMyDatasets([]);
                 return;
             }
-            const ids = (json.value ?? []).map((item: any) => Number.parseInt(String(item.value ?? '0'), 10));
+            const ids: number[] = (listValue.value ?? []).map((item: any): number => (
+                Number.parseInt(String(item.value ?? '0'), 10)
+            ));
             const limited = ids.slice(0, 8);
-            const results = await Promise.all(limited.map((id) => fetchDataset(id)));
+            const results = await Promise.all(limited.map((id: number) => fetchDataset(id)));
             setMyDatasets(results.filter((item): item is Dataset => Boolean(item)));
         } catch (error) {
             setStatusMessage('Unable to load datasets for that address.');
@@ -265,26 +312,38 @@ function App() {
         loadOwnerDatasets(ownerInput.trim());
     };
 
-    const connectWallet = () => {
+    const connectWallet = async () => {
         setWalletMessage('');
-        showConnect({
-            userSession,
-            appDetails: {
-                name: 'Atmos Registry',
-                icon: getAppIcon(),
-            },
-            onFinish: () => {
-                const address = getUserAddress();
-                setWalletAddress(address);
-                setWalletMessage(address ? 'Wallet connected.' : 'Wallet connected, address unavailable.');
-                if (address) {
-                    setOwnerInput(address);
-                }
-            },
-            onCancel: () => {
-                setWalletMessage('Wallet connection canceled.');
-            },
-        });
+        if (!safeIsSignedIn()) {
+            resetInvalidSession();
+        }
+        const uiReady = await ensureConnectUi();
+        if (!uiReady) {
+            setWalletMessage('Wallet UI failed to load. Refresh and try again.');
+            return;
+        }
+        try {
+            showConnect({
+                userSession,
+                appDetails: {
+                    name: 'Atmos Registry',
+                    icon: getAppIcon(),
+                },
+                onFinish: () => {
+                    const address = getUserAddress();
+                    setWalletAddress(address);
+                    setWalletMessage(address ? 'Wallet connected.' : 'Wallet connected, address unavailable.');
+                    if (address) {
+                        setOwnerInput(address);
+                    }
+                },
+                onCancel: () => {
+                    setWalletMessage('Wallet connection canceled.');
+                },
+            });
+        } catch (error) {
+            setWalletMessage('Unable to open wallet connector. Check extension or browser popups.');
+        }
     };
 
     const disconnectWallet = () => {
@@ -318,7 +377,7 @@ function App() {
             return;
         }
         if (altitudeMin < 0 || altitudeMax < altitudeMin) {
-            setTxStatus('Altitude must be a positive range.');
+            setTxStatus('Invalid altitude range. Minimum must be >= 0 and <= maximum.');
             return;
         }
         if (latitude < -90_000_000 || latitude > 90_000_000 || longitude < -180_000_000 || longitude > 180_000_000) {
@@ -358,6 +417,7 @@ function App() {
 
     useEffect(() => {
         const hydrateSession = async () => {
+            await ensureConnectUi();
             if (userSession.isSignInPending()) {
                 try {
                     await userSession.handlePendingSignIn();
@@ -365,7 +425,7 @@ function App() {
                     setWalletMessage('Wallet sign-in failed. Try connecting again.');
                 }
             }
-            if (userSession.isUserSignedIn()) {
+            if (safeIsSignedIn()) {
                 const address = getUserAddress();
                 setWalletAddress(address);
             }
