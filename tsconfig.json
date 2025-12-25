@@ -4,12 +4,13 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
 
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "node",
     "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
     "isolatedModules": true,
     "noEmit": true,
 
@@ -20,7 +21,10 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "node_modules/@hirosystems/clarinet-sdk/vitest-helpers/src",
-    "tests"
+    "src"
+  ],
+  "exclude": [
+    "tests",
+    "node_modules/@hirosystems/clarinet-sdk"
   ]
 }
