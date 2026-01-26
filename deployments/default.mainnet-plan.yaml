@@ -15,4 +15,11 @@ plan:
             path: "contracts\\atmos.clar"
             anchor-block-only: true
             clarity-version: 3
+        - contract-publish:
+            contract-name: atmos-v2
+            expected-sender: SP1G4ZDXED8XM2XJ4Q4GJ7F4PG4EJQ1KKXRCD0S3K
+            cost: 61460
+            path: "contracts\\atmos-v2.clar"
+            anchor-block-only: true
+            clarity-version: 3
       epoch: "3.0"

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { AppConfig, UserSession } from "@stacks/auth";
 import {
+  DEFAULT_PROVIDERS,
   showConnect,
   openContractCall,
   disconnect as clearSelectedProvider,
@@ -154,10 +155,43 @@ const getUserAddress = () => {
 
 const getAppIcon = () => {
   try {
-    return `${window.location.origin}/vite.svg`;
+    return `${window.location.origin}/atmos-icon.svg`;
   } catch {
     return "";
   }
+};
+
+const getConnectProviders = () => {
+  if (typeof window === "undefined") {
+    return DEFAULT_PROVIDERS;
+  }
+
+  const stacksProvider = (window as any).StacksProvider;
+  if (!stacksProvider) {
+    return DEFAULT_PROVIDERS;
+  }
+
+  const hasNamedProvider = Boolean(
+    (window as any).LeatherProvider ||
+      (window as any).AsignaProvider ||
+      (window as any).XverseProviders?.StacksProvider
+  );
+  if (hasNamedProvider) {
+    return DEFAULT_PROVIDERS;
+  }
+
+  const fallbackIcon =
+    DEFAULT_PROVIDERS.find((provider) => provider.id === "LeatherProvider")
+      ?.icon ?? getAppIcon();
+
+  const inAppProvider = {
+    id: "StacksProvider",
+    name: "In-App Wallet",
+    icon: fallbackIcon,
+    webUrl: window.location.origin,
+  };
+
+  return [inAppProvider, ...DEFAULT_PROVIDERS];
 };
 
 const ensureConnectUi = async () => {
@@ -363,12 +397,16 @@ function App() {
       return;
     }
     try {
-      showConnect({
+      const defaultProviders = getConnectProviders();
+      const connectOptions = {
         userSession,
         appDetails: {
           name: "Atmos Registry",
           icon: getAppIcon(),
         },
+        redirectTo: "/redirect.html",
+        manifestPath: "/manifest.json",
+        defaultProviders,
         onFinish: () => {
           const address = getUserAddress();
           setWalletAddress(address);
@@ -384,7 +422,8 @@ function App() {
         onCancel: () => {
           setWalletMessage("Wallet connection canceled.");
         },
-      });
+      } as any;
+      showConnect(connectOptions);
     } catch (error) {
       setWalletMessage(
         "Unable to open wallet connector. Check extension or browser popups."
