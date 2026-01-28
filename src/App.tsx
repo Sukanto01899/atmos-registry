@@ -19,7 +19,7 @@ import {
   uintCV,
 } from "@stacks/transactions";
 
-const CONTRACT_ADDRESS = "SP1G4ZDXED8XM2XJ4Q4GJ7F4PG4EJQ1KKXRCD0S3K";
+const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
 const CONTRACT_NAME = "atmos";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
@@ -93,8 +93,8 @@ const parseTuple = (tuple: any, id: number): Dataset | null => {
   const type = tuple.type ?? "";
   const data =
     type === "tuple" || (typeof type === "string" && type.startsWith("(tuple"))
-      ? tuple.value ?? {}
-      : tuple.value ?? {};
+      ? (tuple.value ?? {})
+      : (tuple.value ?? {});
   const getString = (key: string) => String(data[key]?.value ?? "");
   const getBool = (key: string) => Boolean(data[key]?.value ?? false);
   const getNum = (key: string) =>
@@ -173,8 +173,8 @@ const getConnectProviders = () => {
 
   const hasNamedProvider = Boolean(
     (window as any).LeatherProvider ||
-      (window as any).AsignaProvider ||
-      (window as any).XverseProviders?.StacksProvider
+    (window as any).AsignaProvider ||
+    (window as any).XverseProviders?.StacksProvider,
   );
   if (hasNamedProvider) {
     return DEFAULT_PROVIDERS;
@@ -209,7 +209,7 @@ const ensureConnectUi = async () => {
 };
 
 const readValue = (
-  event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
 ) => event.currentTarget?.value ?? "";
 
 const readChecked = (event: ChangeEvent<HTMLInputElement>) =>
@@ -252,7 +252,7 @@ function App() {
         note: "Climate and Atmosphere",
       },
     ],
-    [datasetCount]
+    [datasetCount],
   );
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
@@ -301,15 +301,15 @@ function App() {
       }
       const ids = Array.from(
         { length: Math.min(4, total) },
-        (_, index) => total - index
+        (_, index) => total - index,
       );
       const results = await Promise.all(ids.map((id) => fetchDataset(id)));
       setLatestDatasets(
-        results.filter((item): item is Dataset => Boolean(item))
+        results.filter((item): item is Dataset => Boolean(item)),
       );
     } catch (error) {
       setStatusMessage(
-        "Unable to load datasets from mainnet. Check your connection and try again."
+        "Unable to load datasets from mainnet. Check your connection and try again.",
       );
     } finally {
       setLoading(false);
@@ -341,11 +341,11 @@ function App() {
         return;
       }
       const ids: number[] = (listValue.value ?? []).map((item: any): number =>
-        Number.parseInt(String(item.value ?? "0"), 10)
+        Number.parseInt(String(item.value ?? "0"), 10),
       );
       const limited = ids.slice(0, 8);
       const results = await Promise.all(
-        limited.map((id: number) => fetchDataset(id))
+        limited.map((id: number) => fetchDataset(id)),
       );
       setMyDatasets(results.filter((item): item is Dataset => Boolean(item)));
     } catch (error) {
@@ -413,7 +413,7 @@ function App() {
           setWalletMessage(
             address
               ? "Wallet connected."
-              : "Wallet connected, address unavailable."
+              : "Wallet connected, address unavailable.",
           );
           if (address) {
             setOwnerInput(address);
@@ -426,7 +426,7 @@ function App() {
       showConnect(connectOptions);
     } catch (error) {
       setWalletMessage(
-        "Unable to open wallet connector. Check extension or browser popups."
+        "Unable to open wallet connector. Check extension or browser popups.",
       );
     }
   };
@@ -447,10 +447,10 @@ function App() {
     const altitudeMin = Number.parseInt(registerForm.altitudeMin, 10);
     const altitudeMax = Number.parseInt(registerForm.altitudeMax, 10);
     const latitude = Math.round(
-      Number.parseFloat(registerForm.latitude) * 1_000_000
+      Number.parseFloat(registerForm.latitude) * 1_000_000,
     );
     const longitude = Math.round(
-      Number.parseFloat(registerForm.longitude) * 1_000_000
+      Number.parseFloat(registerForm.longitude) * 1_000_000,
     );
 
     if (
@@ -475,7 +475,7 @@ function App() {
     }
     if (altitudeMin < 0 || altitudeMax < altitudeMin) {
       setTxStatus(
-        "Invalid altitude range. Minimum must be >= 0 and <= maximum."
+        "Invalid altitude range. Minimum must be >= 0 and <= maximum.",
       );
       return;
     }
