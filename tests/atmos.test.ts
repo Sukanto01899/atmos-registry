@@ -5,6 +5,8 @@ const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 const wallet1 = accounts.get("wallet_1")!;
 const wallet2 = accounts.get("wallet_2")!;
+const wallet3 = accounts.get("wallet_3")!;
+const wallet4 = accounts.get("wallet_4")!;
 const REGISTER_REWARD_AMOUNT = 1_000_000;
 
 const unwrapOk = (cv: unknown) => {
@@ -59,6 +61,12 @@ const getDatasetCount = () => {
 const getRewardBalance = (owner: string) => {
   const { result } = simnet.callReadOnlyFn("atmos-token-v3", "get-balance", [Cl.principal(owner)], deployer);
   return uintFromResponse(result);
+};
+
+const getStakeAmount = (owner: string) => {
+  const { result } = simnet.callReadOnlyFn("atmos-staking-v1", "get-stake-info", [Cl.principal(owner)], deployer);
+  const tuple = tupleFromResponse(result);
+  return Number.parseInt(String(tuple.amount.value ?? "0"), 10);
 };
 
 const registerDataset = (sender: string, name: string, dataType = "temperature") => {
@@ -120,6 +128,65 @@ describe("atmos-v3 contract tests", () => {
     ], wallet1);
 
     expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it("should reject direct staking reward mint calls from users", () => {
+    const { result } = simnet.callPublicFn("atmos-token-v3", "mint-staking-reward", [
+      Cl.principal(wallet1),
+      Cl.uint(REGISTER_REWARD_AMOUNT),
+    ], wallet1);
+
+    expect(result).toBeErr(Cl.uint(401));
+  });
+
+  it("should allow staking ATMOS tokens", () => {
+    registerDataset(wallet3, "Stake Seed");
+    const balanceBefore = getRewardBalance(wallet3);
+
+    const { result } = simnet.callPublicFn("atmos-staking-v1", "stake", [
+      Cl.uint(500_000),
+    ], wallet3);
+
+    expect(result).toBeOk(Cl.tuple({
+      staked: Cl.uint(500_000),
+      "pending-claimed": Cl.uint(0),
+    }));
+    const balanceAfter = getRewardBalance(wallet3);
+    expect(balanceAfter).toBe(balanceBefore - 500_000);
+    expect(getStakeAmount(wallet3)).toBe(500_000);
+  });
+
+  it("should accrue and allow claiming APY rewards", () => {
+    registerDataset(wallet4, "Stake Reward Seed");
+    simnet.callPublicFn("atmos-staking-v1", "stake", [Cl.uint(900_000)], wallet4);
+    simnet.mineEmptyBurnBlocks(2000);
+    const before = getRewardBalance(wallet4);
+
+    const claim = simnet.callPublicFn("atmos-staking-v1", "claim-rewards", [], wallet4);
+    const claimed = uintFromResponse(claim.result);
+
+    expect(claimed).toBeGreaterThan(0);
+    const after = getRewardBalance(wallet4);
+    expect(after).toBe(before + claimed);
+  });
+
+  it("should allow unstaking tokens", () => {
+    registerDataset(wallet2, "Unstake Seed");
+    simnet.callPublicFn("atmos-staking-v1", "stake", [Cl.uint(300_000)], wallet2);
+    const beforeStake = getStakeAmount(wallet2);
+    const beforeBalance = getRewardBalance(wallet2);
+
+    const { result } = simnet.callPublicFn("atmos-staking-v1", "unstake", [
+      Cl.uint(200_000),
+    ], wallet2);
+
+    expect(result).toBeOk(Cl.tuple({
+      unstaked: Cl.uint(200_000),
+      "pending-claimed": Cl.uint(0),
+    }));
+    expect(getStakeAmount(wallet2)).toBe(beforeStake - 200_000);
+    const afterBalance = getRewardBalance(wallet2);
+    expect(afterBalance).toBe(beforeBalance + 200_000);
   });
 
   it("should retrieve dataset information", () => {

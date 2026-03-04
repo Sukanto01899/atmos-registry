@@ -4,6 +4,7 @@
 (define-constant ERR-NOT-AUTHORIZED (err u401))
 (define-constant ERR-INSUFFICIENT-BALANCE (err u402))
 (define-constant REGISTRY-CONTRACT .atmos-v3)
+(define-constant STAKING-CONTRACT .atmos-staking-v1)
 
 (define-fungible-token atmos-token)
 
@@ -39,6 +40,14 @@
   (begin
     ;; Only the atmos-v3 registry contract can mint registration rewards.
     (asserts! (is-eq contract-caller REGISTRY-CONTRACT) ERR-NOT-AUTHORIZED)
+    (ft-mint? atmos-token amount recipient)
+  )
+)
+
+(define-public (mint-staking-reward (recipient principal) (amount uint))
+  (begin
+    ;; Only the atmos-staking-v1 contract can mint APY rewards.
+    (asserts! (is-eq contract-caller STAKING-CONTRACT) ERR-NOT-AUTHORIZED)
     (ft-mint? atmos-token amount recipient)
   )
 )

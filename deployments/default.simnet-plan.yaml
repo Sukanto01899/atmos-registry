@@ -65,6 +65,11 @@ plan:
             path: contracts/atmos-token.clar
             clarity-version: 3
         - emulated-contract-publish:
+            contract-name: atmos-staking-v1
+            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            path: contracts/atmos-staking-v1.clar
+            clarity-version: 3
+        - emulated-contract-publish:
             contract-name: atmos-v3
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/atmos.clar
