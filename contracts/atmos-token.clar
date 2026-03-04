@@ -1,9 +1,9 @@
 ;; Atmos Token Contract
-;; Dedicated reward token minted by the atmos registry contract.
+;; Dedicated reward token minted by the atmos-v3 registry contract.
 
 (define-constant ERR-NOT-AUTHORIZED (err u401))
 (define-constant ERR-INSUFFICIENT-BALANCE (err u402))
-(define-constant REGISTRY-CONTRACT .atmos)
+(define-constant REGISTRY-CONTRACT .atmos-v3)
 
 (define-fungible-token atmos-token)
 
@@ -37,7 +37,7 @@
 
 (define-public (mint-registration-reward (recipient principal) (amount uint))
   (begin
-    ;; Only the atmos registry contract can mint registration rewards.
+    ;; Only the atmos-v3 registry contract can mint registration rewards.
     (asserts! (is-eq contract-caller REGISTRY-CONTRACT) ERR-NOT-AUTHORIZED)
     (ft-mint? atmos-token amount recipient)
   )

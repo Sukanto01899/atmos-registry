@@ -464,6 +464,24 @@ textarea:focus {
   background: rgba(245, 138, 61, 0.12);
 }
 
+.status-pill.status--pending {
+  border-color: rgba(90, 160, 255, 0.45);
+  color: var(--accent-3);
+  background: rgba(90, 160, 255, 0.12);
+}
+
+.status-pill.status--verified {
+  border-color: rgba(32, 201, 151, 0.4);
+  color: var(--accent-2);
+  background: rgba(32, 201, 151, 0.12);
+}
+
+.status-pill.status--rejected {
+  border-color: rgba(255, 120, 120, 0.45);
+  color: #ff8d8d;
+  background: rgba(255, 120, 120, 0.12);
+}
+
 .dataset-description {
   color: var(--muted);
   margin: 0.8rem 0 1.2rem;

@@ -5,11 +5,11 @@ authors = []
 telemetry = false
 cache_dir = './.cache'
 requirements = []
-[contracts.atmos]
+[contracts.atmos-v3]
 path = 'contracts/atmos.clar'
 clarity_version = 3
 epoch = 3.0
-[contracts.atmos-token]
+[contracts.atmos-token-v3]
 path = 'contracts/atmos-token.clar'
 clarity_version = 3
 epoch = 3.0

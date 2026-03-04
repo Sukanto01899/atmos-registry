@@ -6,6 +6,7 @@
 (define-constant ERR-DATASET-NOT-FOUND (err u404))
 (define-constant ERR-INVALID-PARAMS (err u400))
 (define-constant ERR-METADATA-FROZEN (err u403))
+(define-constant ERR-NOT-VALIDATOR (err u405))
 (define-constant ERR-CONTRACT-PAUSED (err u503))
 (define-constant ERR-REWARD-MINT-FAILED (err u550))
 (define-constant REGISTER-REWARD-AMOUNT u1000000)
@@ -14,6 +15,12 @@
 (define-data-var dataset-counter uint u0)
 (define-data-var contract-admin principal tx-sender)
 (define-data-var contract-paused bool false)
+
+;; Validator Map
+(define-map validators
+  { validator: principal }
+  { enabled: bool }
+)
 
 ;; Dataset Map
 (define-map datasets
@@ -31,8 +38,11 @@
     ipfs-hash: (string-ascii 100),
     is-public: bool,
     metadata-frozen: bool,
+    verified: bool,
+    verified-by: (optional principal),
+    verified-at: uint,
     created-at: uint,
-    status: (string-ascii 20), ;; "active", "deprecated"
+    status: (string-ascii 20), ;; "pending", "verified", "rejected", "deprecated"
   }
 )
 
@@ -73,6 +83,10 @@
   (ok REGISTER-REWARD-AMOUNT)
 )
 
+(define-read-only (is-validator (validator principal))
+  (default-to false (get enabled (map-get? validators { validator: validator })))
+)
+
 ;; --- Private Helper Functions ---
 
 (define-private (is-dataset-owner (dataset-id uint))
@@ -104,6 +118,10 @@
 
 (define-private (check-not-paused)
   (or (not (var-get contract-paused)) (is-eq tx-sender (var-get contract-admin)))
+)
+
+(define-private (is-validator-principal (validator principal))
+  (default-to false (get enabled (map-get? validators { validator: validator })))
 )
 
 ;; --- Public Functions ---
@@ -150,13 +168,16 @@
       ipfs-hash: ipfs-hash,
       is-public: is-public,
       metadata-frozen: false,
+      verified: false,
+      verified-by: none,
+      verified-at: u0,
       created-at: current-time,
-      status: "active",
+      status: "pending",
     })
 
     (unwrap! (add-dataset-to-owner owner-principal dataset-id) ERR-INVALID-PARAMS)
     (unwrap!
-      (contract-call? .atmos-token mint-registration-reward owner-principal
+      (contract-call? .atmos-token-v3 mint-registration-reward owner-principal
         REGISTER-REWARD-AMOUNT
       )
       ERR-REWARD-MINT-FAILED
@@ -186,6 +207,10 @@
         description: description,
         data-type: data-type,
         is-public: is-public,
+        verified: false,
+        verified-by: none,
+        verified-at: u0,
+        status: "pending",
       })
     )
     (ok true)
@@ -199,6 +224,40 @@
     (asserts! (is-dataset-owner dataset-id) ERR-NOT-AUTHORIZED)
     (map-set datasets { dataset-id: dataset-id }
       (merge dataset { metadata-frozen: true })
+    )
+    (ok true)
+  )
+)
+
+;; Validator: verify dataset
+(define-public (verify-dataset (dataset-id uint))
+  (let ((dataset (unwrap! (map-get? datasets { dataset-id: dataset-id }) ERR-DATASET-NOT-FOUND)))
+    (asserts! (check-not-paused) ERR-CONTRACT-PAUSED)
+    (asserts! (is-validator-principal tx-sender) ERR-NOT-VALIDATOR)
+    (map-set datasets { dataset-id: dataset-id }
+      (merge dataset {
+        verified: true,
+        verified-by: (some tx-sender),
+        verified-at: burn-block-height,
+        status: "verified",
+      })
+    )
+    (ok true)
+  )
+)
+
+;; Validator: reject dataset
+(define-public (reject-dataset (dataset-id uint))
+  (let ((dataset (unwrap! (map-get? datasets { dataset-id: dataset-id }) ERR-DATASET-NOT-FOUND)))
+    (asserts! (check-not-paused) ERR-CONTRACT-PAUSED)
+    (asserts! (is-validator-principal tx-sender) ERR-NOT-VALIDATOR)
+    (map-set datasets { dataset-id: dataset-id }
+      (merge dataset {
+        verified: false,
+        verified-by: (some tx-sender),
+        verified-at: burn-block-height,
+        status: "rejected",
+      })
     )
     (ok true)
   )
@@ -227,6 +286,15 @@
     (asserts! (is-eq tx-sender (var-get contract-admin)) ERR-NOT-AUTHORIZED)
     (var-set contract-admin new-admin)
     (ok new-admin)
+  )
+)
+
+;; Admin: Add/Remove Validator
+(define-public (set-validator (validator principal) (enabled bool))
+  (begin
+    (asserts! (is-eq tx-sender (var-get contract-admin)) ERR-NOT-AUTHORIZED)
+    (map-set validators { validator: validator } { enabled: enabled })
+    (ok enabled)
   )
 )
 

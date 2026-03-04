@@ -20,7 +20,7 @@ import {
 } from "@stacks/transactions";
 
 const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
-const CONTRACT_NAME = "atmos";
+const CONTRACT_NAME = "atmos-v3";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
@@ -38,6 +38,9 @@ type Dataset = {
   ipfsHash: string;
   isPublic: boolean;
   metadataFrozen: boolean;
+  verified: boolean;
+  verifiedBy: string;
+  verifiedAt: number;
   createdAt: number;
   owner: string;
   status: string;
@@ -99,6 +102,8 @@ const parseTuple = (tuple: any, id: number): Dataset | null => {
   const getBool = (key: string) => Boolean(data[key]?.value ?? false);
   const getNum = (key: string) =>
     Number.parseInt(String(data[key]?.value ?? "0"), 10);
+  const getOptionalPrincipal = (key: string) =>
+    String(data[key]?.value?.value ?? "");
 
   return {
     id,
@@ -113,6 +118,9 @@ const parseTuple = (tuple: any, id: number): Dataset | null => {
     ipfsHash: getString("ipfs-hash"),
     isPublic: getBool("is-public"),
     metadataFrozen: getBool("metadata-frozen"),
+    verified: getBool("verified"),
+    verifiedBy: getOptionalPrincipal("verified-by"),
+    verifiedAt: getNum("verified-at"),
     createdAt: getNum("created-at"),
     owner: getString("owner"),
     status: getString("status"),
@@ -120,6 +128,13 @@ const parseTuple = (tuple: any, id: number): Dataset | null => {
 };
 
 const formatCoord = (value: number) => (value / 1_000_000).toFixed(3);
+const getStatusClass = (status: string) => {
+  if (status === "verified") return "status--verified";
+  if (status === "rejected") return "status--rejected";
+  if (status === "pending") return "status--pending";
+  if (status === "deprecated") return "status--deprecated";
+  return "status--active";
+};
 
 const resetInvalidSession = () => {
   try {
@@ -817,11 +832,7 @@ function App() {
                     </div>
                   </div>
                   <span
-                    className={`status-pill ${
-                      dataset.status === "active"
-                        ? "status--active"
-                        : "status--deprecated"
-                    }`}
+                    className={`status-pill ${getStatusClass(dataset.status)}`}
                   >
                     {dataset.status}
                   </span>
@@ -845,6 +856,12 @@ function App() {
                       {dataset.altitudeMin}-{dataset.altitudeMax} m
                     </strong>
                   </div>
+                  {dataset.verified && (
+                    <div>
+                      <span>Verified by</span>
+                      <strong>{dataset.verifiedBy || "validator"}</strong>
+                    </div>
+                  )}
                 </div>
                 <div className="dataset-foot">
                   <span>Collection date: {dataset.collectionDate}</span>

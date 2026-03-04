@@ -60,12 +60,12 @@ plan:
     - id: 0
       transactions:
         - emulated-contract-publish:
-            contract-name: atmos-token
+            contract-name: atmos-token-v3
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/atmos-token.clar
             clarity-version: 3
         - emulated-contract-publish:
-            contract-name: atmos
+            contract-name: atmos-v3
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             path: contracts/atmos.clar
             clarity-version: 3
