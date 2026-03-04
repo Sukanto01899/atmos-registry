@@ -5,6 +5,7 @@ const accounts = simnet.getAccounts();
 const deployer = accounts.get("deployer")!;
 const wallet1 = accounts.get("wallet_1")!;
 const wallet2 = accounts.get("wallet_2")!;
+const REGISTER_REWARD_AMOUNT = 1_000_000;
 
 const unwrapOk = (cv: unknown) => {
   const json = cvToJSON(cv as any) as any;
@@ -55,6 +56,11 @@ const getDatasetCount = () => {
   return uintFromResponse(result);
 };
 
+const getRewardBalance = (owner: string) => {
+  const { result } = simnet.callReadOnlyFn("atmos-token", "get-balance", [Cl.principal(owner)], deployer);
+  return uintFromResponse(result);
+};
+
 const registerDataset = (sender: string, name: string, dataType = "temperature") => {
   const { result } = simnet.callPublicFn("atmos", "register-dataset", [
     Cl.stringUtf8(name),
@@ -98,6 +104,22 @@ describe("atmos contract tests", () => {
     registerDataset(wallet2, "Humidity Data");
     const after = getDatasetCount();
     expect(after).toBe(before + 1);
+  });
+
+  it("should mint reward tokens after registration", () => {
+    const before = getRewardBalance(wallet1);
+    registerDataset(wallet1, "Rewarded Data");
+    const after = getRewardBalance(wallet1);
+    expect(after).toBe(before + REGISTER_REWARD_AMOUNT);
+  });
+
+  it("should reject direct reward mint calls from users", () => {
+    const { result } = simnet.callPublicFn("atmos-token", "mint-registration-reward", [
+      Cl.principal(wallet1),
+      Cl.uint(REGISTER_REWARD_AMOUNT),
+    ], wallet1);
+
+    expect(result).toBeErr(Cl.uint(401));
   });
 
   it("should retrieve dataset information", () => {

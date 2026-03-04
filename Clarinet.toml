@@ -9,8 +9,8 @@ requirements = []
 path = 'contracts/atmos.clar'
 clarity_version = 3
 epoch = 3.0
-[contracts.atmos-v2]
-path = 'contracts/atmos-v2.clar'
+[contracts.atmos-token]
+path = 'contracts/atmos-token.clar'
 clarity_version = 3
 epoch = 3.0
 [repl.analysis]
