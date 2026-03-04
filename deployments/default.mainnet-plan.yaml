@@ -9,14 +9,14 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: atmos-token-v2
+            contract-name: atmos-token-v3
             expected-sender: SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F
             cost: 11830
             path: "contracts\\atmos-token.clar"
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
-            contract-name: atmos-v2
+            contract-name: atmos-v3
             expected-sender: SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F
             cost: 85650
             path: "contracts\\atmos.clar"
