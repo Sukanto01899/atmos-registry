@@ -506,6 +506,108 @@ textarea:focus {
   color: var(--muted);
 }
 
+.version-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.version-card {
+  padding: 1.2rem;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.78);
+  box-shadow: var(--shadow);
+}
+
+.version-card--full {
+  grid-column: 1 / -1;
+}
+
+.version-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.version-card__subtitle {
+  margin-top: 0.35rem;
+  margin-bottom: 0.8rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.version-actions {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.version-list {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.version-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  background: rgba(24, 33, 44, 0.62);
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+}
+
+.version-item.active {
+  border-color: rgba(245, 138, 61, 0.5);
+  background: rgba(245, 138, 61, 0.1);
+}
+
+.version-source {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.version-diff {
+  margin-top: 0.8rem;
+}
+
+.version-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+}
+
+.diff-table {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.diff-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 1fr;
+  gap: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  background: rgba(12, 17, 22, 0.55);
+  font-size: 0.85rem;
+}
+
+.diff-row div:first-child {
+  color: var(--accent-3);
+  font-weight: 600;
+}
+
 .section {
   margin-top: 2rem;
 }
@@ -797,5 +899,13 @@ textarea:focus {
 
   .dataset-foot__action {
     margin-left: 0;
+  }
+
+  .version-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .diff-row {
+    grid-template-columns: 1fr;
   }
 }

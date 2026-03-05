@@ -69,6 +69,30 @@ type DatasetFilters = {
   altitudeMax: string;
 };
 
+type VersionStatus = "draft" | "pending" | "approved" | "rejected";
+
+type VersionRecord = {
+  id: string;
+  datasetId: number;
+  version: number;
+  source: "onchain" | "local";
+  status: VersionStatus;
+  name: string;
+  description: string;
+  ipfsHash: string;
+  isPublic: boolean;
+  createdAt: number;
+  submittedAt?: number;
+  reviewedAt?: number;
+  reviewer?: string;
+};
+
+type VersionDraft = {
+  description: string;
+  ipfsHash: string;
+  isPublic: boolean;
+};
+
 const defaultRegisterForm: RegisterFormState = {
   name: "Demo Stratosphere Scan",
   description: "Sample atmospheric dataset for UI testing.",
@@ -152,6 +176,19 @@ const getStatusClass = (status: string) => {
   if (status === "deprecated") return "status--deprecated";
   return "status--active";
 };
+const getVersionStatusClass = (status: VersionStatus) => {
+  if (status === "approved") return "status--verified";
+  if (status === "rejected") return "status--rejected";
+  if (status === "pending") return "status--pending";
+  return "status--active";
+};
+const mapDatasetToVersionStatus = (dataset: Dataset): VersionStatus => {
+  if (dataset.status === "rejected") return "rejected";
+  if (dataset.status === "pending") return "pending";
+  if (dataset.verified || dataset.status === "verified") return "approved";
+  return "approved";
+};
+const nowUnix = () => Math.floor(Date.now() / 1000);
 
 const resetInvalidSession = () => {
   try {
@@ -257,6 +294,12 @@ const defaultFilters: DatasetFilters = {
   altitudeMax: "",
 };
 
+const defaultVersionDraft: VersionDraft = {
+  description: "",
+  ipfsHash: "",
+  isPublic: true,
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
   const [datasetCount, setDatasetCount] = useState<number | null>(null);
@@ -274,6 +317,13 @@ function App() {
   const [walletAddress, setWalletAddress] = useState("");
   const [lineageSelectionId, setLineageSelectionId] = useState("");
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
+  const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
+    {},
+  );
+  const [versionDraft, setVersionDraft] =
+    useState<VersionDraft>(defaultVersionDraft);
+  const [selectedVersionId, setSelectedVersionId] = useState("");
+  const [versionMessage, setVersionMessage] = useState("");
   const [registerForm, setRegisterForm] =
     useState<RegisterFormState>(defaultRegisterForm);
 
@@ -439,6 +489,69 @@ function App() {
     }
     return events;
   }, [lineageDataset]);
+  const versionTimeline = useMemo(() => {
+    if (!lineageDataset) return [];
+    const base: VersionRecord = {
+      id: `onchain-${lineageDataset.id}`,
+      datasetId: lineageDataset.id,
+      version: 1,
+      source: "onchain",
+      status: mapDatasetToVersionStatus(lineageDataset),
+      name: lineageDataset.name,
+      description: lineageDataset.description,
+      ipfsHash: lineageDataset.ipfsHash,
+      isPublic: lineageDataset.isPublic,
+      createdAt: lineageDataset.createdAt || lineageDataset.collectionDate,
+      submittedAt: lineageDataset.createdAt || lineageDataset.collectionDate,
+      reviewedAt: lineageDataset.verifiedAt || undefined,
+      reviewer: lineageDataset.verifiedBy || undefined,
+    };
+    const local = versionStore[lineageDataset.id] ?? [];
+    return [base, ...local].sort((a, b) => a.version - b.version);
+  }, [lineageDataset, versionStore]);
+  const selectedVersion = useMemo(
+    () =>
+      versionTimeline.find((record) => record.id === selectedVersionId) ??
+      versionTimeline[versionTimeline.length - 1] ??
+      null,
+    [versionTimeline, selectedVersionId],
+  );
+  const previousVersion = useMemo(() => {
+    if (!selectedVersion) return null;
+    const index = versionTimeline.findIndex(
+      (record) => record.id === selectedVersion.id,
+    );
+    if (index <= 0) return null;
+    return versionTimeline[index - 1];
+  }, [selectedVersion, versionTimeline]);
+  const versionDiffs = useMemo(() => {
+    if (!selectedVersion || !previousVersion) {
+      return [];
+    }
+    const diffs: Array<{ field: string; from: string; to: string }> = [];
+    if (selectedVersion.description !== previousVersion.description) {
+      diffs.push({
+        field: "Description",
+        from: previousVersion.description || "n/a",
+        to: selectedVersion.description || "n/a",
+      });
+    }
+    if (selectedVersion.ipfsHash !== previousVersion.ipfsHash) {
+      diffs.push({
+        field: "IPFS hash",
+        from: previousVersion.ipfsHash || "n/a",
+        to: selectedVersion.ipfsHash || "n/a",
+      });
+    }
+    if (selectedVersion.isPublic !== previousVersion.isPublic) {
+      diffs.push({
+        field: "Visibility",
+        from: previousVersion.isPublic ? "Public" : "Private",
+        to: selectedVersion.isPublic ? "Public" : "Private",
+      });
+    }
+    return diffs;
+  }, [selectedVersion, previousVersion]);
 
   const updateRegisterField =
     (field: keyof RegisterFormState) =>
@@ -614,6 +727,58 @@ function App() {
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+  const handleCreateVersionDraft = () => {
+    if (!lineageDataset) return;
+    const existing = versionStore[lineageDataset.id] ?? [];
+    const nextVersion = existing.length + 2;
+    const record: VersionRecord = {
+      id: `local-${lineageDataset.id}-${Date.now()}`,
+      datasetId: lineageDataset.id,
+      version: nextVersion,
+      source: "local",
+      status: "draft",
+      name: lineageDataset.name,
+      description: versionDraft.description.trim(),
+      ipfsHash: versionDraft.ipfsHash.trim(),
+      isPublic: versionDraft.isPublic,
+      createdAt: nowUnix(),
+    };
+    setVersionStore((prev) => ({
+      ...prev,
+      [lineageDataset.id]: [...(prev[lineageDataset.id] ?? []), record],
+    }));
+    setSelectedVersionId(record.id);
+    setVersionMessage(`Draft v${nextVersion} created.`);
+  };
+  const handleVersionTransition = (versionId: string, next: VersionStatus) => {
+    if (!lineageDataset) return;
+    const reviewer = walletAddress || "validator-demo";
+    const timestamp = nowUnix();
+    setVersionStore((prev) => {
+      const records = prev[lineageDataset.id] ?? [];
+      return {
+        ...prev,
+        [lineageDataset.id]: records.map((record) => {
+          if (record.id !== versionId || record.source === "onchain") {
+            return record;
+          }
+          if (record.status === "draft" && next === "pending") {
+            return { ...record, status: "pending", submittedAt: timestamp };
+          }
+          if (record.status === "pending" && (next === "approved" || next === "rejected")) {
+            return {
+              ...record,
+              status: next,
+              reviewedAt: timestamp,
+              reviewer,
+            };
+          }
+          return record;
+        }),
+      };
+    });
+    setVersionMessage(`Version moved to ${next}.`);
+  };
 
   const connectWallet = async () => {
     setWalletMessage("");
@@ -782,6 +947,32 @@ function App() {
       setLineageSelectionId(String(lineageOptions[0].id));
     }
   }, [lineageOptions, lineageSelectionId]);
+  useEffect(() => {
+    if (!lineageDataset) {
+      setVersionDraft(defaultVersionDraft);
+      return;
+    }
+    setVersionDraft({
+      description: lineageDataset.description,
+      ipfsHash: lineageDataset.ipfsHash,
+      isPublic: lineageDataset.isPublic,
+    });
+    setVersionMessage("");
+  }, [lineageDataset?.id]);
+  useEffect(() => {
+    if (!versionTimeline.length) {
+      if (selectedVersionId) {
+        setSelectedVersionId("");
+      }
+      return;
+    }
+    const hasSelected = versionTimeline.some(
+      (record) => record.id === selectedVersionId,
+    );
+    if (!hasSelected) {
+      setSelectedVersionId(versionTimeline[versionTimeline.length - 1].id);
+    }
+  }, [selectedVersionId, versionTimeline]);
 
   return (
     <div className="app">
@@ -961,6 +1152,195 @@ function App() {
                     </div>
                   </div>
                 ))}
+              </article>
+            </div>
+          )}
+        </section>
+
+        <section className="section version-section" id="version-workflow">
+          <div className="section-header">
+            <div>
+              <h2>Dataset versioning and approval workflow</h2>
+              <p>
+                Create new dataset revisions, submit for review, and track
+                approval outcomes with per-version diffs.
+              </p>
+            </div>
+          </div>
+          {!lineageDataset ? (
+            <div className="dataset-card">
+              <div className="dataset-title">No dataset selected for versioning</div>
+              <p className="dataset-description">
+                Select a dataset from audit controls to start a revision workflow.
+              </p>
+            </div>
+          ) : (
+            <div className="version-grid">
+              <article className="version-card">
+                <div className="version-card__title">Create draft revision</div>
+                <p className="version-card__subtitle">
+                  Base dataset #{lineageDataset.id} ({lineageDataset.name})
+                </p>
+                <div className="field-grid">
+                  <textarea
+                    rows={4}
+                    value={versionDraft.description}
+                    onChange={(event) =>
+                      setVersionDraft((prev) => ({
+                        ...prev,
+                        description: readValue(event),
+                      }))
+                    }
+                    placeholder="Updated description for this revision"
+                  />
+                  <input
+                    value={versionDraft.ipfsHash}
+                    onChange={(event) =>
+                      setVersionDraft((prev) => ({
+                        ...prev,
+                        ipfsHash: readValue(event),
+                      }))
+                    }
+                    placeholder="Updated IPFS hash"
+                  />
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={versionDraft.isPublic}
+                      onChange={(event) =>
+                        setVersionDraft((prev) => ({
+                          ...prev,
+                          isPublic: readChecked(event),
+                        }))
+                      }
+                    />
+                    <span>Keep revision public</span>
+                  </label>
+                </div>
+                <div className="version-actions">
+                  <button
+                    className="primary-btn compact"
+                    type="button"
+                    onClick={handleCreateVersionDraft}
+                  >
+                    Create draft version
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      setVersionDraft({
+                        description: lineageDataset.description,
+                        ipfsHash: lineageDataset.ipfsHash,
+                        isPublic: lineageDataset.isPublic,
+                      })
+                    }
+                  >
+                    Reset draft
+                  </button>
+                </div>
+                {versionMessage && <div className="form-note">{versionMessage}</div>}
+              </article>
+
+              <article className="version-card">
+                <div className="version-card__title">Version timeline</div>
+                <div className="version-list">
+                  {versionTimeline.map((record) => (
+                    <button
+                      key={record.id}
+                      className={`version-item ${
+                        selectedVersion?.id === record.id ? "active" : ""
+                      }`}
+                      type="button"
+                      onClick={() => setSelectedVersionId(record.id)}
+                    >
+                      <div>
+                        <strong>v{record.version}</strong>{" "}
+                        <span className="version-source">{record.source}</span>
+                      </div>
+                      <span
+                        className={`status-pill ${getVersionStatusClass(record.status)}`}
+                      >
+                        {record.status}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {selectedVersion && selectedVersion.source === "local" && (
+                  <div className="version-actions">
+                    {selectedVersion.status === "draft" && (
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() =>
+                          handleVersionTransition(selectedVersion.id, "pending")
+                        }
+                      >
+                        Submit for review
+                      </button>
+                    )}
+                    {selectedVersion.status === "pending" && (
+                      <>
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() =>
+                            handleVersionTransition(selectedVersion.id, "approved")
+                          }
+                        >
+                          Approve
+                        </button>
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() =>
+                            handleVersionTransition(selectedVersion.id, "rejected")
+                          }
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </article>
+
+              <article className="version-card version-card--full">
+                <div className="version-card__title">Version diff view</div>
+                {!selectedVersion ? (
+                  <p className="dataset-description">No version selected.</p>
+                ) : (
+                  <div className="version-diff">
+                    <div className="version-summary">
+                      <span>Selected: v{selectedVersion.version}</span>
+                      <span>Created: {formatChainValue(selectedVersion.createdAt)}</span>
+                      {selectedVersion.reviewer && (
+                        <span>Reviewer: {selectedVersion.reviewer}</span>
+                      )}
+                    </div>
+                    {!previousVersion && (
+                      <p className="dataset-description">
+                        v{selectedVersion.version} is the initial baseline version.
+                      </p>
+                    )}
+                    {previousVersion && versionDiffs.length === 0 && (
+                      <p className="dataset-description">
+                        No field-level differences from v{previousVersion.version}.
+                      </p>
+                    )}
+                    {previousVersion && versionDiffs.length > 0 && (
+                      <div className="diff-table">
+                        {versionDiffs.map((diff) => (
+                          <div className="diff-row" key={`${selectedVersion.id}-${diff.field}`}>
+                            <div>{diff.field}</div>
+                            <div>{diff.from}</div>
+                            <div>{diff.to}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </article>
             </div>
           )}
