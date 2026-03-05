@@ -59,6 +59,16 @@ type RegisterFormState = {
   isPublic: boolean;
 };
 
+type DatasetFilters = {
+  search: string;
+  status: string;
+  visibility: "all" | "public" | "private";
+  dataType: string;
+  owner: string;
+  altitudeMin: string;
+  altitudeMax: string;
+};
+
 const defaultRegisterForm: RegisterFormState = {
   name: "Demo Stratosphere Scan",
   description: "Sample atmospheric dataset for UI testing.",
@@ -237,6 +247,16 @@ const readValue = (
 const readChecked = (event: ChangeEvent<HTMLInputElement>) =>
   event.currentTarget?.checked ?? false;
 
+const defaultFilters: DatasetFilters = {
+  search: "",
+  status: "all",
+  visibility: "all",
+  dataType: "all",
+  owner: "",
+  altitudeMin: "",
+  altitudeMax: "",
+};
+
 function App() {
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
   const [datasetCount, setDatasetCount] = useState<number | null>(null);
@@ -253,6 +273,7 @@ function App() {
   const [txStatus, setTxStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [lineageSelectionId, setLineageSelectionId] = useState("");
+  const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [registerForm, setRegisterForm] =
     useState<RegisterFormState>(defaultRegisterForm);
 
@@ -280,6 +301,74 @@ function App() {
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
   const activeDatasets = activeTab === "explore" ? latestDatasets : myDatasets;
+  const dataTypeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          activeDatasets
+            .map((dataset) => dataset.dataType.trim())
+            .filter((type) => Boolean(type)),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [activeDatasets],
+  );
+  const filteredDatasets = useMemo(() => {
+    const search = filters.search.trim().toLowerCase();
+    const owner = filters.owner.trim().toLowerCase();
+    const min = Number.parseInt(filters.altitudeMin, 10);
+    const max = Number.parseInt(filters.altitudeMax, 10);
+    return activeDatasets.filter((dataset) => {
+      if (search) {
+        const haystack = [
+          dataset.id,
+          dataset.name,
+          dataset.description,
+          dataset.ipfsHash,
+          dataset.dataType,
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(search)) {
+          return false;
+        }
+      }
+      if (filters.status !== "all" && dataset.status !== filters.status) {
+        return false;
+      }
+      if (filters.visibility === "public" && !dataset.isPublic) {
+        return false;
+      }
+      if (filters.visibility === "private" && dataset.isPublic) {
+        return false;
+      }
+      if (filters.dataType !== "all" && dataset.dataType !== filters.dataType) {
+        return false;
+      }
+      if (owner && !dataset.owner.toLowerCase().includes(owner)) {
+        return false;
+      }
+      if (!Number.isNaN(min) && dataset.altitudeMin < min) {
+        return false;
+      }
+      if (!Number.isNaN(max) && dataset.altitudeMax > max) {
+        return false;
+      }
+      return true;
+    });
+  }, [activeDatasets, filters]);
+  const hasActiveFilters = useMemo(
+    () =>
+      Boolean(
+        filters.search ||
+          (filters.status !== "all" && filters.status) ||
+          (filters.visibility !== "all" && filters.visibility) ||
+          (filters.dataType !== "all" && filters.dataType) ||
+          filters.owner ||
+          filters.altitudeMin ||
+          filters.altitudeMax,
+      ),
+    [filters],
+  );
   const lineageOptions = useMemo(() => {
     const deduped = new Map<number, Dataset>();
     [queryResult, ...latestDatasets, ...myDatasets].forEach((dataset) => {
@@ -356,6 +445,12 @@ function App() {
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.currentTarget.value;
       setRegisterForm((prev) => ({ ...prev, [field]: value }));
+    };
+  const updateFilterField =
+    (field: keyof DatasetFilters) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const value = event.currentTarget.value;
+      setFilters((prev) => ({ ...prev, [field]: value }));
     };
 
   const fetchDataset = async (datasetId: number) => {
@@ -1011,6 +1106,75 @@ function App() {
               </div>
             )}
           </div>
+          <div className="filter-card">
+            <div className="filter-grid">
+              <input
+                value={filters.search}
+                onChange={updateFilterField("search")}
+                placeholder="Search id, name, description, hash"
+              />
+              <select
+                value={filters.status}
+                onChange={updateFilterField("status")}
+              >
+                <option value="all">All status</option>
+                <option value="active">Active</option>
+                <option value="verified">Verified</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+                <option value="deprecated">Deprecated</option>
+              </select>
+              <select
+                value={filters.visibility}
+                onChange={updateFilterField("visibility")}
+              >
+                <option value="all">All visibility</option>
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+              <select
+                value={filters.dataType}
+                onChange={updateFilterField("dataType")}
+              >
+                <option value="all">All data types</option>
+                {dataTypeOptions.map((option) => (
+                  <option key={`type-${option}`} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={filters.owner}
+                onChange={updateFilterField("owner")}
+                placeholder="Owner contains..."
+              />
+              <div className="filter-range">
+                <input
+                  value={filters.altitudeMin}
+                  onChange={updateFilterField("altitudeMin")}
+                  placeholder="Altitude min"
+                />
+                <input
+                  value={filters.altitudeMax}
+                  onChange={updateFilterField("altitudeMax")}
+                  placeholder="Altitude max"
+                />
+              </div>
+            </div>
+            <div className="filter-actions">
+              <span>
+                Showing {filteredDatasets.length} of {activeDatasets.length}
+              </span>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={() => setFilters(defaultFilters)}
+                disabled={!hasActiveFilters}
+              >
+                Reset filters
+              </button>
+            </div>
+          </div>
 
           <div className="dataset-grid">
             {activeDatasets.length === 0 && (
@@ -1023,7 +1187,15 @@ function App() {
                 </p>
               </div>
             )}
-            {activeDatasets.map((dataset) => (
+            {activeDatasets.length > 0 && filteredDatasets.length === 0 && (
+              <div className="dataset-card">
+                <div className="dataset-title">No datasets match filters</div>
+                <p className="dataset-description">
+                  Try broadening your filter criteria or reset all filters.
+                </p>
+              </div>
+            )}
+            {filteredDatasets.map((dataset) => (
               <article
                 key={`${activeTab}-${dataset.id}`}
                 className="dataset-card"
