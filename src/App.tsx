@@ -128,6 +128,13 @@ const parseTuple = (tuple: any, id: number): Dataset | null => {
 };
 
 const formatCoord = (value: number) => (value / 1_000_000).toFixed(3);
+const formatChainValue = (value: number) => {
+  if (!value) return "n/a";
+  if (value > 1_000_000_000) {
+    return new Date(value * 1000).toLocaleString();
+  }
+  return `Block ${value}`;
+};
 const getStatusClass = (status: string) => {
   if (status === "verified") return "status--verified";
   if (status === "rejected") return "status--rejected";
@@ -272,6 +279,64 @@ function App() {
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
   const activeDatasets = activeTab === "explore" ? latestDatasets : myDatasets;
+  const lineageDataset = useMemo(
+    () => queryResult || activeDatasets[0] || latestDatasets[0] || null,
+    [queryResult, activeDatasets, latestDatasets],
+  );
+  const lineageFingerprint = useMemo(() => {
+    if (!lineageDataset) return "";
+    return [
+      `ATM-${lineageDataset.id}`,
+      `${lineageDataset.createdAt}`,
+      `${lineageDataset.owner.slice(0, 6)}`,
+      `${(lineageDataset.ipfsHash || "no-ipfs").slice(0, 8)}`,
+    ].join("-");
+  }, [lineageDataset]);
+  const lineageEvents = useMemo(() => {
+    if (!lineageDataset) return [];
+    const events = [
+      {
+        title: "Record registered",
+        detail: `Dataset #${lineageDataset.id} committed on-chain by owner.`,
+        when: formatChainValue(lineageDataset.createdAt),
+        actor: lineageDataset.owner,
+      },
+      {
+        title: "Source metadata linked",
+        detail: lineageDataset.ipfsHash
+          ? `IPFS pointer attached: ${lineageDataset.ipfsHash}`
+          : "No IPFS pointer attached for this dataset.",
+        when: formatChainValue(lineageDataset.collectionDate),
+        actor: lineageDataset.owner,
+      },
+      {
+        title: "Current status snapshot",
+        detail: `Record marked as ${lineageDataset.status}. Visibility: ${
+          lineageDataset.isPublic ? "Public" : "Private"
+        }.`,
+        when: "Latest read",
+        actor: CONTRACT_NAME,
+      },
+    ];
+    if (lineageDataset.verified) {
+      events.push({
+        title: "Verification attested",
+        detail: `Validator attested registry integrity for this dataset.`,
+        when: formatChainValue(lineageDataset.verifiedAt),
+        actor: lineageDataset.verifiedBy || "validator",
+      });
+    }
+    if (lineageDataset.metadataFrozen) {
+      events.push({
+        title: "Metadata frozen",
+        detail:
+          "Mutable metadata updates disabled to preserve an immutable audit history.",
+        when: "On-chain flag",
+        actor: lineageDataset.owner,
+      });
+    }
+    return events;
+  }, [lineageDataset]);
 
   const updateRegisterField =
     (field: keyof RegisterFormState) =>
@@ -398,6 +463,36 @@ function App() {
     }
     setOwnerAddress(ownerInput.trim());
     loadOwnerDatasets(ownerInput.trim());
+  };
+
+  const handleExportAuditTrail = () => {
+    if (!lineageDataset || typeof window === "undefined") return;
+    const lines = [
+      "Atmos Dataset Audit Trail",
+      `Dataset ID: ${lineageDataset.id}`,
+      `Name: ${lineageDataset.name}`,
+      `Owner: ${lineageDataset.owner}`,
+      `Fingerprint: ${lineageFingerprint}`,
+      "",
+      "Timeline:",
+      ...lineageEvents.map(
+        (event, index) =>
+          `${index + 1}. ${event.title} | ${event.when} | ${event.actor} | ${
+            event.detail
+          }`,
+      ),
+    ];
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-audit-dataset-${lineageDataset.id}.txt`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   };
 
   const connectWallet = async () => {
@@ -655,6 +750,67 @@ function App() {
               <div className="stat-note">{stat.note}</div>
             </div>
           ))}
+        </section>
+
+        <section className="section lineage-section">
+          <div className="section-header">
+            <div>
+              <h2>Verifiable lineage and audit trail</h2>
+              <p>
+                Trace dataset custody, validation, and integrity proofs from
+                registry state.
+              </p>
+            </div>
+            {lineageDataset && (
+              <button
+                className="ghost-btn"
+                onClick={handleExportAuditTrail}
+                type="button"
+              >
+                Export audit trail
+              </button>
+            )}
+          </div>
+          {!lineageDataset ? (
+            <div className="dataset-card">
+              <div className="dataset-title">No dataset selected for audit</div>
+              <p className="dataset-description">
+                Use Lookup or load datasets to generate a full lineage timeline.
+              </p>
+            </div>
+          ) : (
+            <div className="lineage-grid">
+              <article className="lineage-proof">
+                <span className="proof-label">Proof badge</span>
+                <h3>{lineageDataset.name}</h3>
+                <p className="lineage-proof__meta">
+                  Dataset #{lineageDataset.id} | {lineageDataset.status}
+                </p>
+                <div className="proof-fingerprint">{lineageFingerprint}</div>
+                <p className="lineage-proof__note">
+                  Fingerprint is derived from on-chain identity fields for quick
+                  human verification.
+                </p>
+              </article>
+              <article className="lineage-timeline">
+                {lineageEvents.map((event) => (
+                  <div
+                    className="lineage-event"
+                    key={`${event.title}-${event.when}-${event.actor}`}
+                  >
+                    <div className="lineage-event__dot" />
+                    <div className="lineage-event__content">
+                      <div className="lineage-event__title">{event.title}</div>
+                      <div className="lineage-event__meta">
+                        {event.when} | {event.actor}
+                      </div>
+                      <p>{event.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </article>
+            </div>
+          )}
         </section>
 
         {statusMessage && <div className="status-banner">{statusMessage}</div>}
