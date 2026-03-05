@@ -252,6 +252,7 @@ function App() {
   const [, setWalletMessage] = useState("");
   const [txStatus, setTxStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [lineageSelectionId, setLineageSelectionId] = useState("");
   const [registerForm, setRegisterForm] =
     useState<RegisterFormState>(defaultRegisterForm);
 
@@ -279,9 +280,21 @@ function App() {
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
   const activeDatasets = activeTab === "explore" ? latestDatasets : myDatasets;
+  const lineageOptions = useMemo(() => {
+    const deduped = new Map<number, Dataset>();
+    [queryResult, ...latestDatasets, ...myDatasets].forEach((dataset) => {
+      if (dataset && !deduped.has(dataset.id)) {
+        deduped.set(dataset.id, dataset);
+      }
+    });
+    return Array.from(deduped.values());
+  }, [queryResult, latestDatasets, myDatasets]);
   const lineageDataset = useMemo(
-    () => queryResult || activeDatasets[0] || latestDatasets[0] || null,
-    [queryResult, activeDatasets, latestDatasets],
+    () =>
+      lineageOptions.find(
+        (dataset) => dataset.id === Number.parseInt(lineageSelectionId, 10),
+      ) ?? lineageOptions[0] ?? null,
+    [lineageOptions, lineageSelectionId],
   );
   const lineageFingerprint = useMemo(() => {
     if (!lineageDataset) return "";
@@ -446,6 +459,9 @@ function App() {
     try {
       const dataset = await fetchDataset(parsed);
       setQueryResult(dataset);
+      if (dataset) {
+        setLineageSelectionId(String(dataset.id));
+      }
       if (!dataset) {
         setStatusMessage("Dataset not found.");
       }
@@ -493,6 +509,15 @@ function App() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const setLineageTarget = (datasetId: number) => {
+    setLineageSelectionId(String(datasetId));
+    if (typeof window !== "undefined") {
+      document
+        .getElementById("lineage-audit")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const connectWallet = async () => {
@@ -649,6 +674,20 @@ function App() {
     loadLatest();
   }, []);
 
+  useEffect(() => {
+    if (!lineageOptions.length) {
+      if (lineageSelectionId) {
+        setLineageSelectionId("");
+      }
+      return;
+    }
+    const selectedId = Number.parseInt(lineageSelectionId, 10);
+    const hasSelected = lineageOptions.some((dataset) => dataset.id === selectedId);
+    if (!hasSelected) {
+      setLineageSelectionId(String(lineageOptions[0].id));
+    }
+  }, [lineageOptions, lineageSelectionId]);
+
   return (
     <div className="app">
       <div className="glow-layer" />
@@ -752,7 +791,7 @@ function App() {
           ))}
         </section>
 
-        <section className="section lineage-section">
+        <section className="section lineage-section" id="lineage-audit">
           <div className="section-header">
             <div>
               <h2>Verifiable lineage and audit trail</h2>
@@ -761,15 +800,34 @@ function App() {
                 registry state.
               </p>
             </div>
-            {lineageDataset && (
-              <button
-                className="ghost-btn"
-                onClick={handleExportAuditTrail}
-                type="button"
-              >
-                Export audit trail
-              </button>
-            )}
+            <div className="lineage-actions">
+              {lineageOptions.length > 0 && (
+                <label className="lineage-picker">
+                  <span>Audit dataset</span>
+                  <select
+                    value={lineageSelectionId}
+                    onChange={(event) =>
+                      setLineageSelectionId(event.currentTarget.value)
+                    }
+                  >
+                    {lineageOptions.map((dataset) => (
+                      <option key={`lineage-${dataset.id}`} value={dataset.id}>
+                        #{dataset.id} {dataset.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {lineageDataset && (
+                <button
+                  className="ghost-btn"
+                  onClick={handleExportAuditTrail}
+                  type="button"
+                >
+                  Export audit trail
+                </button>
+              )}
+            </div>
           </div>
           {!lineageDataset ? (
             <div className="dataset-card">
@@ -1025,6 +1083,13 @@ function App() {
                   <span className="hash">
                     IPFS: {dataset.ipfsHash || "n/a"}
                   </span>
+                  <button
+                    className="ghost-btn dataset-foot__action"
+                    type="button"
+                    onClick={() => setLineageTarget(dataset.id)}
+                  >
+                    Audit this
+                  </button>
                 </div>
               </article>
             ))}

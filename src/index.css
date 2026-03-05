@@ -39,7 +39,7 @@ p {
   margin: 0;
 }
 
-input, button {
+input, button, select {
   font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
 }
 
@@ -279,6 +279,15 @@ input {
   transition: border 0.2s ease;
 }
 
+select {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  transition: border 0.2s ease;
+}
+
 textarea {
   background: var(--bg-soft);
   border: 1px solid var(--border);
@@ -290,6 +299,11 @@ textarea {
 }
 
 input:focus {
+  outline: none;
+  border-color: rgba(245, 138, 61, 0.6);
+}
+
+select:focus {
   outline: none;
   border-color: rgba(245, 138, 61, 0.6);
 }
@@ -372,6 +386,25 @@ textarea:focus {
   display: grid;
   grid-template-columns: minmax(250px, 320px) 1fr;
   gap: 1rem;
+}
+
+.lineage-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.lineage-picker {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lineage-picker span {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .lineage-proof {
@@ -627,6 +660,10 @@ textarea:focus {
   padding-top: 0.9rem;
 }
 
+.dataset-foot__action {
+  margin-left: auto;
+}
+
 .hash {
   color: rgba(32, 201, 151, 0.8);
 }
@@ -717,5 +754,9 @@ textarea:focus {
 
   .lineage-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dataset-foot__action {
+    margin-left: 0;
   }
 }
