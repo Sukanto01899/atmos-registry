@@ -318,6 +318,7 @@ function App() {
   const [lineageSelectionId, setLineageSelectionId] = useState("");
   const [geoTimePercent, setGeoTimePercent] = useState(100);
   const [selectedGeoDatasetId, setSelectedGeoDatasetId] = useState("");
+  const [compareSelectionIds, setCompareSelectionIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
     {},
@@ -457,6 +458,65 @@ function App() {
       ) ?? geoDatasets[0] ?? null,
     [geoDatasets, selectedGeoDatasetId],
   );
+  const compareDatasets = useMemo(() => {
+    const byId = new Map(filteredDatasets.map((dataset) => [String(dataset.id), dataset]));
+    return compareSelectionIds
+      .map((id) => byId.get(id))
+      .filter((dataset): dataset is Dataset => Boolean(dataset));
+  }, [compareSelectionIds, filteredDatasets]);
+  const compareMetrics = useMemo(() => {
+    const score = (dataset: Dataset) =>
+      (dataset.verified ? 45 : 0) +
+      (dataset.ipfsHash ? 30 : 0) +
+      (dataset.metadataFrozen ? 15 : 0) +
+      (dataset.isPublic ? 10 : 0);
+    const values = {
+      status: compareDatasets.map((dataset) => dataset.status),
+      visibility: compareDatasets.map((dataset) =>
+        dataset.isPublic ? "Public" : "Private",
+      ),
+      collection: compareDatasets.map((dataset) =>
+        formatChainValue(dataset.collectionDate),
+      ),
+      altitude: compareDatasets.map(
+        (dataset) => `${dataset.altitudeMin}-${dataset.altitudeMax} m`,
+      ),
+      location: compareDatasets.map(
+        (dataset) =>
+          `${formatCoord(dataset.latitude)}, ${formatCoord(dataset.longitude)}`,
+      ),
+      owner: compareDatasets.map((dataset) => dataset.owner),
+      quality: compareDatasets.map((dataset) => `${score(dataset)} / 100`),
+    };
+    const changed = (arr: string[]) => new Set(arr).size > 1;
+    return {
+      rows: [
+        { label: "Status", key: "status", values: values.status, changed: changed(values.status) },
+        {
+          label: "Visibility",
+          key: "visibility",
+          values: values.visibility,
+          changed: changed(values.visibility),
+        },
+        {
+          label: "Collection",
+          key: "collection",
+          values: values.collection,
+          changed: changed(values.collection),
+        },
+        { label: "Altitude", key: "altitude", values: values.altitude, changed: changed(values.altitude) },
+        { label: "Location", key: "location", values: values.location, changed: changed(values.location) },
+        { label: "Owner", key: "owner", values: values.owner, changed: changed(values.owner) },
+        { label: "Quality", key: "quality", values: values.quality, changed: changed(values.quality) },
+      ],
+      best:
+        compareDatasets.length === 0
+          ? null
+          : compareDatasets.reduce((best, current) =>
+              score(current) > score(best) ? current : best,
+            ),
+    };
+  }, [compareDatasets]);
   const lineageOptions = useMemo(() => {
     const deduped = new Map<number, Dataset>();
     [queryResult, ...latestDatasets, ...myDatasets].forEach((dataset) => {
@@ -769,6 +829,48 @@ function App() {
     setSelectedGeoDatasetId(String(datasetId));
     setLineageTarget(datasetId);
   };
+  const toggleCompareDataset = (datasetId: number) => {
+    const id = String(datasetId);
+    setCompareSelectionIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((item) => item !== id);
+      }
+      if (prev.length >= 4) {
+        return [...prev.slice(1), id];
+      }
+      return [...prev, id];
+    });
+  };
+  const exportComparison = () => {
+    if (!compareDatasets.length || typeof window === "undefined") return;
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      compared: compareDatasets.map((dataset) => ({
+        id: dataset.id,
+        name: dataset.name,
+        status: dataset.status,
+        visibility: dataset.isPublic ? "Public" : "Private",
+        collectionDate: dataset.collectionDate,
+        altitudeMin: dataset.altitudeMin,
+        altitudeMax: dataset.altitudeMax,
+        latitude: dataset.latitude,
+        longitude: dataset.longitude,
+        owner: dataset.owner,
+        ipfsHash: dataset.ipfsHash,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "atmos-dataset-comparison.json";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
   const handleCreateVersionDraft = () => {
     if (!lineageDataset) return;
     const existing = versionStore[lineageDataset.id] ?? [];
@@ -1029,6 +1131,10 @@ function App() {
       setSelectedGeoDatasetId(String(geoDatasets[0].id));
     }
   }, [geoDatasets, selectedGeoDatasetId]);
+  useEffect(() => {
+    const allowed = new Set(filteredDatasets.map((dataset) => String(dataset.id)));
+    setCompareSelectionIds((prev) => prev.filter((id) => allowed.has(id)));
+  }, [filteredDatasets]);
 
   return (
     <div className="app">
@@ -1704,6 +1810,79 @@ function App() {
               </aside>
             </div>
           </div>
+          <div className="compare-card">
+            <div className="compare-header">
+              <div>
+                <h3>Comparative analysis panel</h3>
+                <p>Select up to 4 datasets for side-by-side metric comparison.</p>
+              </div>
+              <div className="compare-actions">
+                <span>
+                  Selected: {compareDatasets.length}/4
+                </span>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={exportComparison}
+                  disabled={compareDatasets.length === 0}
+                >
+                  Export JSON
+                </button>
+              </div>
+            </div>
+            <div className="compare-picks">
+              {filteredDatasets.slice(0, 12).map((dataset) => {
+                const selected = compareSelectionIds.includes(String(dataset.id));
+                return (
+                  <button
+                    key={`cmp-pick-${dataset.id}`}
+                    type="button"
+                    className={`compare-pick ${selected ? "active" : ""}`}
+                    onClick={() => toggleCompareDataset(dataset.id)}
+                  >
+                    #{dataset.id} {dataset.name}
+                  </button>
+                );
+              })}
+            </div>
+            {compareDatasets.length === 0 && (
+              <p className="dataset-description">
+                Choose datasets above to populate the comparison matrix.
+              </p>
+            )}
+            {compareDatasets.length > 0 && (
+              <div className="compare-grid">
+                <div className="compare-grid__header">Metric</div>
+                {compareDatasets.map((dataset) => (
+                  <div key={`cmp-header-${dataset.id}`} className="compare-grid__header">
+                    #{dataset.id} {dataset.name}
+                    {compareMetrics.best?.id === dataset.id && (
+                      <span className="compare-best">Best quality</span>
+                    )}
+                  </div>
+                ))}
+                {compareMetrics.rows.map((row) => (
+                  <div key={`cmp-row-${row.key}`} className="compare-row">
+                    <div
+                      className={`compare-cell compare-cell--label ${
+                        row.changed ? "diff" : ""
+                      }`}
+                    >
+                      {row.label}
+                    </div>
+                    {row.values.map((value, index) => (
+                      <div
+                        key={`cmp-row-${row.key}-${compareDatasets[index].id}`}
+                        className={`compare-cell ${row.changed ? "diff" : ""}`}
+                      >
+                        {value}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="dataset-grid">
             {activeDatasets.length === 0 && (
@@ -1790,6 +1969,17 @@ function App() {
                     onClick={() => setLineageTarget(dataset.id)}
                   >
                     Audit this
+                  </button>
+                  <button
+                    className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
+                      compareSelectionIds.includes(String(dataset.id)) ? "active" : ""
+                    }`}
+                    type="button"
+                    onClick={() => toggleCompareDataset(dataset.id)}
+                  >
+                    {compareSelectionIds.includes(String(dataset.id))
+                      ? "Remove compare"
+                      : "Compare"}
                   </button>
                 </div>
               </article>

@@ -790,6 +790,107 @@ textarea:focus {
   font-size: 0.85rem;
 }
 
+.compare-card {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.78);
+}
+
+.compare-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.compare-header p {
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.compare-actions {
+  display: grid;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.compare-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.compare-pick {
+  border: 1px solid var(--border);
+  background: rgba(24, 33, 44, 0.6);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.compare-pick.active {
+  border-color: rgba(245, 138, 61, 0.5);
+  background: rgba(245, 138, 61, 0.12);
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 170px repeat(4, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+
+.compare-grid__header {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(24, 33, 44, 0.7);
+  padding: 0.55rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.compare-best {
+  margin-left: 0.4rem;
+  color: var(--accent-2);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.compare-row {
+  display: contents;
+}
+
+.compare-cell {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(12, 17, 22, 0.6);
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.compare-cell--label {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.compare-cell.diff {
+  border-color: rgba(245, 138, 61, 0.4);
+  background: rgba(245, 138, 61, 0.1);
+}
+
+.ghost-btn.active {
+  border-color: rgba(245, 138, 61, 0.5);
+  background: rgba(245, 138, 61, 0.12);
+}
+
 .dataset-card {
   padding: 1.6rem;
   border-radius: 20px;
@@ -914,6 +1015,10 @@ textarea:focus {
   margin-left: auto;
 }
 
+.dataset-foot__action--compare {
+  margin-left: 0;
+}
+
 .hash {
   color: rgba(32, 201, 151, 0.8);
 }
@@ -1025,6 +1130,18 @@ textarea:focus {
   }
 
   .geo-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-header {
+    flex-direction: column;
+  }
+
+  .compare-actions {
+    text-align: left;
+  }
+
+  .compare-grid {
     grid-template-columns: 1fr;
   }
 
