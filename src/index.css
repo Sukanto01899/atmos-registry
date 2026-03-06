@@ -891,6 +891,114 @@ textarea:focus {
   background: rgba(245, 138, 61, 0.12);
 }
 
+.alert-bell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.alert-count {
+  min-width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.72rem;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.alert-count.active {
+  border-color: rgba(245, 138, 61, 0.5);
+  color: var(--accent);
+  background: rgba(245, 138, 61, 0.15);
+}
+
+.alert-controls {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.alert-filters {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.8rem;
+  background: rgba(24, 33, 44, 0.55);
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.alert-watchlist-input {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+}
+
+.alert-mutes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.alert-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.alert-item {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(17, 25, 34, 0.76);
+}
+
+.alert-item.unread {
+  border-color: rgba(245, 138, 61, 0.45);
+}
+
+.alert-item.read {
+  opacity: 0.86;
+}
+
+.alert-item.alert-critical {
+  border-color: rgba(255, 120, 120, 0.45);
+}
+
+.alert-item.alert-warning {
+  border-color: rgba(245, 138, 61, 0.45);
+}
+
+.alert-item__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.alert-item p {
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.alert-item__foot {
+  margin-top: 0.65rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.alert-item__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .dataset-card {
   padding: 1.6rem;
   border-radius: 20px;
@@ -1143,6 +1251,16 @@ textarea:focus {
 
   .compare-grid {
     grid-template-columns: 1fr;
+  }
+
+  .alert-watchlist-input {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-item__head,
+  .alert-item__foot {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .lineage-grid {

@@ -93,6 +93,18 @@ type VersionDraft = {
   isPublic: boolean;
 };
 
+type AlertLevel = "critical" | "warning" | "info";
+
+type AlertItem = {
+  id: string;
+  datasetId: number;
+  kind: "verified" | "rejected" | "frozen" | "pending";
+  title: string;
+  message: string;
+  level: AlertLevel;
+  timestamp: number;
+};
+
 const defaultRegisterForm: RegisterFormState = {
   name: "Demo Stratosphere Scan",
   description: "Sample atmospheric dataset for UI testing.",
@@ -319,6 +331,13 @@ function App() {
   const [geoTimePercent, setGeoTimePercent] = useState(100);
   const [selectedGeoDatasetId, setSelectedGeoDatasetId] = useState("");
   const [compareSelectionIds, setCompareSelectionIds] = useState<string[]>([]);
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [mutedAlertKinds, setMutedAlertKinds] = useState<string[]>([]);
+  const [readAlertIds, setReadAlertIds] = useState<string[]>([]);
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([]);
+  const [watchlistOnly, setWatchlistOnly] = useState(false);
+  const [watchlistInput, setWatchlistInput] = useState("");
+  const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
     {},
@@ -517,6 +536,84 @@ function App() {
             ),
     };
   }, [compareDatasets]);
+  const alerts = useMemo(() => {
+    const source = (() => {
+      const deduped = new Map<number, Dataset>();
+      [queryResult, ...latestDatasets, ...myDatasets].forEach((dataset) => {
+        if (dataset && !deduped.has(dataset.id)) {
+          deduped.set(dataset.id, dataset);
+        }
+      });
+      return Array.from(deduped.values());
+    })();
+    const items: AlertItem[] = [];
+    source.forEach((dataset) => {
+      const watched =
+        !watchlistOnly || watchlistIds.includes(String(dataset.id));
+      if (!watched) return;
+      if (dataset.verified || dataset.status === "verified") {
+        items.push({
+          id: `verified-${dataset.id}-${dataset.verifiedAt || dataset.createdAt}`,
+          datasetId: dataset.id,
+          kind: "verified",
+          title: `Dataset #${dataset.id} verified`,
+          message: `${dataset.name} is now verified.`,
+          level: "info",
+          timestamp: dataset.verifiedAt || dataset.createdAt,
+        });
+      }
+      if (dataset.status === "rejected") {
+        items.push({
+          id: `rejected-${dataset.id}-${dataset.verifiedAt || dataset.createdAt}`,
+          datasetId: dataset.id,
+          kind: "rejected",
+          title: `Dataset #${dataset.id} rejected`,
+          message: `${dataset.name} was rejected by validator review.`,
+          level: "critical",
+          timestamp: dataset.verifiedAt || dataset.createdAt,
+        });
+      }
+      if (dataset.metadataFrozen) {
+        items.push({
+          id: `frozen-${dataset.id}-${dataset.createdAt}`,
+          datasetId: dataset.id,
+          kind: "frozen",
+          title: `Dataset #${dataset.id} metadata frozen`,
+          message: `${dataset.name} metadata is now immutable.`,
+          level: "warning",
+          timestamp: dataset.createdAt,
+        });
+      }
+      if (dataset.status === "pending") {
+        items.push({
+          id: `pending-${dataset.id}-${dataset.createdAt}`,
+          datasetId: dataset.id,
+          kind: "pending",
+          title: `Dataset #${dataset.id} pending review`,
+          message: `${dataset.name} is waiting validator approval.`,
+          level: "info",
+          timestamp: dataset.createdAt,
+        });
+      }
+    });
+    return items
+      .filter((item) => !mutedAlertKinds.includes(item.kind))
+      .filter((item) => !dismissedAlertIds.includes(item.id))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 30);
+  }, [
+    queryResult,
+    latestDatasets,
+    myDatasets,
+    mutedAlertKinds,
+    dismissedAlertIds,
+    watchlistOnly,
+    watchlistIds,
+  ]);
+  const unreadAlertCount = useMemo(
+    () => alerts.filter((alert) => !readAlertIds.includes(alert.id)).length,
+    [alerts, readAlertIds],
+  );
   const lineageOptions = useMemo(() => {
     const deduped = new Map<number, Dataset>();
     [queryResult, ...latestDatasets, ...myDatasets].forEach((dataset) => {
@@ -871,6 +968,31 @@ function App() {
     anchor.remove();
     URL.revokeObjectURL(url);
   };
+  const toggleWatchlistDataset = (datasetId: number) => {
+    const id = String(datasetId);
+    setWatchlistIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+  const toggleAlertMute = (kind: AlertItem["kind"]) => {
+    setMutedAlertKinds((prev) =>
+      prev.includes(kind)
+        ? prev.filter((item) => item !== kind)
+        : [...prev, kind],
+    );
+  };
+  const markAlertRead = (alertId: string) => {
+    setReadAlertIds((prev) =>
+      prev.includes(alertId) ? prev : [...prev, alertId],
+    );
+  };
+  const applyWatchlistInput = () => {
+    const parsed = watchlistInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => /^[0-9]+$/.test(item));
+    setWatchlistIds(Array.from(new Set(parsed)));
+  };
   const handleCreateVersionDraft = () => {
     if (!lineageDataset) return;
     const existing = versionStore[lineageDataset.id] ?? [];
@@ -1135,6 +1257,10 @@ function App() {
     const allowed = new Set(filteredDatasets.map((dataset) => String(dataset.id)));
     setCompareSelectionIds((prev) => prev.filter((id) => allowed.has(id)));
   }, [filteredDatasets]);
+  useEffect(() => {
+    const allowed = new Set(lineageOptions.map((dataset) => String(dataset.id)));
+    setWatchlistIds((prev) => prev.filter((id) => allowed.has(id)));
+  }, [lineageOptions]);
 
   return (
     <div className="app">
@@ -1162,6 +1288,16 @@ function App() {
           </button>
           <button className="ghost-btn" onClick={loadLatest} disabled={loading}>
             {loading ? "Syncing..." : "Sync Mainnet"}
+          </button>
+          <button
+            className="ghost-btn alert-bell"
+            type="button"
+            onClick={() => setShowAlerts((prev) => !prev)}
+          >
+            Alerts
+            <span className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}>
+              {unreadAlertCount}
+            </span>
           </button>
           {walletAddress ? (
             <div className="wallet-chip">
@@ -1238,6 +1374,122 @@ function App() {
             </div>
           ))}
         </section>
+
+        {showAlerts && (
+          <section className="section alert-section">
+            <div className="section-header">
+              <div>
+                <h2>Smart alert center</h2>
+                <p>
+                  Track verification, rejection, freeze, and pending review events.
+                </p>
+              </div>
+              <div className="alert-controls">
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => setReadAlertIds(alerts.map((alert) => alert.id))}
+                  disabled={alerts.length === 0}
+                >
+                  Mark all read
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() =>
+                    setDismissedAlertIds((prev) => [
+                      ...new Set([...prev, ...alerts.map((alert) => alert.id)]),
+                    ])
+                  }
+                  disabled={alerts.length === 0}
+                >
+                  Clear all
+                </button>
+              </div>
+            </div>
+            <div className="alert-filters">
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={watchlistOnly}
+                  onChange={(event) => setWatchlistOnly(readChecked(event))}
+                />
+                <span>Watchlist only</span>
+              </label>
+              <div className="alert-watchlist-input">
+                <input
+                  value={watchlistInput}
+                  onChange={(event) => setWatchlistInput(readValue(event))}
+                  placeholder="Watch dataset IDs (comma-separated)"
+                />
+                <button className="ghost-btn" type="button" onClick={applyWatchlistInput}>
+                  Apply
+                </button>
+              </div>
+              <div className="alert-mutes">
+                {(["verified", "rejected", "frozen", "pending"] as const).map((kind) => (
+                  <button
+                    key={`mute-${kind}`}
+                    className={`ghost-btn ${mutedAlertKinds.includes(kind) ? "active" : ""}`}
+                    type="button"
+                    onClick={() => toggleAlertMute(kind)}
+                  >
+                    {mutedAlertKinds.includes(kind) ? `Unmute ${kind}` : `Mute ${kind}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="alert-list">
+              {alerts.length === 0 && (
+                <div className="dataset-card">
+                  <div className="dataset-title">No alerts right now</div>
+                  <p className="dataset-description">
+                    Expand scope or unmute alert types to see more activity.
+                  </p>
+                </div>
+              )}
+              {alerts.map((alert) => {
+                const isRead = readAlertIds.includes(alert.id);
+                return (
+                  <article
+                    key={alert.id}
+                    className={`alert-item ${isRead ? "read" : "unread"} alert-${alert.level}`}
+                  >
+                    <div className="alert-item__head">
+                      <strong>{alert.title}</strong>
+                      <span>{formatChainValue(alert.timestamp)}</span>
+                    </div>
+                    <p>{alert.message}</p>
+                    <div className="alert-item__foot">
+                      <span>Dataset #{alert.datasetId}</span>
+                      <div className="alert-item__actions">
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() => {
+                            markAlertRead(alert.id);
+                            setLineageTarget(alert.datasetId);
+                          }}
+                        >
+                          Open
+                        </button>
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() =>
+                            setDismissedAlertIds((prev) => [...prev, alert.id])
+                          }
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         <section className="section lineage-section" id="lineage-audit">
           <div className="section-header">
@@ -1980,6 +2232,15 @@ function App() {
                     {compareSelectionIds.includes(String(dataset.id))
                       ? "Remove compare"
                       : "Compare"}
+                  </button>
+                  <button
+                    className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
+                      watchlistIds.includes(String(dataset.id)) ? "active" : ""
+                    }`}
+                    type="button"
+                    onClick={() => toggleWatchlistDataset(dataset.id)}
+                  >
+                    {watchlistIds.includes(String(dataset.id)) ? "Watching" : "Watch"}
                   </button>
                 </div>
               </article>
