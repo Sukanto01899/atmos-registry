@@ -316,6 +316,8 @@ function App() {
   const [txStatus, setTxStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [lineageSelectionId, setLineageSelectionId] = useState("");
+  const [geoTimePercent, setGeoTimePercent] = useState(100);
+  const [selectedGeoDatasetId, setSelectedGeoDatasetId] = useState("");
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
     {},
@@ -418,6 +420,42 @@ function App() {
           filters.altitudeMax,
       ),
     [filters],
+  );
+  const geoTimeBounds = useMemo(() => {
+    const timestamps = filteredDatasets
+      .map((dataset) => dataset.collectionDate)
+      .filter((value) => value > 0)
+      .sort((a, b) => a - b);
+    if (!timestamps.length) {
+      return null;
+    }
+    return {
+      min: timestamps[0],
+      max: timestamps[timestamps.length - 1],
+    };
+  }, [filteredDatasets]);
+  const geoTimeCutoff = useMemo(() => {
+    if (!geoTimeBounds) {
+      return null;
+    }
+    const span = geoTimeBounds.max - geoTimeBounds.min;
+    return geoTimeBounds.min + Math.round((span * geoTimePercent) / 100);
+  }, [geoTimeBounds, geoTimePercent]);
+  const geoDatasets = useMemo(() => {
+    if (!geoTimeCutoff) {
+      return filteredDatasets;
+    }
+    return filteredDatasets.filter(
+      (dataset) => dataset.collectionDate <= geoTimeCutoff,
+    );
+  }, [filteredDatasets, geoTimeCutoff]);
+  const selectedGeoDataset = useMemo(
+    () =>
+      geoDatasets.find(
+        (dataset) =>
+          dataset.id === Number.parseInt(selectedGeoDatasetId, 10),
+      ) ?? geoDatasets[0] ?? null,
+    [geoDatasets, selectedGeoDatasetId],
   );
   const lineageOptions = useMemo(() => {
     const deduped = new Map<number, Dataset>();
@@ -727,6 +765,10 @@ function App() {
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+  const setGeoTarget = (datasetId: number) => {
+    setSelectedGeoDatasetId(String(datasetId));
+    setLineageTarget(datasetId);
+  };
   const handleCreateVersionDraft = () => {
     if (!lineageDataset) return;
     const existing = versionStore[lineageDataset.id] ?? [];
@@ -973,6 +1015,20 @@ function App() {
       setSelectedVersionId(versionTimeline[versionTimeline.length - 1].id);
     }
   }, [selectedVersionId, versionTimeline]);
+  useEffect(() => {
+    if (!geoDatasets.length) {
+      if (selectedGeoDatasetId) {
+        setSelectedGeoDatasetId("");
+      }
+      return;
+    }
+    const hasSelected = geoDatasets.some(
+      (dataset) => dataset.id === Number.parseInt(selectedGeoDatasetId, 10),
+    );
+    if (!hasSelected) {
+      setSelectedGeoDatasetId(String(geoDatasets[0].id));
+    }
+  }, [geoDatasets, selectedGeoDatasetId]);
 
   return (
     <div className="app">
@@ -1553,6 +1609,99 @@ function App() {
               >
                 Reset filters
               </button>
+            </div>
+          </div>
+          <div className="geo-card">
+            <div className="geo-header">
+              <div>
+                <h3>Geospatial explorer</h3>
+                <p>
+                  Plot datasets by coordinates and scrub collection time to
+                  inspect spatial coverage changes.
+                </p>
+              </div>
+              <div className="geo-summary">
+                <span>
+                  Visible points: {geoDatasets.length}/{filteredDatasets.length}
+                </span>
+                {geoTimeCutoff && <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>}
+              </div>
+            </div>
+            <div className="geo-timeline">
+              <label htmlFor="geo-time-slider">Time window</label>
+              <input
+                id="geo-time-slider"
+                type="range"
+                min={0}
+                max={100}
+                value={geoTimePercent}
+                onChange={(event) =>
+                  setGeoTimePercent(Number.parseInt(readValue(event), 10) || 0)
+                }
+                disabled={!geoTimeBounds}
+              />
+              <span>{geoTimePercent}%</span>
+            </div>
+            <div className="geo-layout">
+              <div className="geo-map">
+                <div className="geo-map__grid" />
+                {geoDatasets.map((dataset) => {
+                  const left =
+                    ((dataset.longitude / 1_000_000 + 180) / 360) * 100;
+                  const top = (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
+                  return (
+                    <button
+                      key={`geo-${dataset.id}`}
+                      className={`geo-point ${
+                        selectedGeoDataset?.id === dataset.id ? "active" : ""
+                      }`}
+                      title={`#${dataset.id} ${dataset.name}`}
+                      type="button"
+                      style={{ left: `${left}%`, top: `${top}%` }}
+                      onClick={() => setGeoTarget(dataset.id)}
+                    />
+                  );
+                })}
+                {geoDatasets.length === 0 && (
+                  <div className="geo-empty">
+                    No points in the current time window.
+                  </div>
+                )}
+              </div>
+              <aside className="geo-detail">
+                {!selectedGeoDataset ? (
+                  <p className="dataset-description">Select a point to inspect details.</p>
+                ) : (
+                  <>
+                    <div className="geo-detail__title">
+                      #{selectedGeoDataset.id} {selectedGeoDataset.name}
+                    </div>
+                    <p className="dataset-description">
+                      {selectedGeoDataset.description}
+                    </p>
+                    <div className="geo-detail__meta">
+                      <span>
+                        Lat/Lng: {formatCoord(selectedGeoDataset.latitude)},{" "}
+                        {formatCoord(selectedGeoDataset.longitude)}
+                      </span>
+                      <span>
+                        Altitude: {selectedGeoDataset.altitudeMin}-
+                        {selectedGeoDataset.altitudeMax} m
+                      </span>
+                      <span>
+                        Collected: {formatChainValue(selectedGeoDataset.collectionDate)}
+                      </span>
+                    </div>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => setLineageTarget(selectedGeoDataset.id)}
+                    >
+                      Open in audit trail
+                    </button>
+                  </>
+                )}
+              </aside>
             </div>
           </div>
 
