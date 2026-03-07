@@ -149,6 +149,7 @@ type StoryChapter = {
   datasetId?: number;
 };
 
+// Default form state for dataset registration
 const defaultRegisterForm: RegisterFormState = {
   name: "Demo Stratosphere Scan",
   description: "Sample atmospheric dataset for UI testing.",
