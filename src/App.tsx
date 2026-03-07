@@ -163,6 +163,7 @@ const defaultRegisterForm: RegisterFormState = {
   isPublic: true,
 };
 
+// Default providers for wallet connection. In a production app, you would likely want to dynamically detect available providers and support more options.
 const unwrapResponseOk = (cv: unknown) => {
   const json = cvToJSON(cv as any) as any;
   if (json.success === true && json.value !== undefined) {
