@@ -1792,6 +1792,7 @@ function App() {
           </div>
         </section>
 
+        {/* Stats Grid */}
         <section className="stats-grid">
           {stats.map((stat) => (
             <div key={stat.label} className="stat-card">

@@ -1,4 +1,3 @@
-;; StratoSense - Data Registry Contract
 ;; Implements Clarity 3 standards
 
 ;; Error Codes
