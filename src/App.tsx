@@ -135,6 +135,13 @@ type CommandAction = {
   run: () => void;
 };
 
+type StoryChapter = {
+  id: string;
+  title: string;
+  body: string;
+  datasetId?: number;
+};
+
 const defaultRegisterForm: RegisterFormState = {
   name: "Demo Stratosphere Scan",
   description: "Sample atmospheric dataset for UI testing.",
@@ -385,6 +392,8 @@ function App() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
+  const [storyStepIndex, setStoryStepIndex] = useState(0);
+  const [storyPlaying, setStoryPlaying] = useState(false);
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
     {},
@@ -556,6 +565,62 @@ function App() {
     });
     return rankMap;
   }, [sortedDatasets]);
+  const storyChapters = useMemo<StoryChapter[]>(() => {
+    if (!sortedDatasets.length) {
+      return [];
+    }
+    const highestQuality = [...sortedDatasets].sort(
+      (a, b) => getQualityScore(b) - getQualityScore(a),
+    )[0];
+    const highestAltitude = [...sortedDatasets].sort(
+      (a, b) => b.altitudeMax - a.altitudeMax,
+    )[0];
+    const recent = [...sortedDatasets].sort(
+      (a, b) => b.collectionDate - a.collectionDate,
+    )[0];
+    const verifiedCount = sortedDatasets.filter(
+      (dataset) => dataset.verified || dataset.status === "verified",
+    ).length;
+    const pendingCount = sortedDatasets.filter(
+      (dataset) => dataset.status === "pending",
+    ).length;
+
+    return [
+      {
+        id: "chapter-coverage",
+        title: "Coverage snapshot",
+        body: `Current scope includes ${sortedDatasets.length} datasets across ${new Set(
+          sortedDatasets.map((dataset) => dataset.dataType),
+        ).size} data types with ${verifiedCount} verified and ${pendingCount} pending.`,
+      },
+      {
+        id: "chapter-quality",
+        title: "Highest quality signal",
+        body: `Dataset #${highestQuality.id} (${highestQuality.name}) leads quality ranking with ${getQualityScore(
+          highestQuality,
+        )}/100.`,
+        datasetId: highestQuality.id,
+      },
+      {
+        id: "chapter-altitude",
+        title: "Altitude highlight",
+        body: `Highest captured altitude in this view is ${highestAltitude.altitudeMax} m from dataset #${highestAltitude.id}.`,
+        datasetId: highestAltitude.id,
+      },
+      {
+        id: "chapter-recent",
+        title: "Most recent collection",
+        body: `Latest collection in this view is dataset #${recent.id} at ${formatChainValue(
+          recent.collectionDate,
+        )}.`,
+        datasetId: recent.id,
+      },
+    ];
+  }, [sortedDatasets]);
+  const activeStoryChapter = useMemo(
+    () => storyChapters[storyStepIndex] ?? null,
+    [storyChapters, storyStepIndex],
+  );
   const compareMetrics = useMemo(() => {
     const values = {
       status: compareDatasets.map((dataset) => dataset.status),
@@ -1416,6 +1481,31 @@ function App() {
     const allowed = new Set(lineageOptions.map((dataset) => String(dataset.id)));
     setWatchlistIds((prev) => prev.filter((id) => allowed.has(id)));
   }, [lineageOptions]);
+  useEffect(() => {
+    if (!storyChapters.length) {
+      setStoryStepIndex(0);
+      setStoryPlaying(false);
+      return;
+    }
+    if (storyStepIndex > storyChapters.length - 1) {
+      setStoryStepIndex(0);
+    }
+  }, [storyChapters, storyStepIndex]);
+  useEffect(() => {
+    if (!storyPlaying || storyChapters.length <= 1) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setStoryStepIndex((prev) => {
+        const next = prev + 1;
+        if (next >= storyChapters.length) {
+          return 0;
+        }
+        return next;
+      });
+    }, 2600);
+    return () => window.clearInterval(timer);
+  }, [storyPlaying, storyChapters.length]);
   const commandActions: CommandAction[] = [
     {
       id: "sync-mainnet",
@@ -2459,6 +2549,85 @@ function App() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+          <div className="story-card">
+            <div className="story-head">
+              <div>
+                <h3>Data story mode</h3>
+                <p>
+                  Auto-generated narrative from your current filtered and ranked dataset view.
+                </p>
+              </div>
+              <div className="story-controls">
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => setStoryPlaying((prev) => !prev)}
+                  disabled={storyChapters.length <= 1}
+                >
+                  {storyPlaying ? "Pause" : "Play"}
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() =>
+                    setStoryStepIndex((prev) =>
+                      prev <= 0 ? Math.max(storyChapters.length - 1, 0) : prev - 1,
+                    )
+                  }
+                  disabled={storyChapters.length === 0}
+                >
+                  Prev
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() =>
+                    setStoryStepIndex((prev) =>
+                      storyChapters.length === 0 ? 0 : (prev + 1) % storyChapters.length,
+                    )
+                  }
+                  disabled={storyChapters.length === 0}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+            {storyChapters.length === 0 && (
+              <p className="dataset-description">
+                Add or load datasets to generate a narrative.
+              </p>
+            )}
+            {activeStoryChapter && (
+              <article className="story-chapter">
+                <div className="story-progress">
+                  <span>
+                    Chapter {storyStepIndex + 1} / {storyChapters.length}
+                  </span>
+                  <div className="story-dots">
+                    {storyChapters.map((chapter, index) => (
+                      <button
+                        key={chapter.id}
+                        type="button"
+                        className={`story-dot ${index === storyStepIndex ? "active" : ""}`}
+                        onClick={() => setStoryStepIndex(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <h4>{activeStoryChapter.title}</h4>
+                <p>{activeStoryChapter.body}</p>
+                {activeStoryChapter.datasetId && (
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => setLineageTarget(activeStoryChapter.datasetId!)}
+                  >
+                    Open dataset #{activeStoryChapter.datasetId} in audit
+                  </button>
+                )}
+              </article>
             )}
           </div>
 

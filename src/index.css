@@ -1122,6 +1122,79 @@ textarea:focus {
   padding: 0.45rem 0.2rem;
 }
 
+.story-card {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.78);
+}
+
+.story-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.story-head p {
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.story-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.story-chapter {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.9rem;
+  background: rgba(24, 33, 44, 0.6);
+}
+
+.story-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.story-dots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.story-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+}
+
+.story-dot.active {
+  background: var(--accent);
+  border-color: rgba(245, 138, 61, 0.6);
+}
+
+.story-chapter h4 {
+  margin-top: 0.6rem;
+  margin-bottom: 0.4rem;
+  font-size: 1.05rem;
+}
+
+.story-chapter p {
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+}
+
 .dataset-card {
   padding: 1.6rem;
   border-radius: 20px;
@@ -1398,6 +1471,10 @@ textarea:focus {
 
   .compare-grid {
     grid-template-columns: 1fr;
+  }
+
+  .story-head {
+    flex-direction: column;
   }
 
   .alert-watchlist-input {
