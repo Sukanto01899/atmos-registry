@@ -79,6 +79,7 @@ type SortMode =
 
 type VersionStatus = "draft" | "pending" | "approved" | "rejected";
 
+// In a real application, version records would likely be stored in a backend or indexed on-chain with more robust querying. For this example, we keep them in local state keyed by dataset ID for simplicity.
 type VersionRecord = {
   id: string;
   datasetId: number;
