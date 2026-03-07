@@ -95,6 +95,7 @@ type VersionRecord = {
   reviewer?: string;
 };
 
+// For simplicity, this example only supports a single draft version per dataset in local state. In a production app, you would likely want to support multiple drafts and persist them in local storage or a backend.
 type VersionDraft = {
   description: string;
   ipfsHash: string;
