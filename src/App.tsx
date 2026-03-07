@@ -141,6 +141,7 @@ type CommandAction = {
   run: () => void;
 };
 
+// Story chapters are designed to guide users through interesting insights and narratives in the dataset collection. In a real application, you might want to support more complex chapter content, multimedia integration, and persistence of user progress.
 type StoryChapter = {
   id: string;
   title: string;
