@@ -715,6 +715,18 @@ textarea:focus {
   font-size: 0.85rem;
 }
 
+.filter-sort {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.filter-sort label {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .geo-card {
   margin-bottom: 1.25rem;
   padding: 1rem;
@@ -1199,6 +1211,17 @@ textarea:focus {
   margin: 0.8rem 0 1.2rem;
 }
 
+.dataset-rank {
+  margin-top: 0.65rem;
+  display: inline-block;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 138, 61, 0.35);
+  color: rgba(245, 138, 61, 0.95);
+  background: rgba(245, 138, 61, 0.1);
+  font-size: 0.75rem;
+}
+
 .dataset-meta {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -1333,6 +1356,11 @@ textarea:focus {
   .filter-actions {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .filter-sort {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .saved-view-create {

@@ -70,6 +70,13 @@ type DatasetFilters = {
   altitudeMax: string;
 };
 
+type SortMode =
+  | "quality-desc"
+  | "recent-desc"
+  | "recent-asc"
+  | "altitude-desc"
+  | "status-priority";
+
 type VersionStatus = "draft" | "pending" | "approved" | "rejected";
 
 type VersionRecord = {
@@ -210,6 +217,18 @@ const getStatusClass = (status: string) => {
   if (status === "pending") return "status--pending";
   if (status === "deprecated") return "status--deprecated";
   return "status--active";
+};
+const getQualityScore = (dataset: Dataset) =>
+  (dataset.verified ? 45 : 0) +
+  (dataset.ipfsHash ? 30 : 0) +
+  (dataset.metadataFrozen ? 15 : 0) +
+  (dataset.isPublic ? 10 : 0);
+const getStatusPriority = (status: string) => {
+  if (status === "verified") return 4;
+  if (status === "pending") return 3;
+  if (status === "active") return 2;
+  if (status === "deprecated") return 1;
+  return 0;
 };
 const getVersionStatusClass = (status: VersionStatus) => {
   if (status === "approved") return "status--verified";
@@ -365,6 +384,7 @@ function App() {
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
     {},
@@ -510,12 +530,33 @@ function App() {
       .map((id) => byId.get(id))
       .filter((dataset): dataset is Dataset => Boolean(dataset));
   }, [compareSelectionIds, filteredDatasets]);
+  const sortedDatasets = useMemo(() => {
+    const next = [...filteredDatasets];
+    next.sort((a, b) => {
+      if (sortMode === "recent-desc") {
+        return b.collectionDate - a.collectionDate;
+      }
+      if (sortMode === "recent-asc") {
+        return a.collectionDate - b.collectionDate;
+      }
+      if (sortMode === "altitude-desc") {
+        return b.altitudeMax - a.altitudeMax;
+      }
+      if (sortMode === "status-priority") {
+        return getStatusPriority(b.status) - getStatusPriority(a.status);
+      }
+      return getQualityScore(b) - getQualityScore(a);
+    });
+    return next;
+  }, [filteredDatasets, sortMode]);
+  const datasetRankById = useMemo(() => {
+    const rankMap = new Map<number, number>();
+    sortedDatasets.forEach((dataset, index) => {
+      rankMap.set(dataset.id, index + 1);
+    });
+    return rankMap;
+  }, [sortedDatasets]);
   const compareMetrics = useMemo(() => {
-    const score = (dataset: Dataset) =>
-      (dataset.verified ? 45 : 0) +
-      (dataset.ipfsHash ? 30 : 0) +
-      (dataset.metadataFrozen ? 15 : 0) +
-      (dataset.isPublic ? 10 : 0);
     const values = {
       status: compareDatasets.map((dataset) => dataset.status),
       visibility: compareDatasets.map((dataset) =>
@@ -532,7 +573,7 @@ function App() {
           `${formatCoord(dataset.latitude)}, ${formatCoord(dataset.longitude)}`,
       ),
       owner: compareDatasets.map((dataset) => dataset.owner),
-      quality: compareDatasets.map((dataset) => `${score(dataset)} / 100`),
+      quality: compareDatasets.map((dataset) => `${getQualityScore(dataset)} / 100`),
     };
     const changed = (arr: string[]) => new Set(arr).size > 1;
     return {
@@ -559,7 +600,7 @@ function App() {
         compareDatasets.length === 0
           ? null
           : compareDatasets.reduce((best, current) =>
-              score(current) > score(best) ? current : best,
+              getQualityScore(current) > getQualityScore(best) ? current : best,
             ),
     };
   }, [compareDatasets]);
@@ -2228,6 +2269,22 @@ function App() {
               <span>
                 Showing {filteredDatasets.length} of {activeDatasets.length}
               </span>
+              <div className="filter-sort">
+                <label htmlFor="dataset-sort">Sort by</label>
+                <select
+                  id="dataset-sort"
+                  value={sortMode}
+                  onChange={(event) =>
+                    setSortMode(event.currentTarget.value as SortMode)
+                  }
+                >
+                  <option value="quality-desc">Quality score (high to low)</option>
+                  <option value="recent-desc">Newest collection first</option>
+                  <option value="recent-asc">Oldest collection first</option>
+                  <option value="altitude-desc">Highest altitude first</option>
+                  <option value="status-priority">Status priority</option>
+                </select>
+              </div>
               <button
                 className="ghost-btn"
                 type="button"
@@ -2416,7 +2473,7 @@ function App() {
                 </p>
               </div>
             )}
-            {activeDatasets.length > 0 && filteredDatasets.length === 0 && (
+            {activeDatasets.length > 0 && sortedDatasets.length === 0 && (
               <div className="dataset-card">
                 <div className="dataset-title">No datasets match filters</div>
                 <p className="dataset-description">
@@ -2424,7 +2481,7 @@ function App() {
                 </p>
               </div>
             )}
-            {filteredDatasets.map((dataset) => (
+            {sortedDatasets.map((dataset) => (
               <article
                 key={`${activeTab}-${dataset.id}`}
                 className="dataset-card"
@@ -2451,6 +2508,10 @@ function App() {
                   >
                     {dataset.status}
                   </span>
+                </div>
+                <div className="dataset-rank">
+                  Rank #{datasetRankById.get(dataset.id) ?? "-"} | Quality{" "}
+                  {getQualityScore(dataset)}/100
                 </div>
                 <p className="dataset-description">{dataset.description}</p>
                 <div className="dataset-meta">
