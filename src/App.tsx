@@ -121,6 +121,13 @@ type SavedView = {
   };
 };
 
+type CommandAction = {
+  id: string;
+  label: string;
+  detail: string;
+  run: () => void;
+};
+
 const defaultRegisterForm: RegisterFormState = {
   name: "Demo Stratosphere Scan",
   description: "Sample atmospheric dataset for UI testing.",
@@ -356,6 +363,8 @@ function App() {
   const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [savedViewName, setSavedViewName] = useState("");
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [commandQuery, setCommandQuery] = useState("");
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
     {},
@@ -1044,6 +1053,30 @@ function App() {
   const deleteSavedView = (viewId: string) => {
     setSavedViews((prev) => prev.filter((view) => view.id !== viewId));
   };
+  const quickSaveCurrentView = () => {
+    const fallbackName = `Quick View ${new Date().toLocaleTimeString()}`;
+    const next: SavedView = {
+      id: `view-${Date.now()}`,
+      name: fallbackName,
+      createdAt: nowUnix(),
+      payload: {
+        activeTab,
+        filters,
+        geoTimePercent,
+        compareSelectionIds,
+        watchlistOnly,
+        watchlistIds,
+        mutedAlertKinds,
+      },
+    };
+    setSavedViews((prev) => [next, ...prev].slice(0, 20));
+    setStatusMessage(`Saved view: ${fallbackName}`);
+  };
+  const executeCommand = (action: CommandAction) => {
+    action.run();
+    setShowCommandPalette(false);
+    setCommandQuery("");
+  };
   const handleCreateVersionDraft = () => {
     if (!lineageDataset) return;
     const existing = versionStore[lineageDataset.id] ?? [];
@@ -1267,6 +1300,19 @@ function App() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(savedViews));
   }, [savedViews]);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+      if (event.key === "Escape") {
+        setShowCommandPalette(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!lineageOptions.length) {
@@ -1329,6 +1375,74 @@ function App() {
     const allowed = new Set(lineageOptions.map((dataset) => String(dataset.id)));
     setWatchlistIds((prev) => prev.filter((id) => allowed.has(id)));
   }, [lineageOptions]);
+  const commandActions: CommandAction[] = [
+    {
+      id: "sync-mainnet",
+      label: "Sync Mainnet",
+      detail: "Reload latest on-chain datasets",
+      run: () => {
+        loadLatest();
+      },
+    },
+    {
+      id: "tab-explore",
+      label: "Switch to Explore",
+      detail: "Show latest submissions tab",
+      run: () => {
+        setActiveTab("explore");
+      },
+    },
+    {
+      id: "tab-mine",
+      label: "Switch to My Datasets",
+      detail: "Show owner dataset tab",
+      run: () => {
+        setActiveTab("mine");
+      },
+    },
+    {
+      id: "reset-filters",
+      label: "Reset Filters",
+      detail: "Clear all dataset filters",
+      run: () => {
+        setFilters(defaultFilters);
+      },
+    },
+    {
+      id: "toggle-alerts",
+      label: "Toggle Alert Center",
+      detail: "Open or close Smart Alerts panel",
+      run: () => {
+        setShowAlerts((prev) => !prev);
+      },
+    },
+    {
+      id: "quick-save-view",
+      label: "Quick Save Current View",
+      detail: "Store current workspace settings",
+      run: () => {
+        quickSaveCurrentView();
+      },
+    },
+    {
+      id: "open-first-audit",
+      label: "Open First Dataset in Audit",
+      detail: "Jump to audit trail for the first filtered dataset",
+      run: () => {
+        if (filteredDatasets[0]) {
+          setLineageTarget(filteredDatasets[0].id);
+        }
+      },
+    },
+  ];
+  const filteredCommandActions = commandActions.filter((action) => {
+    const query = commandQuery.trim().toLowerCase();
+    if (!query) return true;
+    return (
+      action.label.toLowerCase().includes(query) ||
+      action.detail.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <div className="app">
@@ -1367,6 +1481,13 @@ function App() {
               {unreadAlertCount}
             </span>
           </button>
+          <button
+            className="ghost-btn"
+            type="button"
+            onClick={() => setShowCommandPalette(true)}
+          >
+            Command
+          </button>
           {walletAddress ? (
             <div className="wallet-chip">
               <span className="wallet-address">{walletAddress}</span>
@@ -1381,6 +1502,43 @@ function App() {
           )}
         </div>
       </nav>
+
+      {showCommandPalette && (
+        <div className="command-overlay" onClick={() => setShowCommandPalette(false)}>
+          <div
+            className="command-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="command-head">
+              <strong>Command Palette</strong>
+              <span>Ctrl/Cmd + K</span>
+            </div>
+            <input
+              className="command-search"
+              autoFocus
+              value={commandQuery}
+              onChange={(event) => setCommandQuery(readValue(event))}
+              placeholder="Search commands..."
+            />
+            <div className="command-list">
+              {filteredCommandActions.length === 0 && (
+                <div className="command-empty">No commands matched your query.</div>
+              )}
+              {filteredCommandActions.map((action) => (
+                <button
+                  key={action.id}
+                  className="command-item"
+                  type="button"
+                  onClick={() => executeCommand(action)}
+                >
+                  <span>{action.label}</span>
+                  <small>{action.detail}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="container">
         <section className="hero">
