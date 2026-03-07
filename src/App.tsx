@@ -117,6 +117,7 @@ type AlertItem = {
   timestamp: number;
 };
 
+// Saved views allow users to capture the current state of their filters, sorting, and other view options for easy access later. In a real application, you would likely want to persist these in local storage or a backend and support more complex view configurations.
 type SavedView = {
   id: string;
   name: string;
