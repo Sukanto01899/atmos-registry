@@ -1159,6 +1159,27 @@ function App() {
   const deleteSavedView = (viewId: string) => {
     setSavedViews((prev) => prev.filter((view) => view.id !== viewId));
   };
+  const copyText = async (value: string, label: string) => {
+    if (!value) {
+      setStatusMessage(`${label} is empty.`);
+      return;
+    }
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else if (typeof window !== "undefined") {
+        const area = document.createElement("textarea");
+        area.value = value;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+      }
+      setStatusMessage(`${label} copied.`);
+    } catch {
+      setStatusMessage(`Unable to copy ${label.toLowerCase()}.`);
+    }
+  };
   const quickSaveCurrentView = () => {
     const fallbackName = `Quick View ${new Date().toLocaleTimeString()}`;
     const next: SavedView = {
@@ -2714,6 +2735,27 @@ function App() {
                   <span className="hash">
                     IPFS: {dataset.ipfsHash || "n/a"}
                   </span>
+                  <button
+                    className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+                    type="button"
+                    onClick={() => copyText(String(dataset.id), "Dataset ID")}
+                  >
+                    Copy ID
+                  </button>
+                  <button
+                    className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+                    type="button"
+                    onClick={() => copyText(dataset.owner, "Owner")}
+                  >
+                    Copy owner
+                  </button>
+                  <button
+                    className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+                    type="button"
+                    onClick={() => copyText(dataset.ipfsHash || "", "IPFS hash")}
+                  >
+                    Copy IPFS
+                  </button>
                   <button
                     className="ghost-btn dataset-foot__action"
                     type="button"
