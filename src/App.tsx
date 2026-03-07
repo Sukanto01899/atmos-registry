@@ -395,9 +395,9 @@ function App() {
   const [storyStepIndex, setStoryStepIndex] = useState(0);
   const [storyPlaying, setStoryPlaying] = useState(false);
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
-  const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
-    {},
-  );
+  const [versionStore, setVersionStore] = useState<
+    Record<number, VersionRecord[]>
+  >({});
   const [versionDraft, setVersionDraft] =
     useState<VersionDraft>(defaultVersionDraft);
   const [selectedVersionId, setSelectedVersionId] = useState("");
@@ -488,12 +488,12 @@ function App() {
     () =>
       Boolean(
         filters.search ||
-          (filters.status !== "all" && filters.status) ||
-          (filters.visibility !== "all" && filters.visibility) ||
-          (filters.dataType !== "all" && filters.dataType) ||
-          filters.owner ||
-          filters.altitudeMin ||
-          filters.altitudeMax,
+        (filters.status !== "all" && filters.status) ||
+        (filters.visibility !== "all" && filters.visibility) ||
+        (filters.dataType !== "all" && filters.dataType) ||
+        filters.owner ||
+        filters.altitudeMin ||
+        filters.altitudeMax,
       ),
     [filters],
   );
@@ -528,13 +528,16 @@ function App() {
   const selectedGeoDataset = useMemo(
     () =>
       geoDatasets.find(
-        (dataset) =>
-          dataset.id === Number.parseInt(selectedGeoDatasetId, 10),
-      ) ?? geoDatasets[0] ?? null,
+        (dataset) => dataset.id === Number.parseInt(selectedGeoDatasetId, 10),
+      ) ??
+      geoDatasets[0] ??
+      null,
     [geoDatasets, selectedGeoDatasetId],
   );
   const compareDatasets = useMemo(() => {
-    const byId = new Map(filteredDatasets.map((dataset) => [String(dataset.id), dataset]));
+    const byId = new Map(
+      filteredDatasets.map((dataset) => [String(dataset.id), dataset]),
+    );
     return compareSelectionIds
       .map((id) => byId.get(id))
       .filter((dataset): dataset is Dataset => Boolean(dataset));
@@ -589,9 +592,9 @@ function App() {
       {
         id: "chapter-coverage",
         title: "Coverage snapshot",
-        body: `Current scope includes ${sortedDatasets.length} datasets across ${new Set(
-          sortedDatasets.map((dataset) => dataset.dataType),
-        ).size} data types with ${verifiedCount} verified and ${pendingCount} pending.`,
+        body: `Current scope includes ${sortedDatasets.length} datasets across ${
+          new Set(sortedDatasets.map((dataset) => dataset.dataType)).size
+        } data types with ${verifiedCount} verified and ${pendingCount} pending.`,
       },
       {
         id: "chapter-quality",
@@ -638,12 +641,19 @@ function App() {
           `${formatCoord(dataset.latitude)}, ${formatCoord(dataset.longitude)}`,
       ),
       owner: compareDatasets.map((dataset) => dataset.owner),
-      quality: compareDatasets.map((dataset) => `${getQualityScore(dataset)} / 100`),
+      quality: compareDatasets.map(
+        (dataset) => `${getQualityScore(dataset)} / 100`,
+      ),
     };
     const changed = (arr: string[]) => new Set(arr).size > 1;
     return {
       rows: [
-        { label: "Status", key: "status", values: values.status, changed: changed(values.status) },
+        {
+          label: "Status",
+          key: "status",
+          values: values.status,
+          changed: changed(values.status),
+        },
         {
           label: "Visibility",
           key: "visibility",
@@ -656,10 +666,30 @@ function App() {
           values: values.collection,
           changed: changed(values.collection),
         },
-        { label: "Altitude", key: "altitude", values: values.altitude, changed: changed(values.altitude) },
-        { label: "Location", key: "location", values: values.location, changed: changed(values.location) },
-        { label: "Owner", key: "owner", values: values.owner, changed: changed(values.owner) },
-        { label: "Quality", key: "quality", values: values.quality, changed: changed(values.quality) },
+        {
+          label: "Altitude",
+          key: "altitude",
+          values: values.altitude,
+          changed: changed(values.altitude),
+        },
+        {
+          label: "Location",
+          key: "location",
+          values: values.location,
+          changed: changed(values.location),
+        },
+        {
+          label: "Owner",
+          key: "owner",
+          values: values.owner,
+          changed: changed(values.owner),
+        },
+        {
+          label: "Quality",
+          key: "quality",
+          values: values.quality,
+          changed: changed(values.quality),
+        },
       ],
       best:
         compareDatasets.length === 0
@@ -760,7 +790,9 @@ function App() {
     () =>
       lineageOptions.find(
         (dataset) => dataset.id === Number.parseInt(lineageSelectionId, 10),
-      ) ?? lineageOptions[0] ?? null,
+      ) ??
+      lineageOptions[0] ??
+      null,
     [lineageOptions, lineageSelectionId],
   );
   const lineageFingerprint = useMemo(() => {
@@ -1242,7 +1274,10 @@ function App() {
           if (record.status === "draft" && next === "pending") {
             return { ...record, status: "pending", submittedAt: timestamp };
           }
-          if (record.status === "pending" && (next === "approved" || next === "rejected")) {
+          if (
+            record.status === "pending" &&
+            (next === "approved" || next === "rejected")
+          ) {
             return {
               ...record,
               status: next,
@@ -1449,7 +1484,9 @@ function App() {
       return;
     }
     const selectedId = Number.parseInt(lineageSelectionId, 10);
-    const hasSelected = lineageOptions.some((dataset) => dataset.id === selectedId);
+    const hasSelected = lineageOptions.some(
+      (dataset) => dataset.id === selectedId,
+    );
     if (!hasSelected) {
       setLineageSelectionId(String(lineageOptions[0].id));
     }
@@ -1495,11 +1532,15 @@ function App() {
     }
   }, [geoDatasets, selectedGeoDatasetId]);
   useEffect(() => {
-    const allowed = new Set(filteredDatasets.map((dataset) => String(dataset.id)));
+    const allowed = new Set(
+      filteredDatasets.map((dataset) => String(dataset.id)),
+    );
     setCompareSelectionIds((prev) => prev.filter((id) => allowed.has(id)));
   }, [filteredDatasets]);
   useEffect(() => {
-    const allowed = new Set(lineageOptions.map((dataset) => String(dataset.id)));
+    const allowed = new Set(
+      lineageOptions.map((dataset) => String(dataset.id)),
+    );
     setWatchlistIds((prev) => prev.filter((id) => allowed.has(id)));
   }, [lineageOptions]);
   useEffect(() => {
@@ -1629,7 +1670,9 @@ function App() {
             onClick={() => setShowAlerts((prev) => !prev)}
           >
             Alerts
-            <span className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}>
+            <span
+              className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}
+            >
               {unreadAlertCount}
             </span>
           </button>
@@ -1656,7 +1699,10 @@ function App() {
       </nav>
 
       {showCommandPalette && (
-        <div className="command-overlay" onClick={() => setShowCommandPalette(false)}>
+        <div
+          className="command-overlay"
+          onClick={() => setShowCommandPalette(false)}
+        >
           <div
             className="command-modal"
             onClick={(event) => event.stopPropagation()}
@@ -1674,7 +1720,9 @@ function App() {
             />
             <div className="command-list">
               {filteredCommandActions.length === 0 && (
-                <div className="command-empty">No commands matched your query.</div>
+                <div className="command-empty">
+                  No commands matched your query.
+                </div>
               )}
               {filteredCommandActions.map((action) => (
                 <button
@@ -1692,6 +1740,7 @@ function App() {
         </div>
       )}
 
+      {/* Main content */}
       <main className="container">
         <section className="hero">
           <div className="hero__content">
@@ -1759,14 +1808,17 @@ function App() {
               <div>
                 <h2>Smart alert center</h2>
                 <p>
-                  Track verification, rejection, freeze, and pending review events.
+                  Track verification, rejection, freeze, and pending review
+                  events.
                 </p>
               </div>
               <div className="alert-controls">
                 <button
                   className="ghost-btn"
                   type="button"
-                  onClick={() => setReadAlertIds(alerts.map((alert) => alert.id))}
+                  onClick={() =>
+                    setReadAlertIds(alerts.map((alert) => alert.id))
+                  }
                   disabled={alerts.length === 0}
                 >
                   Mark all read
@@ -1800,21 +1852,29 @@ function App() {
                   onChange={(event) => setWatchlistInput(readValue(event))}
                   placeholder="Watch dataset IDs (comma-separated)"
                 />
-                <button className="ghost-btn" type="button" onClick={applyWatchlistInput}>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={applyWatchlistInput}
+                >
                   Apply
                 </button>
               </div>
               <div className="alert-mutes">
-                {(["verified", "rejected", "frozen", "pending"] as const).map((kind) => (
-                  <button
-                    key={`mute-${kind}`}
-                    className={`ghost-btn ${mutedAlertKinds.includes(kind) ? "active" : ""}`}
-                    type="button"
-                    onClick={() => toggleAlertMute(kind)}
-                  >
-                    {mutedAlertKinds.includes(kind) ? `Unmute ${kind}` : `Mute ${kind}`}
-                  </button>
-                ))}
+                {(["verified", "rejected", "frozen", "pending"] as const).map(
+                  (kind) => (
+                    <button
+                      key={`mute-${kind}`}
+                      className={`ghost-btn ${mutedAlertKinds.includes(kind) ? "active" : ""}`}
+                      type="button"
+                      onClick={() => toggleAlertMute(kind)}
+                    >
+                      {mutedAlertKinds.includes(kind)
+                        ? `Unmute ${kind}`
+                        : `Mute ${kind}`}
+                    </button>
+                  ),
+                )}
               </div>
             </div>
             <div className="alert-list">
@@ -1961,9 +2021,12 @@ function App() {
           </div>
           {!lineageDataset ? (
             <div className="dataset-card">
-              <div className="dataset-title">No dataset selected for versioning</div>
+              <div className="dataset-title">
+                No dataset selected for versioning
+              </div>
               <p className="dataset-description">
-                Select a dataset from audit controls to start a revision workflow.
+                Select a dataset from audit controls to start a revision
+                workflow.
               </p>
             </div>
           ) : (
@@ -2031,7 +2094,9 @@ function App() {
                     Reset draft
                   </button>
                 </div>
-                {versionMessage && <div className="form-note">{versionMessage}</div>}
+                {versionMessage && (
+                  <div className="form-note">{versionMessage}</div>
+                )}
               </article>
 
               <article className="version-card">
@@ -2077,7 +2142,10 @@ function App() {
                           className="ghost-btn"
                           type="button"
                           onClick={() =>
-                            handleVersionTransition(selectedVersion.id, "approved")
+                            handleVersionTransition(
+                              selectedVersion.id,
+                              "approved",
+                            )
                           }
                         >
                           Approve
@@ -2086,7 +2154,10 @@ function App() {
                           className="ghost-btn"
                           type="button"
                           onClick={() =>
-                            handleVersionTransition(selectedVersion.id, "rejected")
+                            handleVersionTransition(
+                              selectedVersion.id,
+                              "rejected",
+                            )
                           }
                         >
                           Reject
@@ -2105,25 +2176,32 @@ function App() {
                   <div className="version-diff">
                     <div className="version-summary">
                       <span>Selected: v{selectedVersion.version}</span>
-                      <span>Created: {formatChainValue(selectedVersion.createdAt)}</span>
+                      <span>
+                        Created: {formatChainValue(selectedVersion.createdAt)}
+                      </span>
                       {selectedVersion.reviewer && (
                         <span>Reviewer: {selectedVersion.reviewer}</span>
                       )}
                     </div>
                     {!previousVersion && (
                       <p className="dataset-description">
-                        v{selectedVersion.version} is the initial baseline version.
+                        v{selectedVersion.version} is the initial baseline
+                        version.
                       </p>
                     )}
                     {previousVersion && versionDiffs.length === 0 && (
                       <p className="dataset-description">
-                        No field-level differences from v{previousVersion.version}.
+                        No field-level differences from v
+                        {previousVersion.version}.
                       </p>
                     )}
                     {previousVersion && versionDiffs.length > 0 && (
                       <div className="diff-table">
                         {versionDiffs.map((diff) => (
-                          <div className="diff-row" key={`${selectedVersion.id}-${diff.field}`}>
+                          <div
+                            className="diff-row"
+                            key={`${selectedVersion.id}-${diff.field}`}
+                          >
                             <div>{diff.field}</div>
                             <div>{diff.from}</div>
                             <div>{diff.to}</div>
@@ -2292,7 +2370,11 @@ function App() {
                 onChange={(event) => setSavedViewName(readValue(event))}
                 placeholder="View name (e.g. Verified Public Global)"
               />
-              <button className="ghost-btn" type="button" onClick={saveCurrentView}>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={saveCurrentView}
+              >
                 Save view
               </button>
             </div>
@@ -2389,7 +2471,9 @@ function App() {
                     setSortMode(event.currentTarget.value as SortMode)
                   }
                 >
-                  <option value="quality-desc">Quality score (high to low)</option>
+                  <option value="quality-desc">
+                    Quality score (high to low)
+                  </option>
                   <option value="recent-desc">Newest collection first</option>
                   <option value="recent-asc">Oldest collection first</option>
                   <option value="altitude-desc">Highest altitude first</option>
@@ -2419,7 +2503,9 @@ function App() {
                 <span>
                   Visible points: {geoDatasets.length}/{filteredDatasets.length}
                 </span>
-                {geoTimeCutoff && <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>}
+                {geoTimeCutoff && (
+                  <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>
+                )}
               </div>
             </div>
             <div className="geo-timeline">
@@ -2443,7 +2529,8 @@ function App() {
                 {geoDatasets.map((dataset) => {
                   const left =
                     ((dataset.longitude / 1_000_000 + 180) / 360) * 100;
-                  const top = (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
+                  const top =
+                    (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
                   return (
                     <button
                       key={`geo-${dataset.id}`}
@@ -2465,7 +2552,9 @@ function App() {
               </div>
               <aside className="geo-detail">
                 {!selectedGeoDataset ? (
-                  <p className="dataset-description">Select a point to inspect details.</p>
+                  <p className="dataset-description">
+                    Select a point to inspect details.
+                  </p>
                 ) : (
                   <>
                     <div className="geo-detail__title">
@@ -2484,7 +2573,8 @@ function App() {
                         {selectedGeoDataset.altitudeMax} m
                       </span>
                       <span>
-                        Collected: {formatChainValue(selectedGeoDataset.collectionDate)}
+                        Collected:{" "}
+                        {formatChainValue(selectedGeoDataset.collectionDate)}
                       </span>
                     </div>
                     <button
@@ -2503,12 +2593,12 @@ function App() {
             <div className="compare-header">
               <div>
                 <h3>Comparative analysis panel</h3>
-                <p>Select up to 4 datasets for side-by-side metric comparison.</p>
+                <p>
+                  Select up to 4 datasets for side-by-side metric comparison.
+                </p>
               </div>
               <div className="compare-actions">
-                <span>
-                  Selected: {compareDatasets.length}/4
-                </span>
+                <span>Selected: {compareDatasets.length}/4</span>
                 <button
                   className="ghost-btn"
                   type="button"
@@ -2521,7 +2611,9 @@ function App() {
             </div>
             <div className="compare-picks">
               {filteredDatasets.slice(0, 12).map((dataset) => {
-                const selected = compareSelectionIds.includes(String(dataset.id));
+                const selected = compareSelectionIds.includes(
+                  String(dataset.id),
+                );
                 return (
                   <button
                     key={`cmp-pick-${dataset.id}`}
@@ -2543,7 +2635,10 @@ function App() {
               <div className="compare-grid">
                 <div className="compare-grid__header">Metric</div>
                 {compareDatasets.map((dataset) => (
-                  <div key={`cmp-header-${dataset.id}`} className="compare-grid__header">
+                  <div
+                    key={`cmp-header-${dataset.id}`}
+                    className="compare-grid__header"
+                  >
                     #{dataset.id} {dataset.name}
                     {compareMetrics.best?.id === dataset.id && (
                       <span className="compare-best">Best quality</span>
@@ -2577,7 +2672,8 @@ function App() {
               <div>
                 <h3>Data story mode</h3>
                 <p>
-                  Auto-generated narrative from your current filtered and ranked dataset view.
+                  Auto-generated narrative from your current filtered and ranked
+                  dataset view.
                 </p>
               </div>
               <div className="story-controls">
@@ -2594,7 +2690,9 @@ function App() {
                   type="button"
                   onClick={() =>
                     setStoryStepIndex((prev) =>
-                      prev <= 0 ? Math.max(storyChapters.length - 1, 0) : prev - 1,
+                      prev <= 0
+                        ? Math.max(storyChapters.length - 1, 0)
+                        : prev - 1,
                     )
                   }
                   disabled={storyChapters.length === 0}
@@ -2606,7 +2704,9 @@ function App() {
                   type="button"
                   onClick={() =>
                     setStoryStepIndex((prev) =>
-                      storyChapters.length === 0 ? 0 : (prev + 1) % storyChapters.length,
+                      storyChapters.length === 0
+                        ? 0
+                        : (prev + 1) % storyChapters.length,
                     )
                   }
                   disabled={storyChapters.length === 0}
@@ -2643,7 +2743,9 @@ function App() {
                   <button
                     className="ghost-btn"
                     type="button"
-                    onClick={() => setLineageTarget(activeStoryChapter.datasetId!)}
+                    onClick={() =>
+                      setLineageTarget(activeStoryChapter.datasetId!)
+                    }
                   >
                     Open dataset #{activeStoryChapter.datasetId} in audit
                   </button>
@@ -2752,7 +2854,9 @@ function App() {
                   <button
                     className="ghost-btn dataset-foot__action dataset-foot__action--compare"
                     type="button"
-                    onClick={() => copyText(dataset.ipfsHash || "", "IPFS hash")}
+                    onClick={() =>
+                      copyText(dataset.ipfsHash || "", "IPFS hash")
+                    }
                   >
                     Copy IPFS
                   </button>
@@ -2765,7 +2869,9 @@ function App() {
                   </button>
                   <button
                     className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
-                      compareSelectionIds.includes(String(dataset.id)) ? "active" : ""
+                      compareSelectionIds.includes(String(dataset.id))
+                        ? "active"
+                        : ""
                     }`}
                     type="button"
                     onClick={() => toggleCompareDataset(dataset.id)}
@@ -2781,7 +2887,9 @@ function App() {
                     type="button"
                     onClick={() => toggleWatchlistDataset(dataset.id)}
                   >
-                    {watchlistIds.includes(String(dataset.id)) ? "Watching" : "Watch"}
+                    {watchlistIds.includes(String(dataset.id))
+                      ? "Watching"
+                      : "Watch"}
                   </button>
                 </div>
               </article>
