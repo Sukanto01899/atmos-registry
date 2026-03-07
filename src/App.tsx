@@ -21,6 +21,7 @@ import {
 
 const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
 const CONTRACT_NAME = "atmos-v3";
+const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
@@ -103,6 +104,21 @@ type AlertItem = {
   message: string;
   level: AlertLevel;
   timestamp: number;
+};
+
+type SavedView = {
+  id: string;
+  name: string;
+  createdAt: number;
+  payload: {
+    activeTab: "explore" | "mine";
+    filters: DatasetFilters;
+    geoTimePercent: number;
+    compareSelectionIds: string[];
+    watchlistOnly: boolean;
+    watchlistIds: string[];
+    mutedAlertKinds: string[];
+  };
 };
 
 const defaultRegisterForm: RegisterFormState = {
@@ -338,6 +354,8 @@ function App() {
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [watchlistInput, setWatchlistInput] = useState("");
   const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
+  const [savedViewName, setSavedViewName] = useState("");
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [versionStore, setVersionStore] = useState<Record<number, VersionRecord[]>>(
     {},
@@ -993,6 +1011,39 @@ function App() {
       .filter((item) => /^[0-9]+$/.test(item));
     setWatchlistIds(Array.from(new Set(parsed)));
   };
+  const saveCurrentView = () => {
+    const name = savedViewName.trim() || `View ${savedViews.length + 1}`;
+    const next: SavedView = {
+      id: `view-${Date.now()}`,
+      name,
+      createdAt: nowUnix(),
+      payload: {
+        activeTab,
+        filters,
+        geoTimePercent,
+        compareSelectionIds,
+        watchlistOnly,
+        watchlistIds,
+        mutedAlertKinds,
+      },
+    };
+    setSavedViews((prev) => [next, ...prev].slice(0, 20));
+    setSavedViewName("");
+    setStatusMessage(`Saved view: ${name}`);
+  };
+  const applySavedView = (view: SavedView) => {
+    setActiveTab(view.payload.activeTab);
+    setFilters(view.payload.filters);
+    setGeoTimePercent(Math.max(0, Math.min(100, view.payload.geoTimePercent)));
+    setCompareSelectionIds(view.payload.compareSelectionIds);
+    setWatchlistOnly(view.payload.watchlistOnly);
+    setWatchlistIds(view.payload.watchlistIds);
+    setMutedAlertKinds(view.payload.mutedAlertKinds);
+    setStatusMessage(`Applied view: ${view.name}`);
+  };
+  const deleteSavedView = (viewId: string) => {
+    setSavedViews((prev) => prev.filter((view) => view.id !== viewId));
+  };
   const handleCreateVersionDraft = () => {
     if (!lineageDataset) return;
     const existing = versionStore[lineageDataset.id] ?? [];
@@ -1199,6 +1250,23 @@ function App() {
     hydrateSession();
     loadLatest();
   }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(SAVED_VIEWS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as SavedView[];
+      if (Array.isArray(parsed)) {
+        setSavedViews(parsed.slice(0, 20));
+      }
+    } catch {
+      // Ignore invalid saved view cache.
+    }
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(savedViews));
+  }, [savedViews]);
 
   useEffect(() => {
     if (!lineageOptions.length) {
@@ -1899,6 +1967,49 @@ function App() {
                 )}
               </div>
             )}
+          </div>
+          <div className="saved-view-card">
+            <div className="saved-view-head">
+              <h3>Saved views</h3>
+              <p>
+                Save and restore your current filters, explorer state, compare
+                picks, and watchlist setup.
+              </p>
+            </div>
+            <div className="saved-view-create">
+              <input
+                value={savedViewName}
+                onChange={(event) => setSavedViewName(readValue(event))}
+                placeholder="View name (e.g. Verified Public Global)"
+              />
+              <button className="ghost-btn" type="button" onClick={saveCurrentView}>
+                Save view
+              </button>
+            </div>
+            <div className="saved-view-list">
+              {savedViews.length === 0 && (
+                <span className="saved-view-empty">No saved views yet.</span>
+              )}
+              {savedViews.map((view) => (
+                <div className="saved-view-item" key={view.id}>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => applySavedView(view)}
+                  >
+                    {view.name}
+                  </button>
+                  <span>{formatChainValue(view.createdAt)}</span>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => deleteSavedView(view.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="filter-card">
             <div className="filter-grid">

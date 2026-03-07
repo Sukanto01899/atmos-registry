@@ -650,6 +650,49 @@ textarea:focus {
   background: rgba(17, 25, 34, 0.75);
 }
 
+.saved-view-card {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.78);
+}
+
+.saved-view-head p {
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.saved-view-create {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+}
+
+.saved-view-list {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.saved-view-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.saved-view-item {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.saved-view-item span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .filter-grid {
   display: grid;
   gap: 0.75rem;
@@ -1222,6 +1265,14 @@ textarea:focus {
   .filter-actions {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .saved-view-create {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-view-item {
+    grid-template-columns: 1fr;
   }
 
   .geo-header {
