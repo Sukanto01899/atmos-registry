@@ -133,6 +133,7 @@ type SavedView = {
   };
 };
 
+// Command palette actions are defined client-side for quick access to common actions and navigation. In a production app, you might want to support more dynamic command registration and more complex command payloads.
 type CommandAction = {
   id: string;
   label: string;
