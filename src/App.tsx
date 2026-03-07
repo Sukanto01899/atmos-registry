@@ -103,6 +103,7 @@ type VersionDraft = {
   isPublic: boolean;
 };
 
+// Alert system is designed to surface important updates about datasets that users are interested in, such as verification status changes or metadata freezes. In a real application, you would likely want to persist read/dismissed state and support more complex alert types and delivery mechanisms.
 type AlertLevel = "critical" | "warning" | "info";
 
 type AlertItem = {
