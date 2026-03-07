@@ -181,6 +181,7 @@ const unwrapResponseOk = (cv: unknown) => {
   return json;
 };
 
+// Parses a tuple response from the get-dataset read-only function into a Dataset object. Handles both tuple and non-tuple response formats for compatibility with different contract versions.
 const parseTuple = (tuple: any, id: number): Dataset | null => {
   if (!tuple) {
     return null;
