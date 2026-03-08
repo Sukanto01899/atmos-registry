@@ -273,6 +273,8 @@ const getQualityScore = (dataset: Dataset) =>
   (dataset.ipfsHash ? 30 : 0) +
   (dataset.metadataFrozen ? 15 : 0) +
   (dataset.isPublic ? 10 : 0);
+
+// Status priority is used for sorting datasets by their status in a meaningful way. In a production app, you might want to support more complex status hierarchies and allow users to customize the priority order.
 const getStatusPriority = (status: string) => {
   if (status === "verified") return 4;
   if (status === "pending") return 3;
