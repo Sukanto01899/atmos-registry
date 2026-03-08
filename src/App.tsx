@@ -162,6 +162,7 @@ type StakeInfo = {
   totalClaimed: number;
 };
 
+// In a production application, you would likely want to fetch and display additional token metrics such as historical price, staking history, and more detailed breakdowns of rewards and penalties. For this example, we focus on the core metrics relevant to staking and governance participation for simplicity.
 type TokenSnapshot = {
   name: string;
   symbol: string;
