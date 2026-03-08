@@ -231,6 +231,8 @@ const formatChainValue = (value: number) => {
   }
   return `Block ${value}`;
 };
+
+// Status classes can be used to apply different styles based on dataset status. In a production app, you would likely want to use a more robust styling solution and support more status types.
 const getStatusClass = (status: string) => {
   if (status === "verified") return "status--verified";
   if (status === "rejected") return "status--rejected";
