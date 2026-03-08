@@ -266,6 +266,8 @@ const getStatusClass = (status: string) => {
   if (status === "deprecated") return "status--deprecated";
   return "status--active";
 };
+
+// Quality score is a simple heuristic based on the presence of certain attributes. In a real application, you would likely want to use a more sophisticated algorithm that takes into account various factors such as data quality metrics, user feedback, and other relevant metadata.
 const getQualityScore = (dataset: Dataset) =>
   (dataset.verified ? 45 : 0) +
   (dataset.ipfsHash ? 30 : 0) +
