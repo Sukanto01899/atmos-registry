@@ -64,6 +64,7 @@ type RegisterFormState = {
   isPublic: boolean;
 };
 
+// Define the structure for dataset filters
 type DatasetFilters = {
   search: string;
   status: string;
