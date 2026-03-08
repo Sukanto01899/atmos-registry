@@ -155,6 +155,7 @@ type StoryChapter = {
   datasetId?: number;
 };
 
+// TokenSnapshot represents the current state of the ATMOS token, including total supply, total staked, APY, and the user's balance and pending rewards. In a production application, you would likely want to fetch this data from a reliable on-chain source or backend API and update it in real-time.
 type StakeInfo = {
   amount: number;
   lastClaimBlock: number;
