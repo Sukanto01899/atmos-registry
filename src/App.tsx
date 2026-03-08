@@ -28,6 +28,7 @@ const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
 
+// Define the structure for a dataset
 type Dataset = {
   id: number;
   name: string;
@@ -460,7 +461,9 @@ function App() {
   const [versionMessage, setVersionMessage] = useState("");
   const [registerForm, setRegisterForm] =
     useState<RegisterFormState>(defaultRegisterForm);
-  const [tokenSnapshot, setTokenSnapshot] = useState<TokenSnapshot | null>(null);
+  const [tokenSnapshot, setTokenSnapshot] = useState<TokenSnapshot | null>(
+    null,
+  );
   const [tokenLoading, setTokenLoading] = useState(false);
   const [stakeAmount, setStakeAmount] = useState("10");
   const [unstakeAmount, setUnstakeAmount] = useState("10");
@@ -657,7 +660,13 @@ function App() {
         }
       });
     return signal;
-  }, [latestDatasets, myDatasets, myStakeInfo.amount, queryResult, walletAddress]);
+  }, [
+    latestDatasets,
+    myDatasets,
+    myStakeInfo.amount,
+    queryResult,
+    walletAddress,
+  ]);
   const storyChapters = useMemo<StoryChapter[]>(() => {
     if (!sortedDatasets.length) {
       return [];
@@ -1031,11 +1040,9 @@ function App() {
     });
 
   const fetchDataset = async (datasetId: number) => {
-    const response = await readContractValue(
-      CONTRACT_NAME,
-      "get-dataset",
-      [uintCV(datasetId)],
-    );
+    const response = await readContractValue(CONTRACT_NAME, "get-dataset", [
+      uintCV(datasetId),
+    ]);
     const okValue = unwrapResponseOk(response);
     const dataset = parseTuple(okValue, datasetId);
     return dataset;
@@ -2164,7 +2171,9 @@ function App() {
                     <button
                       className="ghost-btn"
                       type="button"
-                      onClick={() => handleStakeAction("unstake", unstakeAmount)}
+                      onClick={() =>
+                        handleStakeAction("unstake", unstakeAmount)
+                      }
                       disabled={!walletAddress || tokenLoading}
                     >
                       Unstake
@@ -2178,7 +2187,9 @@ function App() {
                   type="button"
                   onClick={handleClaimRewards}
                   disabled={
-                    !walletAddress || tokenLoading || tokenSnapshot?.pendingReward === 0
+                    !walletAddress ||
+                    tokenLoading ||
+                    tokenSnapshot?.pendingReward === 0
                   }
                 >
                   Claim rewards
@@ -2186,7 +2197,9 @@ function App() {
                 <button
                   className="ghost-btn"
                   type="button"
-                  onClick={() => loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS)}
+                  onClick={() =>
+                    loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS)
+                  }
                   disabled={tokenLoading}
                 >
                   {tokenLoading ? "Refreshing..." : "Refresh staking"}
