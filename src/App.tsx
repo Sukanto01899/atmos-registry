@@ -222,6 +222,8 @@ const parseTuple = (tuple: any, id: number): Dataset | null => {
 
 // Utility functions for formatting and deriving dataset properties for display purposes. In a real application, you might want to use more robust libraries for date formatting, geospatial calculations, and other utilities.
 const formatCoord = (value: number) => (value / 1_000_000).toFixed(3);
+
+// For collectionDate values, if the value is larger than a certain threshold, we assume it's a Unix timestamp and format it as a date. Otherwise, we treat it as a block number. This is to maintain compatibility with different contract versions that may have used different formats for this field.
 const formatChainValue = (value: number) => {
   if (!value) return "n/a";
   if (value > 1_000_000_000) {
