@@ -21,6 +21,8 @@ import {
 
 const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
 const CONTRACT_NAME = "atmos-v3";
+const TOKEN_CONTRACT_NAME = "atmos-token-v3";
+const STAKING_CONTRACT_NAME = "atmos-staking-v1";
 const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
@@ -149,6 +151,24 @@ type StoryChapter = {
   datasetId?: number;
 };
 
+type StakeInfo = {
+  amount: number;
+  lastClaimBlock: number;
+  totalClaimed: number;
+};
+
+type TokenSnapshot = {
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: number;
+  totalStaked: number;
+  apyBps: number;
+  balance: number;
+  pendingReward: number;
+  stakeInfo: StakeInfo;
+};
+
 // Default form state for dataset registration
 const defaultRegisterForm: RegisterFormState = {
   name: "Demo Stratosphere Scan",
@@ -265,6 +285,27 @@ const mapDatasetToVersionStatus = (dataset: Dataset): VersionStatus => {
   return "approved";
 };
 const nowUnix = () => Math.floor(Date.now() / 1000);
+const MICRO_TOKEN = 1_000_000;
+const formatTokenAmount = (value: number, decimals = 6) =>
+  (value / 10 ** decimals).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.min(decimals, 4),
+  });
+const formatPercentFromBps = (bps: number) =>
+  `${(bps / 100).toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}%`;
+const parseUInt = (value: any) =>
+  Number.parseInt(String(value?.value ?? value ?? "0"), 10);
+const parseStakeInfo = (value: any): StakeInfo => {
+  const tuple = value?.value ?? {};
+  return {
+    amount: parseUInt(tuple.amount),
+    lastClaimBlock: parseUInt(tuple["last-claim-block"]),
+    totalClaimed: parseUInt(tuple["total-claimed"]),
+  };
+};
 
 const resetInvalidSession = () => {
   try {
@@ -419,6 +460,11 @@ function App() {
   const [versionMessage, setVersionMessage] = useState("");
   const [registerForm, setRegisterForm] =
     useState<RegisterFormState>(defaultRegisterForm);
+  const [tokenSnapshot, setTokenSnapshot] = useState<TokenSnapshot | null>(null);
+  const [tokenLoading, setTokenLoading] = useState(false);
+  const [stakeAmount, setStakeAmount] = useState("10");
+  const [unstakeAmount, setUnstakeAmount] = useState("10");
+  const [stakeStatus, setStakeStatus] = useState("");
 
   const stats = useMemo(
     () => [
@@ -438,8 +484,17 @@ function App() {
         value: "Global mesh",
         note: "Climate and Atmosphere",
       },
+      {
+        label: "ATMOS staked",
+        value: tokenSnapshot
+          ? `${formatTokenAmount(tokenSnapshot.totalStaked, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+          : "Loading...",
+        note: tokenSnapshot
+          ? `${formatPercentFromBps(tokenSnapshot.apyBps)} APY`
+          : "Stake pool",
+      },
     ],
-    [datasetCount],
+    [datasetCount, tokenSnapshot],
   );
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
@@ -583,6 +638,26 @@ function App() {
     });
     return rankMap;
   }, [sortedDatasets]);
+  const myStakeInfo = tokenSnapshot?.stakeInfo ?? {
+    amount: 0,
+    lastClaimBlock: 0,
+    totalClaimed: 0,
+  };
+  const stewardshipSignalByDatasetId = useMemo(() => {
+    const signal = new Map<number, string>();
+    if (!walletAddress || myStakeInfo.amount <= 0) {
+      return signal;
+    }
+    const amountLabel = `${formatTokenAmount(myStakeInfo.amount)} ATMOS staked`;
+    [...latestDatasets, ...myDatasets, ...(queryResult ? [queryResult] : [])]
+      .filter((dataset): dataset is Dataset => Boolean(dataset))
+      .forEach((dataset) => {
+        if (dataset.owner === walletAddress) {
+          signal.set(dataset.id, amountLabel);
+        }
+      });
+    return signal;
+  }, [latestDatasets, myDatasets, myStakeInfo.amount, queryResult, walletAddress]);
   const storyChapters = useMemo<StoryChapter[]>(() => {
     if (!sortedDatasets.length) {
       return [];
@@ -940,19 +1015,94 @@ function App() {
       const value = event.currentTarget.value;
       setFilters((prev) => ({ ...prev, [field]: value }));
     };
-
-  const fetchDataset = async (datasetId: number) => {
-    const response = await fetchCallReadOnlyFunction({
+  const readContractValue = async (
+    contractName: string,
+    functionName: string,
+    functionArgs: any[],
+    sender = senderAddress,
+  ) =>
+    fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
-      contractName: CONTRACT_NAME,
-      functionName: "get-dataset",
-      functionArgs: [uintCV(datasetId)],
-      senderAddress,
+      contractName,
+      functionName,
+      functionArgs,
+      senderAddress: sender,
       network,
     });
+
+  const fetchDataset = async (datasetId: number) => {
+    const response = await readContractValue(
+      CONTRACT_NAME,
+      "get-dataset",
+      [uintCV(datasetId)],
+    );
     const okValue = unwrapResponseOk(response);
     const dataset = parseTuple(okValue, datasetId);
     return dataset;
+  };
+
+  const loadTokenSnapshot = async (address?: string) => {
+    setTokenLoading(true);
+    try {
+      const account = address || walletAddress || CONTRACT_ADDRESS;
+      const [
+        nameResponse,
+        symbolResponse,
+        decimalsResponse,
+        totalSupplyResponse,
+        totalStakedResponse,
+        apyResponse,
+        balanceResponse,
+        pendingRewardResponse,
+        stakeInfoResponse,
+      ] = await Promise.all([
+        readContractValue(TOKEN_CONTRACT_NAME, "get-name", [], account),
+        readContractValue(TOKEN_CONTRACT_NAME, "get-symbol", [], account),
+        readContractValue(TOKEN_CONTRACT_NAME, "get-decimals", [], account),
+        readContractValue(TOKEN_CONTRACT_NAME, "get-total-supply", [], account),
+        readContractValue(
+          STAKING_CONTRACT_NAME,
+          "get-total-staked",
+          [],
+          account,
+        ),
+        readContractValue(STAKING_CONTRACT_NAME, "get-apy-bps", [], account),
+        readContractValue(
+          TOKEN_CONTRACT_NAME,
+          "get-balance",
+          [principalCV(account)],
+          account,
+        ),
+        readContractValue(
+          STAKING_CONTRACT_NAME,
+          "get-pending-reward",
+          [principalCV(account)],
+          account,
+        ),
+        readContractValue(
+          STAKING_CONTRACT_NAME,
+          "get-stake-info",
+          [principalCV(account)],
+          account,
+        ),
+      ]);
+
+      setTokenSnapshot({
+        name: String(unwrapResponseOk(nameResponse).value ?? "Atmos Token"),
+        symbol: String(unwrapResponseOk(symbolResponse).value ?? "ATMOS"),
+        decimals: parseUInt(unwrapResponseOk(decimalsResponse)),
+        totalSupply: parseUInt(unwrapResponseOk(totalSupplyResponse)),
+        totalStaked: parseUInt(unwrapResponseOk(totalStakedResponse)),
+        apyBps: parseUInt(unwrapResponseOk(apyResponse)),
+        balance: parseUInt(unwrapResponseOk(balanceResponse)),
+        pendingReward: parseUInt(unwrapResponseOk(pendingRewardResponse)),
+        stakeInfo: parseStakeInfo(cvToJSON(stakeInfoResponse as any)),
+      });
+    } catch {
+      setTokenSnapshot(null);
+    } finally {
+      setTokenLoading(false);
+    }
   };
 
   const loadLatest = async () => {
@@ -1339,6 +1489,7 @@ function App() {
           );
           if (address) {
             setOwnerInput(address);
+            loadTokenSnapshot(address);
           }
         },
         onCancel: () => {
@@ -1357,6 +1508,7 @@ function App() {
     userSession.signUserOut(window.location.origin);
     setWalletAddress("");
     setWalletMessage("Wallet disconnected.");
+    loadTokenSnapshot(CONTRACT_ADDRESS);
   };
 
   const handleRegisterSubmit = async () => {
@@ -1441,6 +1593,68 @@ function App() {
     });
   };
 
+  const parseMicroTokenInput = (value: string) => {
+    const amount = Number.parseFloat(value);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return null;
+    }
+    return Math.round(amount * MICRO_TOKEN);
+  };
+
+  const handleStakeAction = async (
+    functionName: "stake" | "unstake",
+    amountText: string,
+  ) => {
+    if (!walletAddress) {
+      setStakeStatus("Connect your wallet to manage staking.");
+      return;
+    }
+    const amount = parseMicroTokenInput(amountText);
+    if (!amount) {
+      setStakeStatus("Enter a valid ATMOS amount.");
+      return;
+    }
+    setStakeStatus("Opening wallet for staking approval...");
+    await openContractCall({
+      network,
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: STAKING_CONTRACT_NAME,
+      functionName,
+      functionArgs: [uintCV(amount)],
+      postConditions: [],
+      onFinish: (data) => {
+        setStakeStatus(`Transaction submitted: ${data.txId}`);
+        loadTokenSnapshot(walletAddress);
+      },
+      onCancel: () => {
+        setStakeStatus("Transaction canceled.");
+      },
+    });
+  };
+
+  const handleClaimRewards = async () => {
+    if (!walletAddress) {
+      setStakeStatus("Connect your wallet to claim rewards.");
+      return;
+    }
+    setStakeStatus("Opening wallet to claim rewards...");
+    await openContractCall({
+      network,
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: STAKING_CONTRACT_NAME,
+      functionName: "claim-rewards",
+      functionArgs: [],
+      postConditions: [],
+      onFinish: (data) => {
+        setStakeStatus(`Claim submitted: ${data.txId}`);
+        loadTokenSnapshot(walletAddress);
+      },
+      onCancel: () => {
+        setStakeStatus("Claim canceled.");
+      },
+    });
+  };
+
   useEffect(() => {
     const hydrateSession = async () => {
       await ensureConnectUi();
@@ -1454,12 +1668,17 @@ function App() {
       if (safeIsSignedIn()) {
         const address = getUserAddress();
         setWalletAddress(address);
+        loadTokenSnapshot(address);
       }
     };
 
     hydrateSession();
     loadLatest();
+    loadTokenSnapshot(CONTRACT_ADDRESS);
   }, []);
+  useEffect(() => {
+    loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS);
+  }, [walletAddress]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -1630,6 +1849,14 @@ function App() {
       detail: "Store current workspace settings",
       run: () => {
         quickSaveCurrentView();
+      },
+    },
+    {
+      id: "refresh-staking",
+      label: "Refresh Staking",
+      detail: "Reload ATMOS token and staking metrics",
+      run: () => {
+        loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS);
       },
     },
     {
@@ -1816,6 +2043,158 @@ function App() {
               <div className="stat-note">{stat.note}</div>
             </div>
           ))}
+        </section>
+
+        <section className="section stake-section">
+          <div className="section-header">
+            <div>
+              <h2>ATMOS staking and trust layer</h2>
+              <p>
+                Monitor token economics and manage wallet staking directly from
+                the registry.
+              </p>
+            </div>
+          </div>
+          <div className="stake-grid">
+            <article className="stake-card stake-card--overview">
+              <div className="stake-card__title">Protocol economics</div>
+              <div className="stake-metrics">
+                <div>
+                  <span>Token</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? `${tokenSnapshot.name} (${tokenSnapshot.symbol})`
+                      : "Loading..."}
+                  </strong>
+                </div>
+                <div>
+                  <span>Total supply</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? `${formatTokenAmount(tokenSnapshot.totalSupply, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                      : "Loading..."}
+                  </strong>
+                </div>
+                <div>
+                  <span>Total staked</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? `${formatTokenAmount(tokenSnapshot.totalStaked, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                      : "Loading..."}
+                  </strong>
+                </div>
+                <div>
+                  <span>Staking APY</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? formatPercentFromBps(tokenSnapshot.apyBps)
+                      : "Loading..."}
+                  </strong>
+                </div>
+              </div>
+            </article>
+            <article className="stake-card">
+              <div className="stake-card__title">Wallet position</div>
+              <p className="stake-card__subtitle">
+                {walletAddress
+                  ? "Use ATMOS to signal stewardship and earn rewards."
+                  : "Connect a wallet to stake, unstake, and claim rewards."}
+              </p>
+              <div className="stake-metrics">
+                <div>
+                  <span>Wallet balance</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? `${formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                      : "Loading..."}
+                  </strong>
+                </div>
+                <div>
+                  <span>Currently staked</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? `${formatTokenAmount(myStakeInfo.amount, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                      : "Loading..."}
+                  </strong>
+                </div>
+                <div>
+                  <span>Pending reward</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? `${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                      : "Loading..."}
+                  </strong>
+                </div>
+                <div>
+                  <span>Total claimed</span>
+                  <strong>
+                    {tokenSnapshot
+                      ? `${formatTokenAmount(myStakeInfo.totalClaimed, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                      : "Loading..."}
+                  </strong>
+                </div>
+              </div>
+              <div className="stake-actions-grid">
+                <label className="stake-field">
+                  <span>Stake ATMOS</span>
+                  <div className="stake-inline">
+                    <input
+                      value={stakeAmount}
+                      onChange={(event) => setStakeAmount(readValue(event))}
+                      placeholder="10"
+                    />
+                    <button
+                      className="primary-btn compact"
+                      type="button"
+                      onClick={() => handleStakeAction("stake", stakeAmount)}
+                      disabled={!walletAddress || tokenLoading}
+                    >
+                      Stake
+                    </button>
+                  </div>
+                </label>
+                <label className="stake-field">
+                  <span>Unstake ATMOS</span>
+                  <div className="stake-inline">
+                    <input
+                      value={unstakeAmount}
+                      onChange={(event) => setUnstakeAmount(readValue(event))}
+                      placeholder="10"
+                    />
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => handleStakeAction("unstake", unstakeAmount)}
+                      disabled={!walletAddress || tokenLoading}
+                    >
+                      Unstake
+                    </button>
+                  </div>
+                </label>
+              </div>
+              <div className="stake-footer">
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={handleClaimRewards}
+                  disabled={
+                    !walletAddress || tokenLoading || tokenSnapshot?.pendingReward === 0
+                  }
+                >
+                  Claim rewards
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS)}
+                  disabled={tokenLoading}
+                >
+                  {tokenLoading ? "Refreshing..." : "Refresh staking"}
+                </button>
+              </div>
+              {stakeStatus && <div className="form-note">{stakeStatus}</div>}
+            </article>
+          </div>
         </section>
 
         {showAlerts && (
@@ -2809,6 +3188,9 @@ function App() {
                       {dataset.metadataFrozen && (
                         <span className="tag tag--frozen">Frozen</span>
                       )}
+                      {stewardshipSignalByDatasetId.has(dataset.id) && (
+                        <span className="tag tag--staked">Steward staked</span>
+                      )}
                     </div>
                   </div>
                   <span
@@ -2821,6 +3203,11 @@ function App() {
                   Rank #{datasetRankById.get(dataset.id) ?? "-"} | Quality{" "}
                   {getQualityScore(dataset)}/100
                 </div>
+                {stewardshipSignalByDatasetId.has(dataset.id) && (
+                  <div className="dataset-rank dataset-rank--stake">
+                    {stewardshipSignalByDatasetId.get(dataset.id)}
+                  </div>
+                )}
                 <p className="dataset-description">{dataset.description}</p>
                 <div className="dataset-meta">
                   <div>

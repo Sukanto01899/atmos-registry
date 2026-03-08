@@ -346,6 +346,97 @@ textarea:focus {
   margin-bottom: 1.5rem;
 }
 
+.stake-section {
+  margin-top: 0;
+}
+
+.stake-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+  gap: 1rem;
+}
+
+.stake-card {
+  padding: 1.2rem;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.8);
+  box-shadow: var(--shadow);
+}
+
+.stake-card--overview {
+  background:
+    radial-gradient(circle at top right, rgba(245, 138, 61, 0.14), transparent 36%),
+    rgba(17, 25, 34, 0.84);
+}
+
+.stake-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.stake-card__subtitle {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.stake-metrics {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+
+.stake-metrics div {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(24, 33, 44, 0.55);
+}
+
+.stake-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.35rem;
+}
+
+.stake-metrics strong {
+  font-size: 0.98rem;
+}
+
+.stake-actions-grid {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.stake-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.stake-field span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.stake-inline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+}
+
+.stake-footer {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
 .stat-card {
   padding: 1.25rem;
   border-radius: 18px;
@@ -1245,6 +1336,11 @@ textarea:focus {
   color: var(--muted);
 }
 
+.tag--staked {
+  border-color: rgba(90, 160, 255, 0.45);
+  color: var(--accent-3);
+}
+
 .status-pill {
   padding: 0.35rem 0.8rem;
   border-radius: 999px;
@@ -1293,6 +1389,13 @@ textarea:focus {
   color: rgba(245, 138, 61, 0.95);
   background: rgba(245, 138, 61, 0.1);
   font-size: 0.75rem;
+}
+
+.dataset-rank--stake {
+  margin-left: 0.5rem;
+  border-color: rgba(90, 160, 255, 0.35);
+  color: var(--accent-3);
+  background: rgba(90, 160, 255, 0.1);
 }
 
 .dataset-meta {
@@ -1413,6 +1516,10 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .stake-grid {
+    grid-template-columns: 1fr;
+  }
+
   .wallet-chip {
     width: 100%;
     justify-content: space-between;
@@ -1423,6 +1530,10 @@ textarea:focus {
   }
 
   .filter-range {
+    grid-template-columns: 1fr;
+  }
+
+  .stake-inline {
     grid-template-columns: 1fr;
   }
 
