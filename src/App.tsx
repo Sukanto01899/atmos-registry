@@ -50,6 +50,7 @@ type Dataset = {
   status: string;
 };
 
+// In a production application, you would likely want to fetch and store additional metadata about datasets, such as data quality metrics, usage statistics, or user-generated tags and reviews. For this example, we focus on the core metadata stored on-chain for simplicity.
 type RegisterFormState = {
   name: string;
   description: string;
