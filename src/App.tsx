@@ -300,6 +300,8 @@ const mapDatasetToVersionStatus = (dataset: Dataset): VersionStatus => {
 };
 const nowUnix = () => Math.floor(Date.now() / 1000);
 const MICRO_TOKEN = 1_000_000;
+
+// Utility functions for formatting token amounts, percentages, and parsing values from user input. In a production app, you would likely want to use a library like bignumber.js for handling token amounts and more robust input parsing and validation.
 const formatTokenAmount = (value: number, decimals = 6) =>
   (value / 10 ** decimals).toLocaleString(undefined, {
     minimumFractionDigits: 0,
@@ -2061,7 +2063,9 @@ function App() {
               </button>
             </div>
             <div className="detail-summary">
-              <span className={`status-pill ${getStatusClass(lineageDataset.status)}`}>
+              <span
+                className={`status-pill ${getStatusClass(lineageDataset.status)}`}
+              >
                 {lineageDataset.status}
               </span>
               <span className="tag">{lineageDataset.dataType}</span>
@@ -2092,16 +2096,21 @@ function App() {
                   <div>
                     <span>Altitude</span>
                     <strong>
-                      {lineageDataset.altitudeMin}-{lineageDataset.altitudeMax} m
+                      {lineageDataset.altitudeMin}-{lineageDataset.altitudeMax}{" "}
+                      m
                     </strong>
                   </div>
                   <div>
                     <span>Collected</span>
-                    <strong>{formatChainValue(lineageDataset.collectionDate)}</strong>
+                    <strong>
+                      {formatChainValue(lineageDataset.collectionDate)}
+                    </strong>
                   </div>
                   <div>
                     <span>Recorded</span>
-                    <strong>{formatChainValue(lineageDataset.createdAt)}</strong>
+                    <strong>
+                      {formatChainValue(lineageDataset.createdAt)}
+                    </strong>
                   </div>
                   <div>
                     <span>IPFS</span>
@@ -2112,7 +2121,9 @@ function App() {
                   <button
                     className="ghost-btn"
                     type="button"
-                    onClick={() => copyText(String(lineageDataset.id), "Dataset ID")}
+                    onClick={() =>
+                      copyText(String(lineageDataset.id), "Dataset ID")
+                    }
                   >
                     Copy ID
                   </button>
@@ -2126,7 +2137,9 @@ function App() {
                   <button
                     className="ghost-btn"
                     type="button"
-                    onClick={() => copyText(lineageDataset.ipfsHash || "", "IPFS hash")}
+                    onClick={() =>
+                      copyText(lineageDataset.ipfsHash || "", "IPFS hash")
+                    }
                   >
                     Copy IPFS
                   </button>
@@ -2223,7 +2236,9 @@ function App() {
                         <strong>v{record.version}</strong>
                         <div className="version-source">{record.source}</div>
                       </div>
-                      <span className={`status-pill ${getVersionStatusClass(record.status)}`}>
+                      <span
+                        className={`status-pill ${getVersionStatusClass(record.status)}`}
+                      >
                         {record.status}
                       </span>
                     </button>
@@ -2235,9 +2250,7 @@ function App() {
                     <div>
                       Created: {formatChainValue(selectedVersion.createdAt)}
                     </div>
-                    <div>
-                      Reviewer: {selectedVersion.reviewer || "n/a"}
-                    </div>
+                    <div>Reviewer: {selectedVersion.reviewer || "n/a"}</div>
                   </div>
                 )}
                 {versionDiffs.length > 0 && (
@@ -3289,23 +3302,23 @@ function App() {
                         {formatChainValue(selectedGeoDataset.collectionDate)}
                       </span>
                     </div>
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() => setLineageTarget(selectedGeoDataset.id)}
-                  >
-                    Open in audit trail
-                  </button>
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() => openDatasetDetail(selectedGeoDataset.id)}
-                  >
-                    Open detail
-                  </button>
-                </>
-              )}
-            </aside>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => setLineageTarget(selectedGeoDataset.id)}
+                    >
+                      Open in audit trail
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => openDatasetDetail(selectedGeoDataset.id)}
+                    >
+                      Open detail
+                    </button>
+                  </>
+                )}
+              </aside>
             </div>
           </div>
           <div className="compare-card">
