@@ -460,6 +460,7 @@ function App() {
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showDatasetDetail, setShowDatasetDetail] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
   const [storyStepIndex, setStoryStepIndex] = useState(0);
@@ -1024,6 +1025,23 @@ function App() {
     }
     return diffs;
   }, [selectedVersion, previousVersion]);
+  const relatedDatasets = useMemo(() => {
+    if (!lineageDataset) {
+      return [];
+    }
+    return lineageOptions
+      .filter((dataset) => dataset.id !== lineageDataset.id)
+      .sort((a, b) => {
+        const aScore =
+          (a.owner === lineageDataset.owner ? 2 : 0) +
+          (a.dataType === lineageDataset.dataType ? 1 : 0);
+        const bScore =
+          (b.owner === lineageDataset.owner ? 2 : 0) +
+          (b.dataType === lineageDataset.dataType ? 1 : 0);
+        return bScore - aScore || b.createdAt - a.createdAt;
+      })
+      .slice(0, 4);
+  }, [lineageDataset, lineageOptions]);
 
   const updateRegisterField =
     (field: keyof RegisterFormState) =>
@@ -1271,6 +1289,10 @@ function App() {
         .getElementById("lineage-audit")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  };
+  const openDatasetDetail = (datasetId: number) => {
+    setLineageSelectionId(String(datasetId));
+    setShowDatasetDetail(true);
   };
   const setGeoTarget = (datasetId: number) => {
     setSelectedGeoDatasetId(String(datasetId));
@@ -1724,6 +1746,7 @@ function App() {
       }
       if (event.key === "Escape") {
         setShowCommandPalette(false);
+        setShowDatasetDetail(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -1889,6 +1912,16 @@ function App() {
         }
       },
     },
+    {
+      id: "open-first-detail",
+      label: "Open First Detail",
+      detail: "Open the detail panel for the first filtered dataset",
+      run: () => {
+        if (filteredDatasets[0]) {
+          openDatasetDetail(filteredDatasets[0].id);
+        }
+      },
+    },
   ];
   const filteredCommandActions = commandActions.filter((action) => {
     const query = commandQuery.trim().toLowerCase();
@@ -2002,6 +2035,257 @@ function App() {
         </div>
       )}
 
+      {showDatasetDetail && lineageDataset && (
+        <div
+          className="detail-overlay"
+          onClick={() => setShowDatasetDetail(false)}
+        >
+          <div
+            className="detail-modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="detail-head">
+              <div>
+                <div className="detail-eyebrow">
+                  Dataset #{lineageDataset.id} detail
+                </div>
+                <h2>{lineageDataset.name}</h2>
+                <p className="detail-subtitle">{lineageDataset.description}</p>
+              </div>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={() => setShowDatasetDetail(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="detail-summary">
+              <span className={`status-pill ${getStatusClass(lineageDataset.status)}`}>
+                {lineageDataset.status}
+              </span>
+              <span className="tag">{lineageDataset.dataType}</span>
+              <span
+                className={`tag ${lineageDataset.isPublic ? "tag--public" : "tag--private"}`}
+              >
+                {lineageDataset.isPublic ? "Public" : "Private"}
+              </span>
+              {lineageDataset.metadataFrozen && (
+                <span className="tag tag--frozen">Frozen metadata</span>
+              )}
+            </div>
+            <div className="detail-grid">
+              <article className="detail-card">
+                <div className="detail-card__title">Metadata</div>
+                <div className="detail-meta-grid">
+                  <div>
+                    <span>Owner</span>
+                    <strong>{lineageDataset.owner}</strong>
+                  </div>
+                  <div>
+                    <span>Location</span>
+                    <strong>
+                      {formatCoord(lineageDataset.latitude)},{" "}
+                      {formatCoord(lineageDataset.longitude)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Altitude</span>
+                    <strong>
+                      {lineageDataset.altitudeMin}-{lineageDataset.altitudeMax} m
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Collected</span>
+                    <strong>{formatChainValue(lineageDataset.collectionDate)}</strong>
+                  </div>
+                  <div>
+                    <span>Recorded</span>
+                    <strong>{formatChainValue(lineageDataset.createdAt)}</strong>
+                  </div>
+                  <div>
+                    <span>IPFS</span>
+                    <strong>{lineageDataset.ipfsHash || "n/a"}</strong>
+                  </div>
+                </div>
+                <div className="detail-actions">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyText(String(lineageDataset.id), "Dataset ID")}
+                  >
+                    Copy ID
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyText(lineageDataset.owner, "Owner")}
+                  >
+                    Copy owner
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyText(lineageDataset.ipfsHash || "", "IPFS hash")}
+                  >
+                    Copy IPFS
+                  </button>
+                </div>
+              </article>
+              <article className="detail-card">
+                <div className="detail-card__title">Trust and provenance</div>
+                <div className="detail-kpis">
+                  <div>
+                    <span>Quality score</span>
+                    <strong>{getQualityScore(lineageDataset)}/100</strong>
+                  </div>
+                  <div>
+                    <span>Fingerprint</span>
+                    <strong>{lineageFingerprint}</strong>
+                  </div>
+                  <div>
+                    <span>Verification</span>
+                    <strong>
+                      {lineageDataset.verified
+                        ? `By ${lineageDataset.verifiedBy || "validator"}`
+                        : "Awaiting or not verified"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Stewardship</span>
+                    <strong>
+                      {stewardshipSignalByDatasetId.get(lineageDataset.id) ||
+                        "No connected-owner stake signal"}
+                    </strong>
+                  </div>
+                </div>
+                <div className="detail-actions">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => {
+                      toggleWatchlistDataset(lineageDataset.id);
+                    }}
+                  >
+                    {watchlistIds.includes(String(lineageDataset.id))
+                      ? "Unwatch"
+                      : "Watch dataset"}
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => toggleCompareDataset(lineageDataset.id)}
+                  >
+                    {compareSelectionIds.includes(String(lineageDataset.id))
+                      ? "Remove compare"
+                      : "Add to compare"}
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => setLineageTarget(lineageDataset.id)}
+                  >
+                    Open audit section
+                  </button>
+                </div>
+              </article>
+              <article className="detail-card detail-card--wide">
+                <div className="detail-card__title">Lineage timeline</div>
+                <div className="detail-timeline">
+                  {lineageEvents.map((event) => (
+                    <div
+                      className="detail-timeline__item"
+                      key={`${event.title}-${event.when}-${event.actor}`}
+                    >
+                      <div className="detail-timeline__dot" />
+                      <div>
+                        <strong>{event.title}</strong>
+                        <div className="detail-timeline__meta">
+                          {event.when} | {event.actor}
+                        </div>
+                        <p>{event.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+              <article className="detail-card">
+                <div className="detail-card__title">Version history</div>
+                <div className="detail-version-list">
+                  {versionTimeline.map((record) => (
+                    <button
+                      key={record.id}
+                      type="button"
+                      className={`version-item ${selectedVersionId === record.id ? "active" : ""}`}
+                      onClick={() => setSelectedVersionId(record.id)}
+                    >
+                      <div>
+                        <strong>v{record.version}</strong>
+                        <div className="version-source">{record.source}</div>
+                      </div>
+                      <span className={`status-pill ${getVersionStatusClass(record.status)}`}>
+                        {record.status}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {selectedVersion && (
+                  <div className="detail-version-summary">
+                    <div>Selected: v{selectedVersion.version}</div>
+                    <div>
+                      Created: {formatChainValue(selectedVersion.createdAt)}
+                    </div>
+                    <div>
+                      Reviewer: {selectedVersion.reviewer || "n/a"}
+                    </div>
+                  </div>
+                )}
+                {versionDiffs.length > 0 && (
+                  <div className="diff-table">
+                    {versionDiffs.map((diff) => (
+                      <div key={diff.field} className="diff-row">
+                        <div>{diff.field}</div>
+                        <div>{diff.from}</div>
+                        <div>{diff.to}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </article>
+              <article className="detail-card">
+                <div className="detail-card__title">Related datasets</div>
+                <div className="detail-related">
+                  {relatedDatasets.length === 0 && (
+                    <p className="dataset-description">
+                      No nearby related datasets in the current local view.
+                    </p>
+                  )}
+                  {relatedDatasets.map((dataset) => (
+                    <button
+                      key={`detail-related-${dataset.id}`}
+                      type="button"
+                      className="detail-related__item"
+                      onClick={() => openDatasetDetail(dataset.id)}
+                    >
+                      <strong>
+                        #{dataset.id} {dataset.name}
+                      </strong>
+                      <span>
+                        {dataset.owner === lineageDataset.owner
+                          ? "Same owner"
+                          : dataset.dataType === lineageDataset.dataType
+                            ? "Same type"
+                            : "Recent neighbor"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <main className="container">
         <section className="hero">
@@ -2049,6 +2333,13 @@ function App() {
                   <span>{queryResult.status}</span>
                 </div>
                 <div className="mini-body">{queryResult.description}</div>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => openDatasetDetail(queryResult.id)}
+                >
+                  Open detail
+                </button>
               </div>
             )}
           </div>
@@ -2998,16 +3289,23 @@ function App() {
                         {formatChainValue(selectedGeoDataset.collectionDate)}
                       </span>
                     </div>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={() => setLineageTarget(selectedGeoDataset.id)}
-                    >
-                      Open in audit trail
-                    </button>
-                  </>
-                )}
-              </aside>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => setLineageTarget(selectedGeoDataset.id)}
+                  >
+                    Open in audit trail
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => openDatasetDetail(selectedGeoDataset.id)}
+                  >
+                    Open detail
+                  </button>
+                </>
+              )}
+            </aside>
             </div>
           </div>
           <div className="compare-card">
@@ -3288,6 +3586,13 @@ function App() {
                     }
                   >
                     Copy IPFS
+                  </button>
+                  <button
+                    className="ghost-btn dataset-foot__action"
+                    type="button"
+                    onClick={() => openDatasetDetail(dataset.id)}
+                  >
+                    Open detail
                   </button>
                   <button
                     className="ghost-btn dataset-foot__action"
