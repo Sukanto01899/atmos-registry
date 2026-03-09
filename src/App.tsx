@@ -314,6 +314,8 @@ const formatPercentFromBps = (bps: number) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })}%`;
+
+// Parsing functions for converting raw values from read-only contract calls into structured data. In a production application, you would likely want to have more robust parsing and error handling, especially if the contract data structures are complex or subject to change.
 const parseUInt = (value: any) =>
   Number.parseInt(String(value?.value ?? value ?? "0"), 10);
 const parseStakeInfo = (value: any): StakeInfo => {
