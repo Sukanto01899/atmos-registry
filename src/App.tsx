@@ -348,6 +348,7 @@ const safeIsSignedIn = () => {
   }
 };
 
+// getUserAddress attempts to retrieve the user's Stacks address from their session data. If the user is not signed in or if there is an error accessing the session data, it returns an empty string. This function allows us to safely access the user's address without risking crashes due to session issues.
 const getUserAddress = () => {
   if (!safeIsSignedIn()) {
     return "";
