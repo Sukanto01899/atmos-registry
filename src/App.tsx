@@ -282,6 +282,8 @@ const getStatusPriority = (status: string) => {
   if (status === "deprecated") return 1;
   return 0;
 };
+
+// Version status is derived from the dataset status and verification state. In a real application, you would likely want to have a more robust versioning system with explicit version records stored on-chain or in a backend, rather than deriving version status from the dataset record.
 const getVersionStatusClass = (status: VersionStatus) => {
   if (status === "approved") return "status--verified";
   if (status === "rejected") return "status--rejected";
