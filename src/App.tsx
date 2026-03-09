@@ -338,6 +338,7 @@ const resetInvalidSession = () => {
   }
 };
 
+// Due to the way some wallet providers handle sessions, calling isUserSignedIn() can sometimes throw an error if the session data is corrupted or in an unexpected format. To prevent the entire app from crashing in this case, we wrap the call in a try-catch block and reset the session if an error occurs. This allows the app to recover gracefully and prompt the user to sign in again without losing access to the rest of the functionality.
 const safeIsSignedIn = () => {
   try {
     return userSession.isUserSignedIn();
