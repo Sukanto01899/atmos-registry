@@ -327,6 +327,7 @@ const parseStakeInfo = (value: any): StakeInfo => {
   };
 };
 
+// Utility functions for handling user session and wallet connection. In a production app, you would likely want to support more robust session management, error handling, and support for multiple wallet providers.
 const resetInvalidSession = () => {
   try {
     userSession.store?.deleteSessionData();
