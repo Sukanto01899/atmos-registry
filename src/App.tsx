@@ -290,6 +290,8 @@ const getVersionStatusClass = (status: VersionStatus) => {
   if (status === "pending") return "status--pending";
   return "status--active";
 };
+
+// In this example, we derive version status directly from the dataset's overall status and verification state for simplicity. In a production application, you would likely want to have explicit version records with their own statuses that can differ from the dataset's overall status, especially if you support multiple versions and more complex review workflows.
 const mapDatasetToVersionStatus = (dataset: Dataset): VersionStatus => {
   if (dataset.status === "rejected") return "rejected";
   if (dataset.status === "pending") return "pending";
