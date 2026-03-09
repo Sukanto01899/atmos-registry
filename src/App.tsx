@@ -307,6 +307,8 @@ const formatTokenAmount = (value: number, decimals = 6) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: Math.min(decimals, 4),
   });
+
+// APY is stored in basis points (bps) on-chain to avoid floating point issues, so we divide by 100 to get the percentage value. In a real application, you would likely want to fetch the current APY from a reliable source and update it in real-time to provide accurate information to users.
 const formatPercentFromBps = (bps: number) =>
   `${(bps / 100).toLocaleString(undefined, {
     minimumFractionDigits: 0,
