@@ -377,6 +377,7 @@ const getConnectProviders = () => {
     return DEFAULT_PROVIDERS;
   }
 
+  // Check for the presence of the Stacks provider
   const stacksProvider = (window as any).StacksProvider;
   if (!stacksProvider) {
     return DEFAULT_PROVIDERS;
