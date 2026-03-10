@@ -371,6 +371,7 @@ const getAppIcon = () => {
   }
 };
 
+// getConnectProviders attempts to retrieve the list of available wallet providers based on the current window environment. If the window object is not available (e.g. during server-side rendering), it returns the default list of providers.
 const getConnectProviders = () => {
   if (typeof window === "undefined") {
     return DEFAULT_PROVIDERS;
