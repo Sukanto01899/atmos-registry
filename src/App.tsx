@@ -362,6 +362,7 @@ const getUserAddress = () => {
   }
 };
 
+// getAppIcon attempts to construct the URL for the app's icon based on the current window location. This is used as a fallback icon for the in-app wallet provider if no other provider icons are detected. If there is an error accessing the window object (e.g. during server-side rendering), it returns an empty string.
 const getAppIcon = () => {
   try {
     return `${window.location.origin}/atmos-icon.svg`;
