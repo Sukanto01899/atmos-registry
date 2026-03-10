@@ -408,6 +408,7 @@ const getConnectProviders = () => {
   return [inAppProvider, ...DEFAULT_PROVIDERS];
 };
 
+// ensureConnectUi checks if the custom elements for the connect UI are defined, and if not, it attempts to define them by calling defineCustomElements. This is necessary because the connect UI relies on web components that need to be registered in the browser before they can be used. By ensuring that the connect UI is defined before attempting to show the connect modal, we can prevent errors and ensure a smooth user experience when connecting their wallet.
 const ensureConnectUi = async () => {
   if (typeof window === "undefined") {
     return false;
