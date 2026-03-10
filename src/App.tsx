@@ -397,6 +397,7 @@ const getConnectProviders = () => {
     DEFAULT_PROVIDERS.find((provider) => provider.id === "LeatherProvider")
       ?.icon ?? getAppIcon();
 
+  // Create an in-app wallet provider as a fallback
   const inAppProvider = {
     id: "StacksProvider",
     name: "In-App Wallet",
