@@ -383,6 +383,7 @@ const getConnectProviders = () => {
     return DEFAULT_PROVIDERS;
   }
 
+  // If any named providers are detected, we assume the user has their own wallet extension and return the default list of providers, which will allow them to choose their preferred wallet. If no named providers are detected, we include an in-app wallet provider as a fallback option to ensure users can still connect and interact with the app even if they don't have a wallet extension installed.
   const hasNamedProvider = Boolean(
     (window as any).LeatherProvider ||
     (window as any).AsignaProvider ||
