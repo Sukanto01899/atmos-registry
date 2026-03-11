@@ -701,6 +701,59 @@ function App() {
       return true;
     });
   }, [activeDatasets, filters]);
+  const overviewHighlights = useMemo(() => {
+    const verifiedCount = filteredDatasets.filter(
+      (dataset) => dataset.verified || dataset.status === "verified",
+    ).length;
+    const publicCount = filteredDatasets.filter((dataset) => dataset.isPublic)
+      .length;
+    const topDataType = filteredDatasets.reduce(
+      (summary, dataset) => {
+        const key = dataset.dataType || "unknown";
+        const nextCount = (summary.counts.get(key) ?? 0) + 1;
+        summary.counts.set(key, nextCount);
+        if (nextCount > summary.topCount) {
+          summary.topLabel = key;
+          summary.topCount = nextCount;
+        }
+        return summary;
+      },
+      {
+        counts: new Map<string, number>(),
+        topLabel: "No dominant type",
+        topCount: 0,
+      },
+    );
+
+    return [
+      {
+        label: "Visible now",
+        value: filteredDatasets.length.toLocaleString(),
+        note: `${activeTab === "explore" ? "Registry" : "Owner"} view`,
+      },
+      {
+        label: "Verified share",
+        value: filteredDatasets.length
+          ? `${Math.round((verifiedCount / filteredDatasets.length) * 100)}%`
+          : "0%",
+        note: `${verifiedCount.toLocaleString()} datasets verified`,
+      },
+      {
+        label: "Public access",
+        value: filteredDatasets.length
+          ? `${Math.round((publicCount / filteredDatasets.length) * 100)}%`
+          : "0%",
+        note: `${publicCount.toLocaleString()} publicly visible`,
+      },
+      {
+        label: "Dominant type",
+        value: topDataType.topLabel,
+        note: topDataType.topCount
+          ? `${topDataType.topCount.toLocaleString()} datasets in focus`
+          : "Load data to populate",
+      },
+    ];
+  }, [activeTab, filteredDatasets]);
   const hasActiveFilters = useMemo(
     () =>
       Boolean(
@@ -2714,6 +2767,15 @@ function App() {
               <div className="stat-value">{stat.value}</div>
               <div className="stat-note">{stat.note}</div>
             </div>
+          ))}
+        </section>
+        <section className="overview-strip" aria-label="Current dataset overview">
+          {overviewHighlights.map((item) => (
+            <article key={item.label} className="overview-chip">
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+              <small>{item.note}</small>
+            </article>
           ))}
         </section>
 

@@ -346,6 +346,45 @@ textarea:focus {
   margin-bottom: 1.5rem;
 }
 
+.overview-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.overview-chip {
+  padding: 1rem 1.1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(135deg, rgba(245, 138, 61, 0.08), transparent 60%),
+    rgba(17, 25, 34, 0.78);
+  box-shadow: var(--shadow);
+}
+
+.overview-chip span {
+  display: block;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.overview-chip strong {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.overview-chip small {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .stake-section {
   margin-top: 0;
 }
