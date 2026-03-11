@@ -1470,6 +1470,51 @@ function App() {
     anchor.remove();
     URL.revokeObjectURL(url);
   };
+  const exportFilteredDatasets = () => {
+    if (!filteredDatasets.length || typeof window === "undefined") {
+      setStatusMessage("No filtered datasets to export.");
+      return;
+    }
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      activeTab,
+      totalVisible: filteredDatasets.length,
+      sortMode,
+      filters,
+      datasets: sortedDatasets.map((dataset) => ({
+        id: dataset.id,
+        name: dataset.name,
+        description: dataset.description,
+        dataType: dataset.dataType,
+        status: dataset.status,
+        owner: dataset.owner,
+        isPublic: dataset.isPublic,
+        metadataFrozen: dataset.metadataFrozen,
+        verified: dataset.verified,
+        verifiedBy: dataset.verifiedBy,
+        verifiedAt: dataset.verifiedAt,
+        collectionDate: dataset.collectionDate,
+        createdAt: dataset.createdAt,
+        altitudeMin: dataset.altitudeMin,
+        altitudeMax: dataset.altitudeMax,
+        latitude: dataset.latitude,
+        longitude: dataset.longitude,
+        ipfsHash: dataset.ipfsHash,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-filtered-${activeTab}-${Date.now()}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported ${filteredDatasets.length} filtered datasets.`);
+  };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
     setWatchlistIds((prev) =>
@@ -3400,6 +3445,14 @@ function App() {
                 disabled={!hasActiveFilters}
               >
                 Reset filters
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={exportFilteredDatasets}
+                disabled={filteredDatasets.length === 0}
+              >
+                Export filtered JSON
               </button>
             </div>
           </div>
