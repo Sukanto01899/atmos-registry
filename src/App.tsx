@@ -1525,6 +1525,26 @@ function App() {
     openDatasetDetail(dataset.id);
     setStatusMessage(`Opened random dataset #${dataset.id}.`);
   };
+  const copyFilterSummary = async () => {
+    const summaryParts = [
+      `Tab: ${activeTab}`,
+      `Results: ${filteredDatasets.length}/${activeDatasets.length}`,
+      `Sort: ${sortMode}`,
+      filters.search ? `Search: ${filters.search}` : "",
+      filters.status !== "all" ? `Status: ${filters.status}` : "",
+      filters.visibility !== "all" ? `Visibility: ${filters.visibility}` : "",
+      filters.dataType !== "all" ? `Type: ${filters.dataType}` : "",
+      filters.owner ? `Owner: ${filters.owner}` : "",
+      filters.altitudeMin ? `Altitude min: ${filters.altitudeMin}` : "",
+      filters.altitudeMax ? `Altitude max: ${filters.altitudeMax}` : "",
+      watchlistOnly ? "Watchlist only: yes" : "",
+      compareSelectionIds.length
+        ? `Compare: ${compareSelectionIds.join(", ")}`
+        : "",
+    ].filter((item) => Boolean(item));
+
+    await copyText(summaryParts.join(" | "), "Filter summary");
+  };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
     setWatchlistIds((prev) =>
@@ -3471,6 +3491,13 @@ function App() {
                 disabled={filteredDatasets.length === 0}
               >
                 Surprise me
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={copyFilterSummary}
+              >
+                Copy summary
               </button>
             </div>
           </div>
