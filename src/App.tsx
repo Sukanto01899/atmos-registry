@@ -1515,6 +1515,16 @@ function App() {
     URL.revokeObjectURL(url);
     setStatusMessage(`Exported ${filteredDatasets.length} filtered datasets.`);
   };
+  const openRandomFilteredDataset = () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No filtered datasets available.");
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * sortedDatasets.length);
+    const dataset = sortedDatasets[randomIndex];
+    openDatasetDetail(dataset.id);
+    setStatusMessage(`Opened random dataset #${dataset.id}.`);
+  };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
     setWatchlistIds((prev) =>
@@ -3453,6 +3463,14 @@ function App() {
                 disabled={filteredDatasets.length === 0}
               >
                 Export filtered JSON
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={openRandomFilteredDataset}
+                disabled={filteredDatasets.length === 0}
+              >
+                Surprise me
               </button>
             </div>
           </div>
