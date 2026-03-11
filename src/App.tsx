@@ -1545,6 +1545,10 @@ function App() {
 
     await copyText(summaryParts.join(" | "), "Filter summary");
   };
+  const clearCompareSelection = () => {
+    setCompareSelectionIds([]);
+    setStatusMessage("Cleared compare selection.");
+  };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
     setWatchlistIds((prev) =>
@@ -3617,6 +3621,14 @@ function App() {
               </div>
               <div className="compare-actions">
                 <span>Selected: {compareDatasets.length}/4</span>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={clearCompareSelection}
+                  disabled={compareDatasets.length === 0}
+                >
+                  Clear compare
+                </button>
                 <button
                   className="ghost-btn"
                   type="button"
