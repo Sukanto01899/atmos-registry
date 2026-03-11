@@ -1579,6 +1579,36 @@ function App() {
     setWatchlistInput(nextIds.join(", "));
     setStatusMessage(`Watchlist updated with ${nextIds.length} visible datasets.`);
   };
+  const copyVisibleIpfsHashes = async () => {
+    const hashes = sortedDatasets
+      .map((dataset) => dataset.ipfsHash.trim())
+      .filter((hash) => Boolean(hash));
+    if (!hashes.length) {
+      setStatusMessage("No visible IPFS hashes to copy.");
+      return;
+    }
+    await copyText(Array.from(new Set(hashes)).join(", "), "Visible IPFS hashes");
+  };
+  const auditTopVisibleDataset = () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible datasets available.");
+      return;
+    }
+    const dataset = sortedDatasets[0];
+    setLineageTarget(dataset.id);
+    setStatusMessage(`Opened audit trail for dataset #${dataset.id}.`);
+  };
+  const compareTopVisibleDatasets = () => {
+    const nextIds = sortedDatasets
+      .slice(0, 4)
+      .map((dataset) => String(dataset.id));
+    if (!nextIds.length) {
+      setStatusMessage("No visible datasets available for compare.");
+      return;
+    }
+    setCompareSelectionIds(nextIds);
+    setStatusMessage(`Loaded ${nextIds.length} visible datasets into compare.`);
+  };
   const clearWatchlist = () => {
     setWatchlistIds([]);
     setWatchlistInput("");
@@ -3571,6 +3601,22 @@ function App() {
               >
                 Watch visible
               </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={copyVisibleIpfsHashes}
+                disabled={filteredDatasets.length === 0}
+              >
+                Copy IPFS
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={auditTopVisibleDataset}
+                disabled={filteredDatasets.length === 0}
+              >
+                Audit top result
+              </button>
             </div>
           </div>
           <div className="geo-card">
@@ -3689,6 +3735,14 @@ function App() {
               </div>
               <div className="compare-actions">
                 <span>Selected: {compareDatasets.length}/4</span>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={compareTopVisibleDatasets}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Compare top 4
+                </button>
                 <button
                   className="ghost-btn"
                   type="button"
