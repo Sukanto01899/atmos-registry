@@ -1571,6 +1571,16 @@ function App() {
       "Visible owners",
     );
   };
+  const copyVisibleDatasetNames = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible dataset names to copy.");
+      return;
+    }
+    await copyText(
+      sortedDatasets.map((dataset) => dataset.name).join(", "),
+      "Visible dataset names",
+    );
+  };
   const useVisibleAsWatchlist = () => {
     const nextIds = Array.from(
       new Set(sortedDatasets.map((dataset) => String(dataset.id))),
@@ -3592,6 +3602,14 @@ function App() {
                 disabled={filteredDatasets.length === 0}
               >
                 Copy owners
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={copyVisibleDatasetNames}
+                disabled={filteredDatasets.length === 0}
+              >
+                Copy names
               </button>
               <button
                 className="ghost-btn"
