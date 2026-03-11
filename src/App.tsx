@@ -1549,6 +1549,16 @@ function App() {
     setCompareSelectionIds([]);
     setStatusMessage("Cleared compare selection.");
   };
+  const copyVisibleDatasetIds = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible dataset IDs to copy.");
+      return;
+    }
+    await copyText(
+      sortedDatasets.map((dataset) => String(dataset.id)).join(", "),
+      "Visible dataset IDs",
+    );
+  };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
     setWatchlistIds((prev) =>
@@ -3502,6 +3512,14 @@ function App() {
                 onClick={copyFilterSummary}
               >
                 Copy summary
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={copyVisibleDatasetIds}
+                disabled={filteredDatasets.length === 0}
+              >
+                Copy visible IDs
               </button>
             </div>
           </div>
