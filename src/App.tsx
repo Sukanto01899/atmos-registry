@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { AppConfig, UserSession } from "@stacks/auth";
 import {
   DEFAULT_PROVIDERS,
@@ -446,7 +446,122 @@ const defaultVersionDraft: VersionDraft = {
   isPublic: true,
 };
 
+const SORT_MODES: SortMode[] = [
+  "quality-desc",
+  "recent-desc",
+  "recent-asc",
+  "altitude-desc",
+  "status-priority",
+];
+
+type UrlViewState = {
+  activeTab: "explore" | "mine";
+  filters: DatasetFilters;
+  geoTimePercent: number;
+  compareSelectionIds: string[];
+  watchlistOnly: boolean;
+  watchlistIds: string[];
+  mutedAlertKinds: string[];
+  sortMode: SortMode;
+  lineageSelectionId: string;
+  selectedGeoDatasetId: string;
+  showDatasetDetail: boolean;
+};
+
+const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
+
+const parseUrlIdList = (value: string | null) =>
+  Array.from(
+    new Set(
+      (value ?? "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => /^[0-9]+$/.test(item)),
+    ),
+  );
+
+const parseUrlStringList = (value: string | null) =>
+  Array.from(
+    new Set(
+      (value ?? "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => Boolean(item)),
+    ),
+  );
+
+const parseUrlViewState = (search: string): UrlViewState => {
+  const params = new URLSearchParams(search);
+  const tab = params.get("tab");
+  const sort = params.get("sort");
+  const geo = Number.parseInt(params.get("geo") ?? "", 10);
+
+  return {
+    activeTab: tab === "mine" ? "mine" : "explore",
+    filters: {
+      search: params.get("search") ?? "",
+      status: params.get("status") ?? "all",
+      visibility:
+        params.get("visibility") === "public" ||
+        params.get("visibility") === "private"
+          ? (params.get("visibility") as "public" | "private")
+          : "all",
+      dataType: params.get("type") ?? "all",
+      owner: params.get("owner") ?? "",
+      altitudeMin: params.get("amin") ?? "",
+      altitudeMax: params.get("amax") ?? "",
+    },
+    geoTimePercent: Number.isNaN(geo) ? 100 : clampPercent(geo),
+    compareSelectionIds: parseUrlIdList(params.get("compare")),
+    watchlistOnly: params.get("watchOnly") === "1",
+    watchlistIds: parseUrlIdList(params.get("watch")),
+    mutedAlertKinds: parseUrlStringList(params.get("mute")),
+    sortMode: SORT_MODES.includes(sort as SortMode)
+      ? (sort as SortMode)
+      : "quality-desc",
+    lineageSelectionId:
+      /^\d+$/.test(params.get("lineage") ?? "") ? params.get("lineage")! : "",
+    selectedGeoDatasetId:
+      /^\d+$/.test(params.get("geoId") ?? "") ? params.get("geoId")! : "",
+    showDatasetDetail: params.get("detail") === "1",
+  };
+};
+
+const buildUrlViewSearch = (state: UrlViewState) => {
+  const params = new URLSearchParams();
+
+  if (state.activeTab !== "explore") params.set("tab", state.activeTab);
+  if (state.sortMode !== "quality-desc") params.set("sort", state.sortMode);
+  if (state.filters.search) params.set("search", state.filters.search);
+  if (state.filters.status !== "all") params.set("status", state.filters.status);
+  if (state.filters.visibility !== "all") {
+    params.set("visibility", state.filters.visibility);
+  }
+  if (state.filters.dataType !== "all") params.set("type", state.filters.dataType);
+  if (state.filters.owner) params.set("owner", state.filters.owner);
+  if (state.filters.altitudeMin) params.set("amin", state.filters.altitudeMin);
+  if (state.filters.altitudeMax) params.set("amax", state.filters.altitudeMax);
+  if (state.geoTimePercent !== 100) {
+    params.set("geo", String(clampPercent(state.geoTimePercent)));
+  }
+  if (state.compareSelectionIds.length) {
+    params.set("compare", state.compareSelectionIds.join(","));
+  }
+  if (state.watchlistOnly) params.set("watchOnly", "1");
+  if (state.watchlistIds.length) params.set("watch", state.watchlistIds.join(","));
+  if (state.mutedAlertKinds.length) {
+    params.set("mute", state.mutedAlertKinds.join(","));
+  }
+  if (state.lineageSelectionId) params.set("lineage", state.lineageSelectionId);
+  if (state.selectedGeoDatasetId) params.set("geoId", state.selectedGeoDatasetId);
+  if (state.showDatasetDetail) params.set("detail", "1");
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+};
+
 function App() {
+  const hasHydratedUrlRef = useRef(false);
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
   const [datasetCount, setDatasetCount] = useState<number | null>(null);
   const [latestDatasets, setLatestDatasets] = useState<Dataset[]>([]);
@@ -1453,6 +1568,13 @@ function App() {
     setSavedViews((prev) => [next, ...prev].slice(0, 20));
     setStatusMessage(`Saved view: ${fallbackName}`);
   };
+  const copyShareLink = async () => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Share link unavailable.");
+      return;
+    }
+    await copyText(window.location.href, "Share link");
+  };
   const executeCommand = (action: CommandAction) => {
     action.run();
     setShowCommandPalette(false);
@@ -1736,6 +1858,52 @@ function App() {
   useEffect(() => {
     loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS);
   }, [walletAddress]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const urlState = parseUrlViewState(window.location.search);
+    setActiveTab(urlState.activeTab);
+    setFilters(urlState.filters);
+    setGeoTimePercent(urlState.geoTimePercent);
+    setCompareSelectionIds(urlState.compareSelectionIds);
+    setWatchlistOnly(urlState.watchlistOnly);
+    setWatchlistIds(urlState.watchlistIds);
+    setMutedAlertKinds(urlState.mutedAlertKinds);
+    setSortMode(urlState.sortMode);
+    setLineageSelectionId(urlState.lineageSelectionId);
+    setSelectedGeoDatasetId(urlState.selectedGeoDatasetId);
+    setShowDatasetDetail(urlState.showDatasetDetail);
+    hasHydratedUrlRef.current = true;
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasHydratedUrlRef.current) return;
+    const nextSearch = buildUrlViewSearch({
+      activeTab,
+      filters,
+      geoTimePercent,
+      compareSelectionIds,
+      watchlistOnly,
+      watchlistIds,
+      mutedAlertKinds,
+      sortMode,
+      lineageSelectionId,
+      selectedGeoDatasetId,
+      showDatasetDetail,
+    });
+    const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, [
+    activeTab,
+    filters,
+    geoTimePercent,
+    compareSelectionIds,
+    watchlistOnly,
+    watchlistIds,
+    mutedAlertKinds,
+    sortMode,
+    lineageSelectionId,
+    selectedGeoDatasetId,
+    showDatasetDetail,
+  ]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -3114,6 +3282,13 @@ function App() {
                 onClick={saveCurrentView}
               >
                 Save view
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={copyShareLink}
+              >
+                Copy share link
               </button>
             </div>
             <div className="saved-view-list">
