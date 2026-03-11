@@ -1559,6 +1559,32 @@ function App() {
       "Visible dataset IDs",
     );
   };
+  const copyVisibleOwners = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible dataset owners to copy.");
+      return;
+    }
+    await copyText(
+      Array.from(new Set(sortedDatasets.map((dataset) => dataset.owner))).join(
+        ", ",
+      ),
+      "Visible owners",
+    );
+  };
+  const useVisibleAsWatchlist = () => {
+    const nextIds = Array.from(
+      new Set(sortedDatasets.map((dataset) => String(dataset.id))),
+    );
+    setWatchlistIds(nextIds);
+    setWatchlistInput(nextIds.join(", "));
+    setStatusMessage(`Watchlist updated with ${nextIds.length} visible datasets.`);
+  };
+  const clearWatchlist = () => {
+    setWatchlistIds([]);
+    setWatchlistInput("");
+    setWatchlistOnly(false);
+    setStatusMessage("Cleared watchlist.");
+  };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
     setWatchlistIds((prev) =>
@@ -2854,6 +2880,14 @@ function App() {
                 >
                   Apply
                 </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={clearWatchlist}
+                  disabled={watchlistIds.length === 0 && !watchlistInput}
+                >
+                  Clear watchlist
+                </button>
               </div>
               <div className="alert-mutes">
                 {(["verified", "rejected", "frozen", "pending"] as const).map(
@@ -3520,6 +3554,22 @@ function App() {
                 disabled={filteredDatasets.length === 0}
               >
                 Copy visible IDs
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={copyVisibleOwners}
+                disabled={filteredDatasets.length === 0}
+              >
+                Copy owners
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={useVisibleAsWatchlist}
+                disabled={filteredDatasets.length === 0}
+              >
+                Watch visible
               </button>
             </div>
           </div>
