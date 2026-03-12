@@ -207,3 +207,9 @@ if (isDirectRun) {
     console.log(`Atmos data service listening at http://${HOST}:${PORT}`);
   });
 }
+
+
+const gracefulShutdown = () => {
+  console.log("Shutting down data service...");
+  process.exit(0);
+}
