@@ -591,6 +591,7 @@ function App() {
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showDatasetDetail, setShowDatasetDetail] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
   const [storyStepIndex, setStoryStepIndex] = useState(0);
@@ -1769,6 +1770,12 @@ function App() {
       setStatusMessage(`Unable to copy ${label.toLowerCase()}.`);
     }
   };
+  const scrollToTop = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const quickSaveCurrentView = () => {
     const fallbackName = `Quick View ${new Date().toLocaleTimeString()}`;
     const next: SavedView = {
@@ -2154,6 +2161,19 @@ function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const syncScrollState = () => {
+      setShowBackToTop(window.scrollY > 520);
+    };
+
+    syncScrollState();
+    window.addEventListener("scroll", syncScrollState, { passive: true });
+    return () => window.removeEventListener("scroll", syncScrollState);
   }, []);
 
   useEffect(() => {
@@ -4164,6 +4184,16 @@ function App() {
           </div>
         </section>
       </main>
+      {showBackToTop && (
+        <button
+          className="back-to-top"
+          type="button"
+          onClick={scrollToTop}
+          aria-label="Back to top"
+        >
+          Top
+        </button>
+      )}
     </div>
   );
 }
