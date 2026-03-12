@@ -3,7 +3,7 @@ import { AppConfig, UserSession } from "@stacks/auth";
 import {
   DEFAULT_PROVIDERS,
   showConnect,
-  openContractCall,
+  showContractCall,
   disconnect as clearSelectedProvider,
 } from "@stacks/connect";
 import { defineCustomElements } from "@stacks/connect-ui/loader";
@@ -446,6 +446,11 @@ const defaultVersionDraft: VersionDraft = {
   isPublic: true,
 };
 
+const APP_DETAILS = {
+  name: "Atmos Registry",
+  icon: getAppIcon(),
+};
+
 const SORT_MODES: SortMode[] = [
   "quality-desc",
   "recent-desc",
@@ -573,7 +578,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [queryLoading, setQueryLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const [, setWalletMessage] = useState("");
+  const [walletMessage, setWalletMessage] = useState("");
   const [txStatus, setTxStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [lineageSelectionId, setLineageSelectionId] = useState("");
@@ -771,6 +776,21 @@ function App() {
       },
     ],
     [activeDatasets.length, activeTab, filteredDatasets.length, watchlistIds],
+  );
+  const recentActivity = useMemo(
+    () =>
+      [...filteredDatasets]
+        .sort((left, right) => right.createdAt - left.createdAt)
+        .slice(0, 3),
+    [filteredDatasets],
+  );
+  const stakeAmountValue = useMemo(
+    () => parseMicroTokenInput(stakeAmount),
+    [stakeAmount],
+  );
+  const unstakeAmountValue = useMemo(
+    () => parseMicroTokenInput(unstakeAmount),
+    [unstakeAmount],
   );
   const hasActiveFilters = useMemo(
     () =>
@@ -1895,10 +1915,7 @@ function App() {
       const defaultProviders = getConnectProviders();
       const connectOptions = {
         userSession,
-        appDetails: {
-          name: "Atmos Registry",
-          icon: getAppIcon(),
-        },
+        appDetails: APP_DETAILS,
         redirectTo: "/redirect.html",
         manifestPath: "/manifest.json",
         defaultProviders,
@@ -1932,6 +1949,40 @@ function App() {
     setWalletAddress("");
     setWalletMessage("Wallet disconnected.");
     loadTokenSnapshot(CONTRACT_ADDRESS);
+  };
+
+  const requestContractCall = async ({
+    functionName,
+    functionArgs,
+    onFinish,
+    onCancel,
+  }: {
+    functionName: string;
+    functionArgs: any[];
+    onFinish: (data: { txId: string }) => void;
+    onCancel: () => void;
+  }) => {
+    const uiReady = await ensureConnectUi();
+    if (!uiReady) {
+      throw new Error("Wallet UI failed to load.");
+    }
+
+    await showContractCall({
+      userSession,
+      appDetails: APP_DETAILS,
+      redirectTo: "/redirect.html",
+      manifestPath: "/manifest.json",
+      defaultProviders: getConnectProviders(),
+      network,
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: STAKING_CONTRACT_NAME,
+      functionName,
+      functionArgs,
+      postConditions: [],
+      stxAddress: walletAddress || undefined,
+      onFinish,
+      onCancel,
+    } as any);
   };
 
   const handleRegisterSubmit = async () => {
@@ -1987,33 +2038,48 @@ function App() {
     }
 
     setTxStatus("Opening wallet for transaction approval...");
-    await openContractCall({
-      network,
-      contractAddress: CONTRACT_ADDRESS,
-      contractName: CONTRACT_NAME,
-      functionName: "register-dataset",
-      functionArgs: [
-        stringUtf8CV(registerForm.name),
-        stringUtf8CV(registerForm.description),
-        stringUtf8CV(registerForm.dataType),
-        uintCV(collectionDate),
-        uintCV(altitudeMin),
-        uintCV(altitudeMax),
-        intCV(latitude),
-        intCV(longitude),
-        stringAsciiCV(registerForm.ipfsHash || ""),
-        boolCV(registerForm.isPublic),
-      ],
-      postConditions: [],
-      onFinish: (data) => {
-        setTxStatus(`Transaction submitted: ${data.txId}`);
-        loadLatest();
-        setRegisterForm(defaultRegisterForm);
-      },
-      onCancel: () => {
-        setTxStatus("Transaction canceled.");
-      },
-    });
+    try {
+      const uiReady = await ensureConnectUi();
+      if (!uiReady) {
+        setTxStatus("Wallet UI failed to load. Refresh and try again.");
+        return;
+      }
+      await showContractCall({
+        userSession,
+        appDetails: APP_DETAILS,
+        redirectTo: "/redirect.html",
+        manifestPath: "/manifest.json",
+        defaultProviders: getConnectProviders(),
+        network,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: "register-dataset",
+        functionArgs: [
+          stringUtf8CV(registerForm.name),
+          stringUtf8CV(registerForm.description),
+          stringUtf8CV(registerForm.dataType),
+          uintCV(collectionDate),
+          uintCV(altitudeMin),
+          uintCV(altitudeMax),
+          intCV(latitude),
+          intCV(longitude),
+          stringAsciiCV(registerForm.ipfsHash || ""),
+          boolCV(registerForm.isPublic),
+        ],
+        postConditions: [],
+        stxAddress: walletAddress,
+        onFinish: (data: { txId: string }) => {
+          setTxStatus(`Transaction submitted: ${data.txId}`);
+          loadLatest();
+          setRegisterForm(defaultRegisterForm);
+        },
+        onCancel: () => {
+          setTxStatus("Transaction canceled.");
+        },
+      } as any);
+    } catch {
+      setTxStatus("Unable to open the wallet transaction popup.");
+    }
   };
 
   const parseMicroTokenInput = (value: string) => {
@@ -2038,21 +2104,21 @@ function App() {
       return;
     }
     setStakeStatus("Opening wallet for staking approval...");
-    await openContractCall({
-      network,
-      contractAddress: CONTRACT_ADDRESS,
-      contractName: STAKING_CONTRACT_NAME,
-      functionName,
-      functionArgs: [uintCV(amount)],
-      postConditions: [],
-      onFinish: (data) => {
-        setStakeStatus(`Transaction submitted: ${data.txId}`);
-        loadTokenSnapshot(walletAddress);
-      },
-      onCancel: () => {
-        setStakeStatus("Transaction canceled.");
-      },
-    });
+    try {
+      await requestContractCall({
+        functionName,
+        functionArgs: [uintCV(amount)],
+        onFinish: (data) => {
+          setStakeStatus(`Transaction submitted: ${data.txId}`);
+          loadTokenSnapshot(walletAddress);
+        },
+        onCancel: () => {
+          setStakeStatus("Transaction canceled.");
+        },
+      });
+    } catch {
+      setStakeStatus("Unable to open the wallet transaction popup.");
+    }
   };
 
   const handleClaimRewards = async () => {
@@ -2061,21 +2127,21 @@ function App() {
       return;
     }
     setStakeStatus("Opening wallet to claim rewards...");
-    await openContractCall({
-      network,
-      contractAddress: CONTRACT_ADDRESS,
-      contractName: STAKING_CONTRACT_NAME,
-      functionName: "claim-rewards",
-      functionArgs: [],
-      postConditions: [],
-      onFinish: (data) => {
-        setStakeStatus(`Claim submitted: ${data.txId}`);
-        loadTokenSnapshot(walletAddress);
-      },
-      onCancel: () => {
-        setStakeStatus("Claim canceled.");
-      },
-    });
+    try {
+      await requestContractCall({
+        functionName: "claim-rewards",
+        functionArgs: [],
+        onFinish: (data) => {
+          setStakeStatus(`Claim submitted: ${data.txId}`);
+          loadTokenSnapshot(walletAddress);
+        },
+        onCancel: () => {
+          setStakeStatus("Claim canceled.");
+        },
+      });
+    } catch {
+      setStakeStatus("Unable to open the wallet transaction popup.");
+    }
   };
 
   useEffect(() => {
@@ -2371,6 +2437,30 @@ function App() {
       action.detail.toLowerCase().includes(query)
     );
   });
+  const appNotices = [
+    walletMessage
+      ? {
+          id: "wallet",
+          tone: "info" as const,
+          message: walletMessage,
+        }
+      : null,
+    statusMessage
+      ? {
+          id: "status",
+          tone: "info" as const,
+          message: statusMessage,
+        }
+      : null,
+  ].filter(
+    (
+      item,
+    ): item is {
+      id: string;
+      tone: "info";
+      message: string;
+    } => Boolean(item),
+  );
 
   return (
     <div className="app">
@@ -2432,6 +2522,18 @@ function App() {
           )}
         </div>
       </nav>
+      {appNotices.length > 0 && (
+        <div className="app-notices">
+          {appNotices.map((notice) => (
+            <div
+              key={notice.id}
+              className={`status-banner status-banner--${notice.tone}`}
+            >
+              {notice.message}
+            </div>
+          ))}
+        </div>
+      )}
 
       {showCommandPalette && (
         <div
@@ -2822,6 +2924,38 @@ function App() {
             )}
           </div>
         </section>
+        <section className="activity-strip" aria-label="Recent activity">
+          <div className="activity-strip__head">
+            <div>
+              <h3>Recent activity</h3>
+              <p>Newest visible datasets in your current view.</p>
+            </div>
+          </div>
+          <div className="activity-strip__grid">
+            {recentActivity.length === 0 && (
+              <div className="activity-card activity-card--empty">
+                Load data to populate recent registry activity.
+              </div>
+            )}
+            {recentActivity.map((dataset) => (
+              <article key={`activity-${dataset.id}`} className="activity-card">
+                <div className="activity-card__meta">
+                  <span>#{dataset.id}</span>
+                  <span>{dataset.status}</span>
+                </div>
+                <strong>{dataset.name}</strong>
+                <p>{dataset.dataType}</p>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => openDatasetDetail(dataset.id)}
+                >
+                  Open
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
 
         {/* Stats Grid */}
         <section className="stats-grid">
@@ -2945,7 +3079,7 @@ function App() {
                       className="primary-btn compact"
                       type="button"
                       onClick={() => handleStakeAction("stake", stakeAmount)}
-                      disabled={!walletAddress || tokenLoading}
+                      disabled={!walletAddress || tokenLoading || !stakeAmountValue}
                     >
                       Stake
                     </button>
@@ -2965,12 +3099,26 @@ function App() {
                       onClick={() =>
                         handleStakeAction("unstake", unstakeAmount)
                       }
-                      disabled={!walletAddress || tokenLoading}
+                      disabled={
+                        !walletAddress || tokenLoading || !unstakeAmountValue
+                      }
                     >
                       Unstake
                     </button>
                   </div>
                 </label>
+              </div>
+              <div className="stake-inline-note">
+                <span>
+                  {stakeAmountValue
+                    ? "Stake amount looks valid."
+                    : "Enter a positive ATMOS amount to enable staking."}
+                </span>
+                <span>
+                  {unstakeAmountValue
+                    ? "Unstake amount looks valid."
+                    : "Enter a positive ATMOS amount to enable unstaking."}
+                </span>
               </div>
               <div className="stake-footer">
                 <button

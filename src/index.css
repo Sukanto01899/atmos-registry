@@ -77,6 +77,14 @@ textarea {
   backdrop-filter: blur(14px);
 }
 
+.app-notices {
+  position: relative;
+  z-index: 4;
+  padding: 0.9rem 3.5vw 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
 .nav__brand {
   display: flex;
   align-items: center;
@@ -232,6 +240,59 @@ textarea {
   display: block;
   margin-top: 0.35rem;
   font-size: 1rem;
+}
+
+.activity-strip {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.76);
+}
+
+.activity-strip__head p {
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
+.activity-strip__grid {
+  margin-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.8rem;
+}
+
+.activity-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0.95rem;
+  background: rgba(24, 33, 44, 0.6);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.activity-card--empty {
+  color: var(--muted);
+  place-items: start;
+}
+
+.activity-card__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.activity-card strong {
+  font-size: 1rem;
+}
+
+.activity-card p {
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .primary-btn {
@@ -508,6 +569,14 @@ textarea:focus {
   gap: 0.6rem;
 }
 
+.stake-inline-note {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .stat-card {
   padding: 1.25rem;
   border-radius: 18px;
@@ -538,6 +607,12 @@ textarea:focus {
   border: 1px solid rgba(245, 138, 61, 0.35);
   color: var(--text);
   margin-bottom: 1.2rem;
+}
+
+.status-banner--info {
+  margin-bottom: 0;
+  background: rgba(90, 160, 255, 0.12);
+  border-color: rgba(90, 160, 255, 0.35);
 }
 
 .lineage-section {
