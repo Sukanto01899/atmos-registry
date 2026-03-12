@@ -206,6 +206,34 @@ textarea {
   align-items: center;
 }
 
+.hero-signals {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.hero-signal {
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(24, 33, 44, 0.55);
+}
+
+.hero-signal span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hero-signal strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1rem;
+}
+
 .primary-btn {
   border: none;
   background: linear-gradient(135deg, var(--accent), #f5c155);
@@ -268,6 +296,10 @@ textarea {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.75rem;
+}
+
+.lookup-row {
+  grid-template-columns: 1fr auto auto;
 }
 
 input {
@@ -758,6 +790,12 @@ textarea:focus {
 
 .section-header p {
   color: var(--muted);
+}
+
+.section-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .owner-form {

@@ -755,6 +755,23 @@ function App() {
       },
     ];
   }, [activeTab, filteredDatasets]);
+  const interfaceSignals = useMemo(
+    () => [
+      {
+        label: "Active view",
+        value: activeTab === "explore" ? "Explore" : "Mine",
+      },
+      {
+        label: "Filtered results",
+        value: `${filteredDatasets.length}/${activeDatasets.length}`,
+      },
+      {
+        label: "Watchlist",
+        value: watchlistIds.length.toLocaleString(),
+      },
+    ],
+    [activeDatasets.length, activeTab, filteredDatasets.length, watchlistIds],
+  );
   const hasActiveFilters = useMemo(
     () =>
       Boolean(
@@ -2738,6 +2755,22 @@ function App() {
               >
                 {loading ? "Fetching data..." : "Refresh on-chain data"}
               </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={openRandomFilteredDataset}
+                disabled={sortedDatasets.length === 0}
+              >
+                Random dataset
+              </button>
+            </div>
+            <div className="hero-signals" aria-label="Interface signals">
+              {interfaceSignals.map((item) => (
+                <div key={item.label} className="hero-signal">
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </div>
           </div>
           <div className="hero__panel">
@@ -2745,7 +2778,7 @@ function App() {
             <p className="panel-subtitle">
               Fetch a single dataset by id from the registry.
             </p>
-            <div className="field-row">
+            <div className="field-row lookup-row">
               <input
                 value={queryId}
                 onChange={(event) => setQueryId(readValue(event))}
@@ -2757,6 +2790,17 @@ function App() {
                 disabled={queryLoading}
               >
                 {queryLoading ? "Checking..." : "Lookup"}
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={() => {
+                  setQueryId("");
+                  setQueryResult(null);
+                }}
+                disabled={!queryId && !queryResult}
+              >
+                Clear
               </button>
             </div>
             {queryResult && (
@@ -3518,6 +3562,23 @@ function App() {
                 )}
               </div>
             )}
+            <div className="section-tools">
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={copyFilterSummary}
+              >
+                Copy filter summary
+              </button>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={exportFilteredDatasets}
+                disabled={sortedDatasets.length === 0}
+              >
+                Export visible JSON
+              </button>
+            </div>
           </div>
           <div className="saved-view-card">
             <div className="saved-view-head">
