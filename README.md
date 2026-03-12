@@ -58,6 +58,22 @@ npm install
 npm run dev
 ```
 
+### Run the data service API
+
+```
+npm run api
+```
+
+The API starts on `http://127.0.0.1:4000` by default.
+
+### API routes
+
+- `GET /health`
+- `GET /api/datasets`
+- `GET /api/datasets?search=wind&status=verified&visibility=public`
+- `GET /api/datasets/:id`
+- `GET /api/summary`
+
 ### Build
 
 ```
