@@ -218,3 +218,11 @@ const shutdownSignals = ["SIGINT", "SIGTERM", "SIGQUIT"];
 shutdownSignals.forEach((signal) => {
   process.on(signal, gracefulShutdown);
 });
+
+const uncaughtSignals = ["uncaughtException", "unhandledRejection"];
+uncaughtSignals.forEach((event) => {
+  process.on(event, (error) => {
+    console.error(`Uncaught ${event}:`, error);
+    gracefulShutdown();
+  });
+});
