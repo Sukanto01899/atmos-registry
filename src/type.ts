@@ -43,3 +43,13 @@ export type DatasetFilters = {
   altitudeMin: string;
   altitudeMax: string;
 };
+
+// Sort modes determine the ordering of datasets in the explore and mine tabs. In a real application, you might want to support more complex sorting options and allow users to customize their default sort mode.
+export type SortMode =
+  | "quality-desc"
+  | "recent-desc"
+  | "recent-asc"
+  | "altitude-desc"
+  | "status-priority";
+
+export type VersionStatus = "draft" | "pending" | "approved" | "rejected";

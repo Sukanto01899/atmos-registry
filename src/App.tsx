@@ -19,7 +19,13 @@ import {
   uintCV,
 } from "@stacks/transactions";
 import { parseUrlViewState } from "./lib";
-import { Dataset, DatasetFilters, RegisterFormState } from "./type";
+import {
+  Dataset,
+  DatasetFilters,
+  RegisterFormState,
+  SortMode,
+  VersionStatus,
+} from "./type";
 
 const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
 const CONTRACT_NAME = "atmos-v3";
@@ -29,16 +35,6 @@ const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
-
-// Sort modes determine the ordering of datasets in the explore and mine tabs. In a real application, you might want to support more complex sorting options and allow users to customize their default sort mode.
-type SortMode =
-  | "quality-desc"
-  | "recent-desc"
-  | "recent-asc"
-  | "altitude-desc"
-  | "status-priority";
-
-type VersionStatus = "draft" | "pending" | "approved" | "rejected";
 
 // In a real application, version records would likely be stored in a backend or indexed on-chain with more robust querying. For this example, we keep them in local state keyed by dataset ID for simplicity.
 type VersionRecord = {
