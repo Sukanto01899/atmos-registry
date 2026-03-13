@@ -19,7 +19,7 @@ import {
   uintCV,
 } from "@stacks/transactions";
 import { parseUrlViewState } from "./lib";
-import { Dataset } from "./type";
+import { Dataset, RegisterFormState } from "./type";
 
 const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
 const CONTRACT_NAME = "atmos-v3";
@@ -29,20 +29,6 @@ const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
-
-// In a production application, you would likely want to fetch and store additional metadata about datasets, such as data quality metrics, usage statistics, or user-generated tags and reviews. For this example, we focus on the core metadata stored on-chain for simplicity.
-type RegisterFormState = {
-  name: string;
-  description: string;
-  dataType: string;
-  collectionDate: string;
-  altitudeMin: string;
-  altitudeMax: string;
-  latitude: string;
-  longitude: string;
-  ipfsHash: string;
-  isPublic: boolean;
-};
 
 // Define the structure for dataset filters
 type DatasetFilters = {
