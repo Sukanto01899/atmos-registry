@@ -32,3 +32,14 @@ export type RegisterFormState = {
   ipfsHash: string;
   isPublic: boolean;
 };
+
+// Define the structure for dataset filters
+export type DatasetFilters = {
+  search: string;
+  status: string;
+  visibility: "all" | "public" | "private";
+  dataType: string;
+  owner: string;
+  altitudeMin: string;
+  altitudeMax: string;
+};

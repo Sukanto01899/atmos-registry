@@ -19,7 +19,7 @@ import {
   uintCV,
 } from "@stacks/transactions";
 import { parseUrlViewState } from "./lib";
-import { Dataset, RegisterFormState } from "./type";
+import { Dataset, DatasetFilters, RegisterFormState } from "./type";
 
 const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
 const CONTRACT_NAME = "atmos-v3";
@@ -29,17 +29,6 @@ const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
-
-// Define the structure for dataset filters
-type DatasetFilters = {
-  search: string;
-  status: string;
-  visibility: "all" | "public" | "private";
-  dataType: string;
-  owner: string;
-  altitudeMin: string;
-  altitudeMax: string;
-};
 
 // Sort modes determine the ordering of datasets in the explore and mine tabs. In a real application, you might want to support more complex sorting options and allow users to customize their default sort mode.
 type SortMode =
