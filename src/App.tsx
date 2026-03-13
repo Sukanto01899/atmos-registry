@@ -24,6 +24,7 @@ import {
   DatasetFilters,
   RegisterFormState,
   SortMode,
+  VersionRecord,
   VersionStatus,
 } from "./type";
 
@@ -35,23 +36,6 @@ const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
-
-// In a real application, version records would likely be stored in a backend or indexed on-chain with more robust querying. For this example, we keep them in local state keyed by dataset ID for simplicity.
-type VersionRecord = {
-  id: string;
-  datasetId: number;
-  version: number;
-  source: "onchain" | "local";
-  status: VersionStatus;
-  name: string;
-  description: string;
-  ipfsHash: string;
-  isPublic: boolean;
-  createdAt: number;
-  submittedAt?: number;
-  reviewedAt?: number;
-  reviewer?: string;
-};
 
 // For simplicity, this example only supports a single draft version per dataset in local state. In a production app, you would likely want to support multiple drafts and persist them in local storage or a backend.
 type VersionDraft = {

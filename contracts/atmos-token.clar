@@ -1,5 +1,5 @@
 ;; Atmos Token Contract
-;; Dedicated reward token minted by the atmos-v3 registry contract.
+;; Dedicated reward token minted by the atmos-v3 registry contract
 
 (define-constant ERR-NOT-AUTHORIZED (err u401))
 (define-constant ERR-INSUFFICIENT-BALANCE (err u402))
@@ -28,15 +28,24 @@
   (ok (ft-get-supply atmos-token))
 )
 
-(define-public (transfer (amount uint) (sender principal) (recipient principal))
+(define-public (transfer
+    (amount uint)
+    (sender principal)
+    (recipient principal)
+  )
   (begin
     (asserts! (is-eq tx-sender sender) ERR-NOT-AUTHORIZED)
-    (asserts! (>= (ft-get-balance atmos-token sender) amount) ERR-INSUFFICIENT-BALANCE)
+    (asserts! (>= (ft-get-balance atmos-token sender) amount)
+      ERR-INSUFFICIENT-BALANCE
+    )
     (ft-transfer? atmos-token amount sender recipient)
   )
 )
 
-(define-public (mint-registration-reward (recipient principal) (amount uint))
+(define-public (mint-registration-reward
+    (recipient principal)
+    (amount uint)
+  )
   (begin
     ;; Only the atmos-v3 registry contract can mint registration rewards.
     (asserts! (is-eq contract-caller REGISTRY-CONTRACT) ERR-NOT-AUTHORIZED)
@@ -44,7 +53,10 @@
   )
 )
 
-(define-public (mint-staking-reward (recipient principal) (amount uint))
+(define-public (mint-staking-reward
+    (recipient principal)
+    (amount uint)
+  )
   (begin
     ;; Only the atmos-staking-v1 contract can mint APY rewards.
     (asserts! (is-eq contract-caller STAKING-CONTRACT) ERR-NOT-AUTHORIZED)
