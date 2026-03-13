@@ -18,6 +18,7 @@ import {
   stringUtf8CV,
   uintCV,
 } from "@stacks/transactions";
+import { parseUrlViewState } from "./lib";
 
 const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
 const CONTRACT_NAME = "atmos-v3";
@@ -495,42 +496,42 @@ const parseUrlStringList = (value: string | null) =>
     ),
   );
 
-const parseUrlViewState = (search: string): UrlViewState => {
-  const params = new URLSearchParams(search);
-  const tab = params.get("tab");
-  const sort = params.get("sort");
-  const geo = Number.parseInt(params.get("geo") ?? "", 10);
+// const parseUrlViewState = (search: string): UrlViewState => {
+//   const params = new URLSearchParams(search);
+//   const tab = params.get("tab");
+//   const sort = params.get("sort");
+//   const geo = Number.parseInt(params.get("geo") ?? "", 10);
 
-  return {
-    activeTab: tab === "mine" ? "mine" : "explore",
-    filters: {
-      search: params.get("search") ?? "",
-      status: params.get("status") ?? "all",
-      visibility:
-        params.get("visibility") === "public" ||
-        params.get("visibility") === "private"
-          ? (params.get("visibility") as "public" | "private")
-          : "all",
-      dataType: params.get("type") ?? "all",
-      owner: params.get("owner") ?? "",
-      altitudeMin: params.get("amin") ?? "",
-      altitudeMax: params.get("amax") ?? "",
-    },
-    geoTimePercent: Number.isNaN(geo) ? 100 : clampPercent(geo),
-    compareSelectionIds: parseUrlIdList(params.get("compare")),
-    watchlistOnly: params.get("watchOnly") === "1",
-    watchlistIds: parseUrlIdList(params.get("watch")),
-    mutedAlertKinds: parseUrlStringList(params.get("mute")),
-    sortMode: SORT_MODES.includes(sort as SortMode)
-      ? (sort as SortMode)
-      : "quality-desc",
-    lineageSelectionId:
-      /^\d+$/.test(params.get("lineage") ?? "") ? params.get("lineage")! : "",
-    selectedGeoDatasetId:
-      /^\d+$/.test(params.get("geoId") ?? "") ? params.get("geoId")! : "",
-    showDatasetDetail: params.get("detail") === "1",
-  };
-};
+//   return {
+//     activeTab: tab === "mine" ? "mine" : "explore",
+//     filters: {
+//       search: params.get("search") ?? "",
+//       status: params.get("status") ?? "all",
+//       visibility:
+//         params.get("visibility") === "public" ||
+//         params.get("visibility") === "private"
+//           ? (params.get("visibility") as "public" | "private")
+//           : "all",
+//       dataType: params.get("type") ?? "all",
+//       owner: params.get("owner") ?? "",
+//       altitudeMin: params.get("amin") ?? "",
+//       altitudeMax: params.get("amax") ?? "",
+//     },
+//     geoTimePercent: Number.isNaN(geo) ? 100 : clampPercent(geo),
+//     compareSelectionIds: parseUrlIdList(params.get("compare")),
+//     watchlistOnly: params.get("watchOnly") === "1",
+//     watchlistIds: parseUrlIdList(params.get("watch")),
+//     mutedAlertKinds: parseUrlStringList(params.get("mute")),
+//     sortMode: SORT_MODES.includes(sort as SortMode)
+//       ? (sort as SortMode)
+//       : "quality-desc",
+//     lineageSelectionId:
+//       /^\d+$/.test(params.get("lineage") ?? "") ? params.get("lineage")! : "",
+//     selectedGeoDatasetId:
+//       /^\d+$/.test(params.get("geoId") ?? "") ? params.get("geoId")! : "",
+//     showDatasetDetail: params.get("detail") === "1",
+//   };
+// };
 
 const buildUrlViewSearch = (state: UrlViewState) => {
   const params = new URLSearchParams();
@@ -538,11 +539,13 @@ const buildUrlViewSearch = (state: UrlViewState) => {
   if (state.activeTab !== "explore") params.set("tab", state.activeTab);
   if (state.sortMode !== "quality-desc") params.set("sort", state.sortMode);
   if (state.filters.search) params.set("search", state.filters.search);
-  if (state.filters.status !== "all") params.set("status", state.filters.status);
+  if (state.filters.status !== "all")
+    params.set("status", state.filters.status);
   if (state.filters.visibility !== "all") {
     params.set("visibility", state.filters.visibility);
   }
-  if (state.filters.dataType !== "all") params.set("type", state.filters.dataType);
+  if (state.filters.dataType !== "all")
+    params.set("type", state.filters.dataType);
   if (state.filters.owner) params.set("owner", state.filters.owner);
   if (state.filters.altitudeMin) params.set("amin", state.filters.altitudeMin);
   if (state.filters.altitudeMax) params.set("amax", state.filters.altitudeMax);
@@ -553,12 +556,14 @@ const buildUrlViewSearch = (state: UrlViewState) => {
     params.set("compare", state.compareSelectionIds.join(","));
   }
   if (state.watchlistOnly) params.set("watchOnly", "1");
-  if (state.watchlistIds.length) params.set("watch", state.watchlistIds.join(","));
+  if (state.watchlistIds.length)
+    params.set("watch", state.watchlistIds.join(","));
   if (state.mutedAlertKinds.length) {
     params.set("mute", state.mutedAlertKinds.join(","));
   }
   if (state.lineageSelectionId) params.set("lineage", state.lineageSelectionId);
-  if (state.selectedGeoDatasetId) params.set("geoId", state.selectedGeoDatasetId);
+  if (state.selectedGeoDatasetId)
+    params.set("geoId", state.selectedGeoDatasetId);
   if (state.showDatasetDetail) params.set("detail", "1");
 
   const query = params.toString();
@@ -711,8 +716,9 @@ function App() {
     const verifiedCount = filteredDatasets.filter(
       (dataset) => dataset.verified || dataset.status === "verified",
     ).length;
-    const publicCount = filteredDatasets.filter((dataset) => dataset.isPublic)
-      .length;
+    const publicCount = filteredDatasets.filter(
+      (dataset) => dataset.isPublic,
+    ).length;
     const topDataType = filteredDatasets.reduce(
       (summary, dataset) => {
         const key = dataset.dataType || "unknown";
@@ -1690,7 +1696,9 @@ function App() {
     );
     setWatchlistIds(nextIds);
     setWatchlistInput(nextIds.join(", "));
-    setStatusMessage(`Watchlist updated with ${nextIds.length} visible datasets.`);
+    setStatusMessage(
+      `Watchlist updated with ${nextIds.length} visible datasets.`,
+    );
   };
   const copyVisibleIpfsHashes = async () => {
     const hashes = sortedDatasets
@@ -1700,7 +1708,10 @@ function App() {
       setStatusMessage("No visible IPFS hashes to copy.");
       return;
     }
-    await copyText(Array.from(new Set(hashes)).join(", "), "Visible IPFS hashes");
+    await copyText(
+      Array.from(new Set(hashes)).join(", "),
+      "Visible IPFS hashes",
+    );
   };
   const auditTopVisibleDataset = () => {
     if (!sortedDatasets.length) {
@@ -2967,7 +2978,10 @@ function App() {
             </div>
           ))}
         </section>
-        <section className="overview-strip" aria-label="Current dataset overview">
+        <section
+          className="overview-strip"
+          aria-label="Current dataset overview"
+        >
           {overviewHighlights.map((item) => (
             <article key={item.label} className="overview-chip">
               <span>{item.label}</span>
@@ -3079,7 +3093,9 @@ function App() {
                       className="primary-btn compact"
                       type="button"
                       onClick={() => handleStakeAction("stake", stakeAmount)}
-                      disabled={!walletAddress || tokenLoading || !stakeAmountValue}
+                      disabled={
+                        !walletAddress || tokenLoading || !stakeAmountValue
+                      }
                     >
                       Stake
                     </button>
