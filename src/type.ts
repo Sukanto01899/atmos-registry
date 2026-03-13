@@ -1,0 +1,20 @@
+export type Dataset = {
+  id: number;
+  name: string;
+  description: string;
+  dataType: string;
+  collectionDate: number;
+  altitudeMin: number;
+  altitudeMax: number;
+  latitude: number;
+  longitude: number;
+  ipfsHash: string;
+  isPublic: boolean;
+  metadataFrozen: boolean;
+  verified: boolean;
+  verifiedBy: string;
+  verifiedAt: number;
+  createdAt: number;
+  owner: string;
+  status: string;
+};
