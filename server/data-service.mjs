@@ -213,3 +213,8 @@ const gracefulShutdown = () => {
   console.log("Shutting down data service...");
   process.exit(0);
 }
+
+const shutdownSignals = ["SIGINT", "SIGTERM", "SIGQUIT"];
+shutdownSignals.forEach((signal) => {
+  process.on(signal, gracefulShutdown);
+});
