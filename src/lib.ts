@@ -238,6 +238,14 @@ export const formatPercentFromBps = (bps: number) =>
 export const parseUInt = (value: any) =>
   Number.parseInt(String(value?.value ?? value ?? "0"), 10);
 
+export const parseMicroTokenInput = (value: string) => {
+  const amount = Number.parseFloat(value);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+  return Math.round(amount * MICRO_TOKEN);
+};
+
 export const parseStakeInfo = (value: any) => {
   const tuple = value?.value ?? {};
   return {

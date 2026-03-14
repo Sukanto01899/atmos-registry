@@ -17,7 +17,6 @@ import {
   uintCV,
 } from "@stacks/transactions";
 import {
-  MICRO_TOKEN,
   buildUrlViewSearch,
   ensureConnectUi,
   formatChainValue,
@@ -36,6 +35,7 @@ import {
   parseStakeInfo,
   parseTuple,
   parseUInt,
+  parseMicroTokenInput,
   parseUrlViewState,
   readChecked,
   readValue,
@@ -1688,14 +1688,6 @@ function App() {
     } catch {
       setTxStatus("Unable to open the wallet transaction popup.");
     }
-  };
-
-  const parseMicroTokenInput = (value: string) => {
-    const amount = Number.parseFloat(value);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return null;
-    }
-    return Math.round(amount * MICRO_TOKEN);
   };
 
   const handleStakeAction = async (
