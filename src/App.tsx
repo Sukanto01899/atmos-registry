@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { AppConfig, UserSession } from "@stacks/auth";
 import {
-  DEFAULT_PROVIDERS,
   showConnect,
   showContractCall,
   disconnect as clearSelectedProvider,
 } from "@stacks/connect";
-import { defineCustomElements } from "@stacks/connect-ui/loader";
 import { STACKS_MAINNET, createNetwork } from "@stacks/network";
 import {
   boolCV,
@@ -18,7 +16,33 @@ import {
   stringUtf8CV,
   uintCV,
 } from "@stacks/transactions";
-import { parseUrlViewState } from "./lib";
+import {
+  MICRO_TOKEN,
+  buildUrlViewSearch,
+  ensureConnectUi,
+  formatChainValue,
+  formatCoord,
+  formatPercentFromBps,
+  formatTokenAmount,
+  getAppIcon,
+  getConnectProviders,
+  getQualityScore,
+  getStatusClass,
+  getStatusPriority,
+  getUserAddress,
+  getVersionStatusClass,
+  mapDatasetToVersionStatus,
+  nowUnix,
+  parseStakeInfo,
+  parseTuple,
+  parseUInt,
+  parseUrlViewState,
+  readChecked,
+  readValue,
+  resetInvalidSession,
+  safeIsSignedIn,
+  unwrapResponseOk,
+} from "./lib";
 import { AppNotices } from "./components/AppNotices";
 import { CommandPalette } from "./components/CommandPalette";
 import { DatasetCard } from "./components/DatasetCard";
@@ -122,247 +146,6 @@ const defaultRegisterForm: RegisterFormState = {
   isPublic: true,
 };
 
-// Default providers for wallet connection. In a production app, you would likely want to dynamically detect available providers and support more options.
-const unwrapResponseOk = (cv: unknown) => {
-  const json = cvToJSON(cv as any) as any;
-  if (json.success === true && json.value !== undefined) {
-    return json.value;
-  }
-  if (json.success === false) {
-    throw new Error("Read-only call returned err");
-  }
-  if (json.type === "response") {
-    if (json.value?.type !== "ok") {
-      throw new Error("Read-only call returned err");
-    }
-    return json.value.value;
-  }
-  return json;
-};
-
-// Parses a tuple response from the get-dataset read-only function into a Dataset object. Handles both tuple and non-tuple response formats for compatibility with different contract versions.
-const parseTuple = (tuple: any, id: number): Dataset | null => {
-  if (!tuple) {
-    return null;
-  }
-  const type = tuple.type ?? "";
-  const data =
-    type === "tuple" || (typeof type === "string" && type.startsWith("(tuple"))
-      ? (tuple.value ?? {})
-      : (tuple.value ?? {});
-  const getString = (key: string) => String(data[key]?.value ?? "");
-  const getBool = (key: string) => Boolean(data[key]?.value ?? false);
-  const getNum = (key: string) =>
-    Number.parseInt(String(data[key]?.value ?? "0"), 10);
-  const getOptionalPrincipal = (key: string) =>
-    String(data[key]?.value?.value ?? "");
-
-  return {
-    id,
-    name: getString("name"),
-    description: getString("description"),
-    dataType: getString("data-type"),
-    collectionDate: getNum("collection-date"),
-    altitudeMin: getNum("altitude-min"),
-    altitudeMax: getNum("altitude-max"),
-    latitude: getNum("latitude"),
-    longitude: getNum("longitude"),
-    ipfsHash: getString("ipfs-hash"),
-    isPublic: getBool("is-public"),
-    metadataFrozen: getBool("metadata-frozen"),
-    verified: getBool("verified"),
-    verifiedBy: getOptionalPrincipal("verified-by"),
-    verifiedAt: getNum("verified-at"),
-    createdAt: getNum("created-at"),
-    owner: getString("owner"),
-    status: getString("status"),
-  };
-};
-
-// Utility functions for formatting and deriving dataset properties for display purposes. In a real application, you might want to use more robust libraries for date formatting, geospatial calculations, and other utilities.
-const formatCoord = (value: number) => (value / 1_000_000).toFixed(3);
-
-// For collectionDate values, if the value is larger than a certain threshold, we assume it's a Unix timestamp and format it as a date. Otherwise, we treat it as a block number. This is to maintain compatibility with different contract versions that may have used different formats for this field.
-const formatChainValue = (value: number) => {
-  if (!value) return "n/a";
-  if (value > 1_000_000_000) {
-    return new Date(value * 1000).toLocaleString();
-  }
-  return `Block ${value}`;
-};
-
-// Status classes can be used to apply different styles based on dataset status. In a production app, you would likely want to use a more robust styling solution and support more status types.
-const getStatusClass = (status: string) => {
-  if (status === "verified") return "status--verified";
-  if (status === "rejected") return "status--rejected";
-  if (status === "pending") return "status--pending";
-  if (status === "deprecated") return "status--deprecated";
-  return "status--active";
-};
-
-// Quality score is a simple heuristic based on the presence of certain attributes. In a real application, you would likely want to use a more sophisticated algorithm that takes into account various factors such as data quality metrics, user feedback, and other relevant metadata.
-const getQualityScore = (dataset: Dataset) =>
-  (dataset.verified ? 45 : 0) +
-  (dataset.ipfsHash ? 30 : 0) +
-  (dataset.metadataFrozen ? 15 : 0) +
-  (dataset.isPublic ? 10 : 0);
-
-// Status priority is used for sorting datasets by their status in a meaningful way. In a production app, you might want to support more complex status hierarchies and allow users to customize the priority order.
-const getStatusPriority = (status: string) => {
-  if (status === "verified") return 4;
-  if (status === "pending") return 3;
-  if (status === "active") return 2;
-  if (status === "deprecated") return 1;
-  return 0;
-};
-
-// Version status is derived from the dataset status and verification state. In a real application, you would likely want to have a more robust versioning system with explicit version records stored on-chain or in a backend, rather than deriving version status from the dataset record.
-const getVersionStatusClass = (status: VersionStatus) => {
-  if (status === "approved") return "status--verified";
-  if (status === "rejected") return "status--rejected";
-  if (status === "pending") return "status--pending";
-  return "status--active";
-};
-
-// In this example, we derive version status directly from the dataset's overall status and verification state for simplicity. In a production application, you would likely want to have explicit version records with their own statuses that can differ from the dataset's overall status, especially if you support multiple versions and more complex review workflows.
-const mapDatasetToVersionStatus = (dataset: Dataset): VersionStatus => {
-  if (dataset.status === "rejected") return "rejected";
-  if (dataset.status === "pending") return "pending";
-  if (dataset.verified || dataset.status === "verified") return "approved";
-  return "approved";
-};
-const nowUnix = () => Math.floor(Date.now() / 1000);
-const MICRO_TOKEN = 1_000_000;
-
-// Utility functions for formatting token amounts, percentages, and parsing values from user input. In a production app, you would likely want to use a library like bignumber.js for handling token amounts and more robust input parsing and validation.
-const formatTokenAmount = (value: number, decimals = 6) =>
-  (value / 10 ** decimals).toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: Math.min(decimals, 4),
-  });
-
-// APY is stored in basis points (bps) on-chain to avoid floating point issues, so we divide by 100 to get the percentage value. In a real application, you would likely want to fetch the current APY from a reliable source and update it in real-time to provide accurate information to users.
-const formatPercentFromBps = (bps: number) =>
-  `${(bps / 100).toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  })}%`;
-
-// Parsing functions for converting raw values from read-only contract calls into structured data. In a production application, you would likely want to have more robust parsing and error handling, especially if the contract data structures are complex or subject to change.
-const parseUInt = (value: any) =>
-  Number.parseInt(String(value?.value ?? value ?? "0"), 10);
-const parseStakeInfo = (value: any): StakeInfo => {
-  const tuple = value?.value ?? {};
-  return {
-    amount: parseUInt(tuple.amount),
-    lastClaimBlock: parseUInt(tuple["last-claim-block"]),
-    totalClaimed: parseUInt(tuple["total-claimed"]),
-  };
-};
-
-// Utility functions for handling user session and wallet connection. In a production app, you would likely want to support more robust session management, error handling, and support for multiple wallet providers.
-const resetInvalidSession = () => {
-  try {
-    userSession.store?.deleteSessionData();
-  } catch {
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("blockstack-session");
-    }
-  }
-};
-
-// Due to the way some wallet providers handle sessions, calling isUserSignedIn() can sometimes throw an error if the session data is corrupted or in an unexpected format. To prevent the entire app from crashing in this case, we wrap the call in a try-catch block and reset the session if an error occurs. This allows the app to recover gracefully and prompt the user to sign in again without losing access to the rest of the functionality.
-const safeIsSignedIn = () => {
-  try {
-    return userSession.isUserSignedIn();
-  } catch {
-    resetInvalidSession();
-    return false;
-  }
-};
-
-// getUserAddress attempts to retrieve the user's Stacks address from their session data. If the user is not signed in or if there is an error accessing the session data, it returns an empty string. This function allows us to safely access the user's address without risking crashes due to session issues.
-const getUserAddress = () => {
-  if (!safeIsSignedIn()) {
-    return "";
-  }
-  try {
-    const userData = userSession.loadUserData();
-    const profile = userData?.profile as any;
-    return profile?.stxAddress?.mainnet ?? profile?.stxAddress?.testnet ?? "";
-  } catch {
-    return "";
-  }
-};
-
-// getAppIcon attempts to construct the URL for the app's icon based on the current window location. This is used as a fallback icon for the in-app wallet provider if no other provider icons are detected. If there is an error accessing the window object (e.g. during server-side rendering), it returns an empty string.
-const getAppIcon = () => {
-  try {
-    return `${window.location.origin}/atmos-icon.svg`;
-  } catch {
-    return "";
-  }
-};
-
-// getConnectProviders attempts to retrieve the list of available wallet providers based on the current window environment. If the window object is not available (e.g. during server-side rendering), it returns the default list of providers.
-const getConnectProviders = () => {
-  if (typeof window === "undefined") {
-    return DEFAULT_PROVIDERS;
-  }
-
-  // Check for the presence of the Stacks provider
-  const stacksProvider = (window as any).StacksProvider;
-  if (!stacksProvider) {
-    return DEFAULT_PROVIDERS;
-  }
-
-  // If any named providers are detected, we assume the user has their own wallet extension and return the default list of providers, which will allow them to choose their preferred wallet. If no named providers are detected, we include an in-app wallet provider as a fallback option to ensure users can still connect and interact with the app even if they don't have a wallet extension installed.
-  const hasNamedProvider = Boolean(
-    (window as any).LeatherProvider ||
-    (window as any).AsignaProvider ||
-    (window as any).XverseProviders?.StacksProvider,
-  );
-  if (hasNamedProvider) {
-    return DEFAULT_PROVIDERS;
-  }
-
-  const fallbackIcon =
-    DEFAULT_PROVIDERS.find((provider) => provider.id === "LeatherProvider")
-      ?.icon ?? getAppIcon();
-
-  // Create an in-app wallet provider as a fallback
-  const inAppProvider = {
-    id: "StacksProvider",
-    name: "In-App Wallet",
-    icon: fallbackIcon,
-    webUrl: window.location.origin,
-  };
-
-  return [inAppProvider, ...DEFAULT_PROVIDERS];
-};
-
-// ensureConnectUi checks if the custom elements for the connect UI are defined, and if not, it attempts to define them by calling defineCustomElements. This is necessary because the connect UI relies on web components that need to be registered in the browser before they can be used. By ensuring that the connect UI is defined before attempting to show the connect modal, we can prevent errors and ensure a smooth user experience when connecting their wallet.
-const ensureConnectUi = async () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  if (!window.customElements?.get("connect-modal")) {
-    try {
-      await defineCustomElements(window);
-    } catch {
-      return false;
-    }
-  }
-  return Boolean(window.customElements?.get("connect-modal"));
-};
-
-const readValue = (
-  event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-) => event.currentTarget?.value ?? "";
-
-const readChecked = (event: ChangeEvent<HTMLInputElement>) =>
-  event.currentTarget?.checked ?? false;
-
 const defaultFilters: DatasetFilters = {
   search: "",
   status: "all",
@@ -382,59 +165,6 @@ const defaultVersionDraft: VersionDraft = {
 const APP_DETAILS = {
   name: "Atmos Registry",
   icon: getAppIcon(),
-};
-
-type UrlViewState = {
-  activeTab: "explore" | "mine";
-  filters: DatasetFilters;
-  geoTimePercent: number;
-  compareSelectionIds: string[];
-  watchlistOnly: boolean;
-  watchlistIds: string[];
-  mutedAlertKinds: string[];
-  sortMode: SortMode;
-  lineageSelectionId: string;
-  selectedGeoDatasetId: string;
-  showDatasetDetail: boolean;
-};
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-const buildUrlViewSearch = (state: UrlViewState) => {
-  const params = new URLSearchParams();
-
-  if (state.activeTab !== "explore") params.set("tab", state.activeTab);
-  if (state.sortMode !== "quality-desc") params.set("sort", state.sortMode);
-  if (state.filters.search) params.set("search", state.filters.search);
-  if (state.filters.status !== "all")
-    params.set("status", state.filters.status);
-  if (state.filters.visibility !== "all") {
-    params.set("visibility", state.filters.visibility);
-  }
-  if (state.filters.dataType !== "all")
-    params.set("type", state.filters.dataType);
-  if (state.filters.owner) params.set("owner", state.filters.owner);
-  if (state.filters.altitudeMin) params.set("amin", state.filters.altitudeMin);
-  if (state.filters.altitudeMax) params.set("amax", state.filters.altitudeMax);
-  if (state.geoTimePercent !== 100) {
-    params.set("geo", String(clampPercent(state.geoTimePercent)));
-  }
-  if (state.compareSelectionIds.length) {
-    params.set("compare", state.compareSelectionIds.join(","));
-  }
-  if (state.watchlistOnly) params.set("watchOnly", "1");
-  if (state.watchlistIds.length)
-    params.set("watch", state.watchlistIds.join(","));
-  if (state.mutedAlertKinds.length) {
-    params.set("mute", state.mutedAlertKinds.join(","));
-  }
-  if (state.lineageSelectionId) params.set("lineage", state.lineageSelectionId);
-  if (state.selectedGeoDatasetId)
-    params.set("geoId", state.selectedGeoDatasetId);
-  if (state.showDatasetDetail) params.set("detail", "1");
-
-  const query = params.toString();
-  return query ? `?${query}` : "";
 };
 
 function App() {
@@ -1780,8 +1510,8 @@ function App() {
 
   const connectWallet = async () => {
     setWalletMessage("");
-    if (!safeIsSignedIn()) {
-      resetInvalidSession();
+    if (!safeIsSignedIn(userSession)) {
+      resetInvalidSession(userSession);
     }
     clearSelectedProvider();
     const uiReady = await ensureConnectUi();
@@ -1798,7 +1528,7 @@ function App() {
         manifestPath: "/manifest.json",
         defaultProviders,
         onFinish: () => {
-          const address = getUserAddress();
+          const address = getUserAddress(userSession);
           setWalletAddress(address);
           setWalletMessage(
             address
@@ -2032,8 +1762,8 @@ function App() {
           setWalletMessage("Wallet sign-in failed. Try connecting again.");
         }
       }
-      if (safeIsSignedIn()) {
-        const address = getUserAddress();
+      if (safeIsSignedIn(userSession)) {
+        const address = getUserAddress(userSession);
         setWalletAddress(address);
         loadTokenSnapshot(address);
       }
