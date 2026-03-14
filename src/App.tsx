@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { AppConfig, UserSession } from "@stacks/auth";
 import {
   showConnect,
   showContractCall,
   disconnect as clearSelectedProvider,
 } from "@stacks/connect";
-import { STACKS_MAINNET, createNetwork } from "@stacks/network";
 import {
   boolCV,
   cvToJSON,
@@ -48,10 +46,14 @@ import { CommandPalette } from "./components/CommandPalette";
 import { DatasetCard } from "./components/DatasetCard";
 import { NavBar } from "./components/NavBar";
 import {
+  CommandAction,
   Dataset,
   DatasetFilters,
   RegisterFormState,
+  SavedView,
   SortMode,
+  StoryChapter,
+  TokenSnapshot,
   VersionDraft,
   VersionRecord,
   VersionStatus,
@@ -78,58 +80,6 @@ type AlertItem = {
   message: string;
   level: AlertLevel;
   timestamp: number;
-};
-
-// Saved views allow users to capture the current state of their filters, sorting, and other view options for easy access later. In a real application, you would likely want to persist these in local storage or a backend and support more complex view configurations.
-type SavedView = {
-  id: string;
-  name: string;
-  createdAt: number;
-  payload: {
-    activeTab: "explore" | "mine";
-    filters: DatasetFilters;
-    geoTimePercent: number;
-    compareSelectionIds: string[];
-    watchlistOnly: boolean;
-    watchlistIds: string[];
-    mutedAlertKinds: string[];
-  };
-};
-
-// Command palette actions are defined client-side for quick access to common actions and navigation. In a production app, you might want to support more dynamic command registration and more complex command payloads.
-type CommandAction = {
-  id: string;
-  label: string;
-  detail: string;
-  run: () => void;
-};
-
-// Story chapters are designed to guide users through interesting insights and narratives in the dataset collection. In a real application, you might want to support more complex chapter content, multimedia integration, and persistence of user progress.
-type StoryChapter = {
-  id: string;
-  title: string;
-  body: string;
-  datasetId?: number;
-};
-
-// TokenSnapshot represents the current state of the ATMOS token, including total supply, total staked, APY, and the user's balance and pending rewards. In a production application, you would likely want to fetch this data from a reliable on-chain source or backend API and update it in real-time.
-type StakeInfo = {
-  amount: number;
-  lastClaimBlock: number;
-  totalClaimed: number;
-};
-
-// In a production application, you would likely want to fetch and display additional token metrics such as historical price, staking history, and more detailed breakdowns of rewards and penalties. For this example, we focus on the core metrics relevant to staking and governance participation for simplicity.
-type TokenSnapshot = {
-  name: string;
-  symbol: string;
-  decimals: number;
-  totalSupply: number;
-  totalStaked: number;
-  apyBps: number;
-  balance: number;
-  pendingReward: number;
-  stakeInfo: StakeInfo;
 };
 
 // Default form state for dataset registration
