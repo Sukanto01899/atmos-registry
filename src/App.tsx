@@ -19,6 +19,10 @@ import {
   uintCV,
 } from "@stacks/transactions";
 import { parseUrlViewState } from "./lib";
+import { AppNotices } from "./components/AppNotices";
+import { CommandPalette } from "./components/CommandPalette";
+import { DatasetCard } from "./components/DatasetCard";
+import { NavBar } from "./components/NavBar";
 import {
   Dataset,
   DatasetFilters,
@@ -380,14 +384,6 @@ const APP_DETAILS = {
   icon: getAppIcon(),
 };
 
-const SORT_MODES: SortMode[] = [
-  "quality-desc",
-  "recent-desc",
-  "recent-asc",
-  "altitude-desc",
-  "status-priority",
-];
-
 type UrlViewState = {
   activeTab: "explore" | "mine";
   filters: DatasetFilters;
@@ -403,63 +399,6 @@ type UrlViewState = {
 };
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
-
-const parseUrlIdList = (value: string | null) =>
-  Array.from(
-    new Set(
-      (value ?? "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter((item) => /^[0-9]+$/.test(item)),
-    ),
-  );
-
-const parseUrlStringList = (value: string | null) =>
-  Array.from(
-    new Set(
-      (value ?? "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter((item) => Boolean(item)),
-    ),
-  );
-
-// const parseUrlViewState = (search: string): UrlViewState => {
-//   const params = new URLSearchParams(search);
-//   const tab = params.get("tab");
-//   const sort = params.get("sort");
-//   const geo = Number.parseInt(params.get("geo") ?? "", 10);
-
-//   return {
-//     activeTab: tab === "mine" ? "mine" : "explore",
-//     filters: {
-//       search: params.get("search") ?? "",
-//       status: params.get("status") ?? "all",
-//       visibility:
-//         params.get("visibility") === "public" ||
-//         params.get("visibility") === "private"
-//           ? (params.get("visibility") as "public" | "private")
-//           : "all",
-//       dataType: params.get("type") ?? "all",
-//       owner: params.get("owner") ?? "",
-//       altitudeMin: params.get("amin") ?? "",
-//       altitudeMax: params.get("amax") ?? "",
-//     },
-//     geoTimePercent: Number.isNaN(geo) ? 100 : clampPercent(geo),
-//     compareSelectionIds: parseUrlIdList(params.get("compare")),
-//     watchlistOnly: params.get("watchOnly") === "1",
-//     watchlistIds: parseUrlIdList(params.get("watch")),
-//     mutedAlertKinds: parseUrlStringList(params.get("mute")),
-//     sortMode: SORT_MODES.includes(sort as SortMode)
-//       ? (sort as SortMode)
-//       : "quality-desc",
-//     lineageSelectionId:
-//       /^\d+$/.test(params.get("lineage") ?? "") ? params.get("lineage")! : "",
-//     selectedGeoDatasetId:
-//       /^\d+$/.test(params.get("geoId") ?? "") ? params.get("geoId")! : "",
-//     showDatasetDetail: params.get("detail") === "1",
-//   };
-// };
 
 const buildUrlViewSearch = (state: UrlViewState) => {
   const params = new URLSearchParams();
@@ -2404,117 +2343,27 @@ function App() {
   return (
     <div className="app">
       <div className="glow-layer" />
-      <nav className="nav">
-        <div className="nav__brand">
-          <div className="logo-orb">A</div>
-          <div>
-            <div className="brand-title">Atmos Registry</div>
-            <div className="brand-subtitle">Mainnet data mesh</div>
-          </div>
-        </div>
-        <div className="nav__actions">
-          <button
-            className={`tab-btn ${activeTab === "explore" ? "active" : ""}`}
-            onClick={() => setActiveTab("explore")}
-          >
-            Explore
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "mine" ? "active" : ""}`}
-            onClick={() => setActiveTab("mine")}
-          >
-            My Datasets
-          </button>
-          <button className="ghost-btn" onClick={loadLatest} disabled={loading}>
-            {loading ? "Syncing..." : "Sync Mainnet"}
-          </button>
-          <button
-            className="ghost-btn alert-bell"
-            type="button"
-            onClick={() => setShowAlerts((prev) => !prev)}
-          >
-            Alerts
-            <span
-              className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}
-            >
-              {unreadAlertCount}
-            </span>
-          </button>
-          <button
-            className="ghost-btn"
-            type="button"
-            onClick={() => setShowCommandPalette(true)}
-          >
-            Command
-          </button>
-          {walletAddress ? (
-            <div className="wallet-chip">
-              <span className="wallet-address">{walletAddress}</span>
-              <button className="ghost-btn" onClick={disconnectWallet}>
-                Disconnect
-              </button>
-            </div>
-          ) : (
-            <button className="primary-btn compact" onClick={connectWallet}>
-              Connect Wallet
-            </button>
-          )}
-        </div>
-      </nav>
-      {appNotices.length > 0 && (
-        <div className="app-notices">
-          {appNotices.map((notice) => (
-            <div
-              key={notice.id}
-              className={`status-banner status-banner--${notice.tone}`}
-            >
-              {notice.message}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showCommandPalette && (
-        <div
-          className="command-overlay"
-          onClick={() => setShowCommandPalette(false)}
-        >
-          <div
-            className="command-modal"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="command-head">
-              <strong>Command Palette</strong>
-              <span>Ctrl/Cmd + K</span>
-            </div>
-            <input
-              className="command-search"
-              autoFocus
-              value={commandQuery}
-              onChange={(event) => setCommandQuery(readValue(event))}
-              placeholder="Search commands..."
-            />
-            <div className="command-list">
-              {filteredCommandActions.length === 0 && (
-                <div className="command-empty">
-                  No commands matched your query.
-                </div>
-              )}
-              {filteredCommandActions.map((action) => (
-                <button
-                  key={action.id}
-                  className="command-item"
-                  type="button"
-                  onClick={() => executeCommand(action)}
-                >
-                  <span>{action.label}</span>
-                  <small>{action.detail}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <NavBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        loading={loading}
+        onSyncMainnet={loadLatest}
+        unreadAlertCount={unreadAlertCount}
+        onToggleAlerts={() => setShowAlerts((prev) => !prev)}
+        onOpenCommandPalette={() => setShowCommandPalette(true)}
+        walletAddress={walletAddress}
+        onConnectWallet={connectWallet}
+        onDisconnectWallet={disconnectWallet}
+      />
+      <AppNotices notices={appNotices} />
+      <CommandPalette
+        open={showCommandPalette}
+        query={commandQuery}
+        onQueryChange={setCommandQuery}
+        actions={filteredCommandActions}
+        onClose={() => setShowCommandPalette(false)}
+        onSelect={executeCommand}
+      />
 
       {showDatasetDetail && lineageDataset && (
         <div
@@ -4199,140 +4048,25 @@ function App() {
               </div>
             )}
             {sortedDatasets.map((dataset) => (
-              <article
+              <DatasetCard
                 key={`${activeTab}-${dataset.id}`}
-                className="dataset-card"
-              >
-                <div className="dataset-header">
-                  <div>
-                    <div className="dataset-title">{dataset.name}</div>
-                    <div className="dataset-tags">
-                      <span className="tag">{dataset.dataType}</span>
-                      <span
-                        className={`tag ${
-                          dataset.isPublic ? "tag--public" : "tag--private"
-                        }`}
-                      >
-                        {dataset.isPublic ? "Public" : "Private"}
-                      </span>
-                      {dataset.metadataFrozen && (
-                        <span className="tag tag--frozen">Frozen</span>
-                      )}
-                      {stewardshipSignalByDatasetId.has(dataset.id) && (
-                        <span className="tag tag--staked">Steward staked</span>
-                      )}
-                    </div>
-                  </div>
-                  <span
-                    className={`status-pill ${getStatusClass(dataset.status)}`}
-                  >
-                    {dataset.status}
-                  </span>
-                </div>
-                <div className="dataset-rank">
-                  Rank #{datasetRankById.get(dataset.id) ?? "-"} | Quality{" "}
-                  {getQualityScore(dataset)}/100
-                </div>
-                {stewardshipSignalByDatasetId.has(dataset.id) && (
-                  <div className="dataset-rank dataset-rank--stake">
-                    {stewardshipSignalByDatasetId.get(dataset.id)}
-                  </div>
-                )}
-                <p className="dataset-description">{dataset.description}</p>
-                <div className="dataset-meta">
-                  <div>
-                    <span>Owner</span>
-                    <strong>{dataset.owner}</strong>
-                  </div>
-                  <div>
-                    <span>Location</span>
-                    <strong>
-                      {formatCoord(dataset.latitude)} deg,{" "}
-                      {formatCoord(dataset.longitude)} deg
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Altitude</span>
-                    <strong>
-                      {dataset.altitudeMin}-{dataset.altitudeMax} m
-                    </strong>
-                  </div>
-                  {dataset.verified && (
-                    <div>
-                      <span>Verified by</span>
-                      <strong>{dataset.verifiedBy || "validator"}</strong>
-                    </div>
-                  )}
-                </div>
-                <div className="dataset-foot">
-                  <span>Collection date: {dataset.collectionDate}</span>
-                  <span>Record height: {dataset.createdAt}</span>
-                  <span className="hash">
-                    IPFS: {dataset.ipfsHash || "n/a"}
-                  </span>
-                  <button
-                    className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-                    type="button"
-                    onClick={() => copyText(String(dataset.id), "Dataset ID")}
-                  >
-                    Copy ID
-                  </button>
-                  <button
-                    className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-                    type="button"
-                    onClick={() => copyText(dataset.owner, "Owner")}
-                  >
-                    Copy owner
-                  </button>
-                  <button
-                    className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-                    type="button"
-                    onClick={() =>
-                      copyText(dataset.ipfsHash || "", "IPFS hash")
-                    }
-                  >
-                    Copy IPFS
-                  </button>
-                  <button
-                    className="ghost-btn dataset-foot__action"
-                    type="button"
-                    onClick={() => openDatasetDetail(dataset.id)}
-                  >
-                    Open detail
-                  </button>
-                  <button
-                    className="ghost-btn dataset-foot__action"
-                    type="button"
-                    onClick={() => setLineageTarget(dataset.id)}
-                  >
-                    Audit this
-                  </button>
-                  <button
-                    className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
-                      compareSelectionIds.includes(String(dataset.id))
-                        ? "active"
-                        : ""
-                    }`}
-                    type="button"
-                    onClick={() => toggleCompareDataset(dataset.id)}
-                  >
-                    {compareSelectionIds.includes(String(dataset.id))
-                      ? "Remove compare"
-                      : "Compare"}
-                  </button>
-                  <button
-                    className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
-                      watchlistIds.includes(String(dataset.id)) ? "active" : ""
-                    }`}
-                    type="button"
-                    onClick={() => toggleWatchlistDataset(dataset.id)}
-                  >
-                    {watchlistIds.includes(String(dataset.id))
-                      ? "Watching"
-                      : "Watch"}
-                  </button>
-                </div>
-              </article>
+                dataset={dataset}
+                statusClass={getStatusClass(dataset.status)}
+                rank={datasetRankById.get(dataset.id) ?? "-"}
+                qualityScore={getQualityScore(dataset)}
+                stewardshipSignal={stewardshipSignalByDatasetId.get(dataset.id)}
+                isStewardStaked={stewardshipSignalByDatasetId.has(dataset.id)}
+                compareActive={compareSelectionIds.includes(String(dataset.id))}
+                watchActive={watchlistIds.includes(String(dataset.id))}
+                formatCoord={formatCoord}
+                onCopyId={() => copyText(String(dataset.id), "Dataset ID")}
+                onCopyOwner={() => copyText(dataset.owner, "Owner")}
+                onCopyIpfs={() => copyText(dataset.ipfsHash || "", "IPFS hash")}
+                onOpenDetail={() => openDatasetDetail(dataset.id)}
+                onAudit={() => setLineageTarget(dataset.id)}
+                onToggleCompare={() => toggleCompareDataset(dataset.id)}
+                onToggleWatch={() => toggleWatchlistDataset(dataset.id)}
+              />
             ))}
           </div>
         </section>
