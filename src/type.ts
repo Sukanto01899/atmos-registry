@@ -78,20 +78,6 @@ export type VersionDraft = {
   isPublic: boolean;
 };
 
-// Alert system is designed to surface important updates about datasets that users are interested in, such as verification status changes or metadata freezes. In a real application, you would likely want to persist read/dismissed state and support more complex alert types and delivery mechanisms.
-export type AlertLevel = "critical" | "warning" | "info";
-
-// In this example, alerts are generated client-side based on dataset status and user watchlist. In a production application, you might want to generate and store alerts server-side or on-chain for more reliability and to support notifications outside of the app.
-export type AlertItem = {
-  id: string;
-  datasetId: number;
-  kind: "verified" | "rejected" | "frozen" | "pending";
-  title: string;
-  message: string;
-  level: AlertLevel;
-  timestamp: number;
-};
-
 // Saved views allow users to capture the current state of their filters, sorting, and other view options for easy access later. In a real application, you would likely want to persist these in local storage or a backend and support more complex view configurations.
 export type SavedView = {
   id: string;
@@ -142,4 +128,18 @@ export type TokenSnapshot = {
   balance: number;
   pendingReward: number;
   stakeInfo: StakeInfo;
+};
+
+// Alert system is designed to surface important updates about datasets that users are interested in, such as verification status changes or metadata freezes. In a real application, you would likely want to persist read/dismissed state and support more complex alert types and delivery mechanisms.
+export type AlertLevel = "critical" | "warning" | "info";
+
+// In this example, alerts are generated client-side based on dataset status and user watchlist. In a production application, you might want to generate and store alerts server-side or on-chain for more reliability and to support notifications outside of the app.
+export type AlertItem = {
+  id: string;
+  datasetId: number;
+  kind: "verified" | "rejected" | "frozen" | "pending";
+  title: string;
+  message: string;
+  level: AlertLevel;
+  timestamp: number;
 };

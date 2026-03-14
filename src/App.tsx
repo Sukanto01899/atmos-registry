@@ -46,6 +46,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { DatasetCard } from "./components/DatasetCard";
 import { NavBar } from "./components/NavBar";
 import {
+  AlertItem,
   CommandAction,
   Dataset,
   DatasetFilters,
@@ -67,20 +68,6 @@ import {
   TOKEN_CONTRACT_NAME,
   userSession,
 } from "./constant";
-
-// Alert system is designed to surface important updates about datasets that users are interested in, such as verification status changes or metadata freezes. In a real application, you would likely want to persist read/dismissed state and support more complex alert types and delivery mechanisms.
-type AlertLevel = "critical" | "warning" | "info";
-
-// In this example, alerts are generated client-side based on dataset status and user watchlist. In a production application, you might want to generate and store alerts server-side or on-chain for more reliability and to support notifications outside of the app.
-type AlertItem = {
-  id: string;
-  datasetId: number;
-  kind: "verified" | "rejected" | "frozen" | "pending";
-  title: string;
-  message: string;
-  level: AlertLevel;
-  timestamp: number;
-};
 
 // Default form state for dataset registration
 const defaultRegisterForm: RegisterFormState = {
