@@ -24,6 +24,7 @@ import {
   DatasetFilters,
   RegisterFormState,
   SortMode,
+  VersionDraft,
   VersionRecord,
   VersionStatus,
 } from "./type";
@@ -36,13 +37,6 @@ const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 const network = createNetwork(STACKS_MAINNET);
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
-
-// For simplicity, this example only supports a single draft version per dataset in local state. In a production app, you would likely want to support multiple drafts and persist them in local storage or a backend.
-type VersionDraft = {
-  description: string;
-  ipfsHash: string;
-  isPublic: boolean;
-};
 
 // Alert system is designed to surface important updates about datasets that users are interested in, such as verification status changes or metadata freezes. In a real application, you would likely want to persist read/dismissed state and support more complex alert types and delivery mechanisms.
 type AlertLevel = "critical" | "warning" | "info";
