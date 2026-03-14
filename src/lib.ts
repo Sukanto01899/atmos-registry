@@ -1,4 +1,6 @@
-﻿export const SORT_MODES = [
+﻿import { DatasetFilters, SortMode } from "./type";
+
+export const SORT_MODES = [
   "quality-desc",
   "recent-desc",
   "recent-asc",
@@ -6,17 +8,7 @@
   "status-priority",
 ] as const;
 
-export type SortMode = (typeof SORT_MODES)[number];
-
-export type DatasetFilters = {
-  search: string;
-  status: string;
-  visibility: "all" | "public" | "private";
-  dataType: string;
-  owner: string;
-  altitudeMin: string;
-  altitudeMax: string;
-};
+// export type SortMode = (typeof SORT_MODES)[number];
 
 export type UrlViewState = {
   activeTab: "explore" | "mine";
