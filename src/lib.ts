@@ -82,3 +82,28 @@ export const parseUrlViewState = (search: string): UrlViewState => {
     showDatasetDetail: params.get("detail") === "1",
   };
 };
+
+export const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
+export const CONTRACT_NAME = "atmos-v3";
+
+// Dataset structure represents the core metadata about each dataset stored on-chain. In a real application, you would likely want to fetch and store additional metadata about datasets, such as data quality metrics, usage statistics, or user-generated tags and reviews. For this example, we focus on the core metadata stored on-chain for simplicity.
+export type Dataset = {
+  id: number;
+  name: string;
+  description: string;
+  dataType: string;
+  collectionDate: number;
+  altitudeMin: number;
+  altitudeMax: number;
+  latitude: number;
+  longitude: number;
+  ipfsHash: string;
+  isPublic: boolean;
+  metadataFrozen: boolean;
+  verified: boolean;
+  verifiedBy: string;
+  verifiedAt: number;
+  createdAt: number;
+  owner: string;
+  status: string;
+};
