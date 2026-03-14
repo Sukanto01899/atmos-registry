@@ -56,15 +56,15 @@ import {
   VersionRecord,
   VersionStatus,
 } from "./type";
-
-const CONTRACT_ADDRESS = "SP1K2XGT5RNGT42N49BH936VDF8NXWNZJY15BPV4F";
-const CONTRACT_NAME = "atmos-v3";
-const TOKEN_CONTRACT_NAME = "atmos-token-v3";
-const STAKING_CONTRACT_NAME = "atmos-staking-v1";
-const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
-const network = createNetwork(STACKS_MAINNET);
-const appConfig = new AppConfig(["store_write", "publish_data"]);
-const userSession = new UserSession({ appConfig });
+import {
+  CONTRACT_ADDRESS,
+  CONTRACT_NAME,
+  network,
+  SAVED_VIEWS_KEY,
+  STAKING_CONTRACT_NAME,
+  TOKEN_CONTRACT_NAME,
+  userSession,
+} from "./constant";
 
 // Alert system is designed to surface important updates about datasets that users are interested in, such as verification status changes or metadata freezes. In a real application, you would likely want to persist read/dismissed state and support more complex alert types and delivery mechanisms.
 type AlertLevel = "critical" | "warning" | "info";
