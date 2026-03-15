@@ -86,9 +86,6 @@ function App() {
   const [featureTab, setFeatureTab] = useState<
     "datasets" | "staking" | "alerts" | "audit" | "versions"
   >("datasets");
-  const [datasetView, setDatasetView] = useState<
-    "home" | "add" | "list"
-  >("home");
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
   const [datasetCount, setDatasetCount] = useState<number | null>(null);
   const [latestDatasets, setLatestDatasets] = useState<Dataset[]>([]);
@@ -117,6 +114,7 @@ function App() {
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showDatasetDetail, setShowDatasetDetail] = useState(false);
+  const [datasetView, setDatasetView] = useState<"list" | "add">("list");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
@@ -139,37 +137,6 @@ function App() {
   const [stakeAmount, setStakeAmount] = useState("10");
   const [unstakeAmount, setUnstakeAmount] = useState("10");
   const [stakeStatus, setStakeStatus] = useState("");
-
-  const stats = useMemo(
-    () => [
-      {
-        label: "Total datasets on-chain",
-        value:
-          datasetCount === null ? "Loading..." : datasetCount.toLocaleString(),
-        note: "Mainnet - Atmos",
-      },
-      {
-        label: "Registry status",
-        value: "Operational",
-        note: "Anchored on Stacks",
-      },
-      {
-        label: "Data coverage",
-        value: "Global mesh",
-        note: "Climate and Atmosphere",
-      },
-      {
-        label: "ATMOS staked",
-        value: tokenSnapshot
-          ? `${formatTokenAmount(tokenSnapshot.totalStaked, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-          : "Loading...",
-        note: tokenSnapshot
-          ? `${formatPercentFromBps(tokenSnapshot.apyBps)} APY`
-          : "Stake pool",
-      },
-    ],
-    [datasetCount, tokenSnapshot],
-  );
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
   const activeDatasets = activeTab === "explore" ? latestDatasets : myDatasets;
@@ -228,60 +195,6 @@ function App() {
       return true;
     });
   }, [activeDatasets, filters]);
-  const overviewHighlights = useMemo(() => {
-    const verifiedCount = filteredDatasets.filter(
-      (dataset) => dataset.verified || dataset.status === "verified",
-    ).length;
-    const publicCount = filteredDatasets.filter(
-      (dataset) => dataset.isPublic,
-    ).length;
-    const topDataType = filteredDatasets.reduce(
-      (summary, dataset) => {
-        const key = dataset.dataType || "unknown";
-        const nextCount = (summary.counts.get(key) ?? 0) + 1;
-        summary.counts.set(key, nextCount);
-        if (nextCount > summary.topCount) {
-          summary.topLabel = key;
-          summary.topCount = nextCount;
-        }
-        return summary;
-      },
-      {
-        counts: new Map<string, number>(),
-        topLabel: "No dominant type",
-        topCount: 0,
-      },
-    );
-
-    return [
-      {
-        label: "Visible now",
-        value: filteredDatasets.length.toLocaleString(),
-        note: `${activeTab === "explore" ? "Registry" : "Owner"} view`,
-      },
-      {
-        label: "Verified share",
-        value: filteredDatasets.length
-          ? `${Math.round((verifiedCount / filteredDatasets.length) * 100)}%`
-          : "0%",
-        note: `${verifiedCount.toLocaleString()} datasets verified`,
-      },
-      {
-        label: "Public access",
-        value: filteredDatasets.length
-          ? `${Math.round((publicCount / filteredDatasets.length) * 100)}%`
-          : "0%",
-        note: `${publicCount.toLocaleString()} publicly visible`,
-      },
-      {
-        label: "Dominant type",
-        value: topDataType.topLabel,
-        note: topDataType.topCount
-          ? `${topDataType.topCount.toLocaleString()} datasets in focus`
-          : "Load data to populate",
-      },
-    ];
-  }, [activeTab, filteredDatasets]);
   const interfaceSignals = useMemo(
     () => [
       {
@@ -298,13 +211,6 @@ function App() {
       },
     ],
     [activeDatasets.length, activeTab, filteredDatasets.length, watchlistIds],
-  );
-  const recentActivity = useMemo(
-    () =>
-      [...filteredDatasets]
-        .sort((left, right) => right.createdAt - left.createdAt)
-        .slice(0, 3),
-    [filteredDatasets],
   );
   const stakeAmountValue = useMemo(
     () => parseMicroTokenInput(stakeAmount),
@@ -1629,7 +1535,8 @@ function App() {
     }
     setStakeStatus("Opening wallet for staking approval...");
     try {
-      const assetContractId = `${CONTRACT_ADDRESS}.${TOKEN_CONTRACT_NAME}` as `${string}.${string}`;
+      const assetContractId =
+        `${CONTRACT_ADDRESS}.${TOKEN_CONTRACT_NAME}` as `${string}.${string}`;
       const shouldGuardSpend = functionName === "stake";
       const postConditions = shouldGuardSpend
         ? [
@@ -1752,6 +1659,13 @@ function App() {
     selectedGeoDatasetId,
     showDatasetDetail,
   ]);
+
+  useEffect(() => {
+    if (featureTab !== "datasets") {
+      setDatasetView("list");
+    }
+  }, [featureTab]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -2025,13 +1939,6 @@ function App() {
           message: walletMessage,
         }
       : null,
-    statusMessage
-      ? {
-          id: "status",
-          tone: "info" as const,
-          message: statusMessage,
-        }
-      : null,
   ].filter(
     (
       item,
@@ -2052,7 +1959,7 @@ function App() {
           if (typeof window === "undefined") return;
           if (action === "home") {
             setFeatureTab("datasets");
-            setDatasetView("home");
+            setDatasetView("list");
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
           }
@@ -2066,30 +1973,24 @@ function App() {
             }, 0);
             return;
           }
-          if (action === "datasets") {
-            setFeatureTab("datasets");
-            setDatasetView("list");
-            window.setTimeout(() => {
-              document
-                .getElementById("dataset-list")
-                ?.scrollIntoView({ behavior: "smooth" });
-            }, 0);
-            return;
-          }
           if (action === "staking") {
             setFeatureTab("staking");
+            setDatasetView("list");
             return;
           }
           if (action === "alerts") {
             setFeatureTab("alerts");
+            setDatasetView("list");
             return;
           }
           if (action === "audit") {
             setFeatureTab("audit");
+            setDatasetView("list");
             return;
           }
           if (action === "versions") {
             setFeatureTab("versions");
+            setDatasetView("list");
           }
         }}
         loading={loading}
@@ -2377,325 +2278,266 @@ function App() {
       <main className="container">
         {featureTab === "datasets" && (
           <>
-            {datasetView === "home" && (
-              <>
-                <section className="hero" id="home">
-          <div className="hero__content">
-            <p className="eyebrow">Atmospheric data registry</p>
-            <h1>Trusted climate signals, anchored on Stacks.</h1>
-            <p className="hero__subtitle">
-              Browse datasets, verify provenance, and register new records
-              directly from the Atmos mainnet contract.
-            </p>
-            <div className="hero__actions">
-              <button
-                className="primary-btn"
-                onClick={loadLatest}
-                disabled={loading}
-              >
-                {loading ? "Fetching data..." : "Refresh on-chain data"}
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={openRandomFilteredDataset}
-                disabled={sortedDatasets.length === 0}
-              >
-                Random dataset
-              </button>
-            </div>
-            <div className="hero-signals" aria-label="Interface signals">
-              {interfaceSignals.map((item) => (
-                <div key={item.label} className="hero-signal">
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
+            <section className="hero" id="home">
+              <div className="hero__content">
+                <p className="eyebrow">Atmospheric data registry</p>
+                <h1>Trusted climate signals, anchored on Stacks.</h1>
+                <p className="hero__subtitle">
+                  Browse datasets, verify provenance, and register new records
+                  directly from the Atmos mainnet contract.
+                </p>
+                <div className="hero__actions">
+                  <button
+                    className="primary-btn"
+                    onClick={loadLatest}
+                    disabled={loading}
+                  >
+                    {loading ? "Fetching data..." : "Refresh on-chain data"}
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={openRandomFilteredDataset}
+                    disabled={sortedDatasets.length === 0}
+                  >
+                    Random dataset
+                  </button>
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="hero__panel">
-            <div className="panel-title">Lookup a dataset</div>
-            <p className="panel-subtitle">
-              Fetch a single dataset by id from the registry.
-            </p>
-            <div className="field-row lookup-row">
-              <input
-                value={queryId}
-                onChange={(event) => setQueryId(readValue(event))}
-                placeholder="Dataset id (e.g. 12)"
-              />
-              <button
-                className="primary-btn compact"
-                onClick={handleLookup}
-                disabled={queryLoading}
-              >
-                {queryLoading ? "Checking..." : "Lookup"}
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={() => {
-                  setQueryId("");
-                  setQueryResult(null);
-                }}
-                disabled={!queryId && !queryResult}
-              >
-                Clear
-              </button>
-            </div>
-            {queryResult && (
-              <div className="mini-card">
-                <div className="mini-title">{queryResult.name}</div>
-                <div className="mini-meta">
-                  <span>{queryResult.dataType}</span>
-                  <span>{queryResult.status}</span>
+                <div className="hero-signals" aria-label="Interface signals">
+                  {interfaceSignals.map((item) => (
+                    <div key={item.label} className="hero-signal">
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                  ))}
                 </div>
-                <div className="mini-body">{queryResult.description}</div>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={() => openDatasetDetail(queryResult.id)}
-                >
-                  Open detail
-                </button>
               </div>
-            )}
-          </div>
-        </section>
-        <section className="activity-strip" aria-label="Recent activity">
-          <div className="activity-strip__head">
-            <div>
-              <h3>Recent activity</h3>
-              <p>Newest visible datasets in your current view.</p>
-            </div>
-          </div>
-          <div className="activity-strip__grid">
-            {recentActivity.length === 0 && (
-              <div className="activity-card activity-card--empty">
-                Load data to populate recent registry activity.
-              </div>
-            )}
-            {recentActivity.map((dataset) => (
-              <article key={`activity-${dataset.id}`} className="activity-card">
-                <div className="activity-card__meta">
-                  <span>#{dataset.id}</span>
-                  <span>{dataset.status}</span>
+              <div className="hero__panel">
+                <div className="panel-title">Lookup a dataset</div>
+                <p className="panel-subtitle">
+                  Fetch a single dataset by id from the registry.
+                </p>
+                <div className="field-row lookup-row">
+                  <input
+                    value={queryId}
+                    onChange={(event) => setQueryId(readValue(event))}
+                    placeholder="Dataset id (e.g. 12)"
+                  />
+                  <button
+                    className="primary-btn compact"
+                    onClick={handleLookup}
+                    disabled={queryLoading}
+                  >
+                    {queryLoading ? "Checking..." : "Lookup"}
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => {
+                      setQueryId("");
+                      setQueryResult(null);
+                    }}
+                    disabled={!queryId && !queryResult}
+                  >
+                    Clear
+                  </button>
                 </div>
-                <strong>{dataset.name}</strong>
-                <p>{dataset.dataType}</p>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={() => openDatasetDetail(dataset.id)}
-                >
-                  Open
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {/* Stats Grid */}
-        <section className="stats-grid">
-          {stats.map((stat) => (
-            <div key={stat.label} className="stat-card">
-              <div className="stat-label">{stat.label}</div>
-              <div className="stat-value">{stat.value}</div>
-              <div className="stat-note">{stat.note}</div>
-            </div>
-          ))}
-        </section>
-        <section
-          className="overview-strip"
-          aria-label="Current dataset overview"
-        >
-          {overviewHighlights.map((item) => (
-            <article key={item.label} className="overview-chip">
-              <span>{item.label}</span>
-              <strong>{item.value}</strong>
-              <small>{item.note}</small>
-            </article>
-          ))}
-        </section>
-              </>
-            )}
+                {queryResult && (
+                  <div className="mini-card">
+                    <div className="mini-title">{queryResult.name}</div>
+                    <div className="mini-meta">
+                      <span>{queryResult.dataType}</span>
+                      <span>{queryResult.status}</span>
+                    </div>
+                    <div className="mini-body">{queryResult.description}</div>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => openDatasetDetail(queryResult.id)}
+                    >
+                      Open detail
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
           </>
         )}
 
         {featureTab === "staking" && (
           <section className="section stake-section" id="staking">
-          <div className="section-header">
-            <div>
-              <h2>ATMOS staking and trust layer</h2>
-              <p>
-                Monitor token economics and manage wallet staking directly from
-                the registry.
-              </p>
+            <div className="section-header">
+              <div>
+                <h2>ATMOS staking and trust layer</h2>
+                <p>
+                  Monitor token economics and manage wallet staking directly
+                  from the registry.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="stake-grid">
-            <article className="stake-card stake-card--overview">
-              <div className="stake-card__title">Protocol economics</div>
-              <div className="stake-metrics">
-                <div>
-                  <span>Token</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? `${tokenSnapshot.name} (${tokenSnapshot.symbol})`
-                      : "Loading..."}
-                  </strong>
-                </div>
-                <div>
-                  <span>Total supply</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? `${formatTokenAmount(tokenSnapshot.totalSupply, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                      : "Loading..."}
-                  </strong>
-                </div>
-                <div>
-                  <span>Total staked</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? `${formatTokenAmount(tokenSnapshot.totalStaked, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                      : "Loading..."}
-                  </strong>
-                </div>
-                <div>
-                  <span>Staking APY</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? formatPercentFromBps(tokenSnapshot.apyBps)
-                      : "Loading..."}
-                  </strong>
-                </div>
-              </div>
-            </article>
-            <article className="stake-card">
-              <div className="stake-card__title">Wallet position</div>
-              <p className="stake-card__subtitle">
-                {walletAddress
-                  ? "Use ATMOS to signal stewardship and earn rewards."
-                  : "Connect a wallet to stake, unstake, and claim rewards."}
-              </p>
-              <div className="stake-metrics">
-                <div>
-                  <span>Wallet balance</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? `${formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                      : "Loading..."}
-                  </strong>
-                </div>
-                <div>
-                  <span>Currently staked</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? `${formatTokenAmount(myStakeInfo.amount, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                      : "Loading..."}
-                  </strong>
-                </div>
-                <div>
-                  <span>Pending reward</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? `${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                      : "Loading..."}
-                  </strong>
-                </div>
-                <div>
-                  <span>Total claimed</span>
-                  <strong>
-                    {tokenSnapshot
-                      ? `${formatTokenAmount(myStakeInfo.totalClaimed, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                      : "Loading..."}
-                  </strong>
-                </div>
-              </div>
-              <div className="stake-actions-grid">
-                <label className="stake-field">
-                  <span>Stake ATMOS</span>
-                  <div className="stake-inline">
-                    <input
-                      value={stakeAmount}
-                      onChange={(event) => setStakeAmount(readValue(event))}
-                      placeholder="10"
-                    />
-                    <button
-                      className="primary-btn compact"
-                      type="button"
-                      onClick={() => handleStakeAction("stake", stakeAmount)}
-                      disabled={
-                        !walletAddress || tokenLoading || !stakeAmountValue
-                      }
-                    >
-                      Stake
-                    </button>
+            <div className="stake-grid">
+              <article className="stake-card stake-card--overview">
+                <div className="stake-card__title">Protocol economics</div>
+                <div className="stake-metrics">
+                  <div>
+                    <span>Token</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${tokenSnapshot.name} (${tokenSnapshot.symbol})`
+                        : "Loading..."}
+                    </strong>
                   </div>
-                </label>
-                <label className="stake-field">
-                  <span>Unstake ATMOS</span>
-                  <div className="stake-inline">
-                    <input
-                      value={unstakeAmount}
-                      onChange={(event) => setUnstakeAmount(readValue(event))}
-                      placeholder="10"
-                    />
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={() =>
-                        handleStakeAction("unstake", unstakeAmount)
-                      }
-                      disabled={
-                        !walletAddress || tokenLoading || !unstakeAmountValue
-                      }
-                    >
-                      Unstake
-                    </button>
+                  <div>
+                    <span>Total supply</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${formatTokenAmount(tokenSnapshot.totalSupply, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                        : "Loading..."}
+                    </strong>
                   </div>
-                </label>
-              </div>
-              <div className="stake-inline-note">
-                <span>
-                  {stakeAmountValue
-                    ? "Stake amount looks valid."
-                    : "Enter a positive ATMOS amount to enable staking."}
-                </span>
-                <span>
-                  {unstakeAmountValue
-                    ? "Unstake amount looks valid."
-                    : "Enter a positive ATMOS amount to enable unstaking."}
-                </span>
-              </div>
-              <div className="stake-footer">
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={handleClaimRewards}
-                  disabled={
-                    !walletAddress ||
-                    tokenLoading ||
-                    tokenSnapshot?.pendingReward === 0
-                  }
-                >
-                  Claim rewards
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={() =>
-                    loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS)
-                  }
-                  disabled={tokenLoading}
-                >
-                  {tokenLoading ? "Refreshing..." : "Refresh staking"}
-                </button>
-              </div>
-              {stakeStatus && <div className="form-note">{stakeStatus}</div>}
-            </article>
-          </div>
-        </section>
+                  <div>
+                    <span>Total staked</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${formatTokenAmount(tokenSnapshot.totalStaked, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                        : "Loading..."}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Staking APY</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? formatPercentFromBps(tokenSnapshot.apyBps)
+                        : "Loading..."}
+                    </strong>
+                  </div>
+                </div>
+              </article>
+              <article className="stake-card">
+                <div className="stake-card__title">Wallet position</div>
+                <p className="stake-card__subtitle">
+                  {walletAddress
+                    ? "Use ATMOS to signal stewardship and earn rewards."
+                    : "Connect a wallet to stake, unstake, and claim rewards."}
+                </p>
+                <div className="stake-metrics">
+                  <div>
+                    <span>Wallet balance</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                        : "Loading..."}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Currently staked</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${formatTokenAmount(myStakeInfo.amount, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                        : "Loading..."}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Pending reward</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                        : "Loading..."}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Total claimed</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${formatTokenAmount(myStakeInfo.totalClaimed, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                        : "Loading..."}
+                    </strong>
+                  </div>
+                </div>
+                <div className="stake-actions-grid">
+                  <label className="stake-field">
+                    <span>Stake ATMOS</span>
+                    <div className="stake-inline">
+                      <input
+                        value={stakeAmount}
+                        onChange={(event) => setStakeAmount(readValue(event))}
+                        placeholder="10"
+                      />
+                      <button
+                        className="primary-btn compact"
+                        type="button"
+                        onClick={() => handleStakeAction("stake", stakeAmount)}
+                        disabled={
+                          !walletAddress || tokenLoading || !stakeAmountValue
+                        }
+                      >
+                        Stake
+                      </button>
+                    </div>
+                  </label>
+                  <label className="stake-field">
+                    <span>Unstake ATMOS</span>
+                    <div className="stake-inline">
+                      <input
+                        value={unstakeAmount}
+                        onChange={(event) => setUnstakeAmount(readValue(event))}
+                        placeholder="10"
+                      />
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() =>
+                          handleStakeAction("unstake", unstakeAmount)
+                        }
+                        disabled={
+                          !walletAddress || tokenLoading || !unstakeAmountValue
+                        }
+                      >
+                        Unstake
+                      </button>
+                    </div>
+                  </label>
+                </div>
+                <div className="stake-inline-note">
+                  <span>
+                    {stakeAmountValue
+                      ? "Stake amount looks valid."
+                      : "Enter a positive ATMOS amount to enable staking."}
+                  </span>
+                  <span>
+                    {unstakeAmountValue
+                      ? "Unstake amount looks valid."
+                      : "Enter a positive ATMOS amount to enable unstaking."}
+                  </span>
+                </div>
+                <div className="stake-footer">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={handleClaimRewards}
+                    disabled={
+                      !walletAddress ||
+                      tokenLoading ||
+                      tokenSnapshot?.pendingReward === 0
+                    }
+                  >
+                    Claim rewards
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS)
+                    }
+                    disabled={tokenLoading}
+                  >
+                    {tokenLoading ? "Refreshing..." : "Refresh staking"}
+                  </button>
+                </div>
+                {stakeStatus && <div className="form-note">{stakeStatus}</div>}
+              </article>
+            </div>
+          </section>
         )}
 
         {featureTab === "alerts" && (
@@ -2835,293 +2677,308 @@ function App() {
 
         {featureTab === "audit" && (
           <section className="section lineage-section" id="lineage-audit">
-          <div className="section-header">
-            <div>
-              <h2>Verifiable lineage and audit trail</h2>
-              <p>
-                Trace dataset custody, validation, and integrity proofs from
-                registry state.
-              </p>
-            </div>
-            <div className="lineage-actions">
-              {lineageOptions.length > 0 && (
-                <label className="lineage-picker">
-                  <span>Audit dataset</span>
-                  <select
-                    value={lineageSelectionId}
-                    onChange={(event) =>
-                      setLineageSelectionId(event.currentTarget.value)
-                    }
-                  >
-                    {lineageOptions.map((dataset) => (
-                      <option key={`lineage-${dataset.id}`} value={dataset.id}>
-                        #{dataset.id} {dataset.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {lineageDataset && (
-                <button
-                  className="ghost-btn"
-                  onClick={handleExportAuditTrail}
-                  type="button"
-                >
-                  Export audit trail
-                </button>
-              )}
-            </div>
-          </div>
-          {!lineageDataset ? (
-            <div className="dataset-card">
-              <div className="dataset-title">No dataset selected for audit</div>
-              <p className="dataset-description">
-                Use Lookup or load datasets to generate a full lineage timeline.
-              </p>
-            </div>
-          ) : (
-            <div className="lineage-grid">
-              <article className="lineage-proof">
-                <span className="proof-label">Proof badge</span>
-                <h3>{lineageDataset.name}</h3>
-                <p className="lineage-proof__meta">
-                  Dataset #{lineageDataset.id} | {lineageDataset.status}
+            <div className="section-header">
+              <div>
+                <h2>Verifiable lineage and audit trail</h2>
+                <p>
+                  Trace dataset custody, validation, and integrity proofs from
+                  registry state.
                 </p>
-                <div className="proof-fingerprint">{lineageFingerprint}</div>
-                <p className="lineage-proof__note">
-                  Fingerprint is derived from on-chain identity fields for quick
-                  human verification.
-                </p>
-              </article>
-              <article className="lineage-timeline">
-                {lineageEvents.map((event) => (
-                  <div
-                    className="lineage-event"
-                    key={`${event.title}-${event.when}-${event.actor}`}
+              </div>
+              <div className="lineage-actions">
+                {lineageOptions.length > 0 && (
+                  <label className="lineage-picker">
+                    <span>Audit dataset</span>
+                    <select
+                      value={lineageSelectionId}
+                      onChange={(event) =>
+                        setLineageSelectionId(event.currentTarget.value)
+                      }
+                    >
+                      {lineageOptions.map((dataset) => (
+                        <option
+                          key={`lineage-${dataset.id}`}
+                          value={dataset.id}
+                        >
+                          #{dataset.id} {dataset.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {lineageDataset && (
+                  <button
+                    className="ghost-btn"
+                    onClick={handleExportAuditTrail}
+                    type="button"
                   >
-                    <div className="lineage-event__dot" />
-                    <div className="lineage-event__content">
-                      <div className="lineage-event__title">{event.title}</div>
-                      <div className="lineage-event__meta">
-                        {event.when} | {event.actor}
+                    Export audit trail
+                  </button>
+                )}
+              </div>
+            </div>
+            {!lineageDataset ? (
+              <div className="dataset-card">
+                <div className="dataset-title">
+                  No dataset selected for audit
+                </div>
+                <p className="dataset-description">
+                  Use Lookup or load datasets to generate a full lineage
+                  timeline.
+                </p>
+              </div>
+            ) : (
+              <div className="lineage-grid">
+                <article className="lineage-proof">
+                  <span className="proof-label">Proof badge</span>
+                  <h3>{lineageDataset.name}</h3>
+                  <p className="lineage-proof__meta">
+                    Dataset #{lineageDataset.id} | {lineageDataset.status}
+                  </p>
+                  <div className="proof-fingerprint">{lineageFingerprint}</div>
+                  <p className="lineage-proof__note">
+                    Fingerprint is derived from on-chain identity fields for
+                    quick human verification.
+                  </p>
+                </article>
+                <article className="lineage-timeline">
+                  {lineageEvents.map((event) => (
+                    <div
+                      className="lineage-event"
+                      key={`${event.title}-${event.when}-${event.actor}`}
+                    >
+                      <div className="lineage-event__dot" />
+                      <div className="lineage-event__content">
+                        <div className="lineage-event__title">
+                          {event.title}
+                        </div>
+                        <div className="lineage-event__meta">
+                          {event.when} | {event.actor}
+                        </div>
+                        <p>{event.detail}</p>
                       </div>
-                      <p>{event.detail}</p>
                     </div>
-                  </div>
-                ))}
-              </article>
-            </div>
-          )}
-        </section>
+                  ))}
+                </article>
+              </div>
+            )}
+          </section>
         )}
 
         {featureTab === "versions" && (
           <section className="section version-section" id="version-workflow">
-          <div className="section-header">
-            <div>
-              <h2>Dataset versioning and approval workflow</h2>
-              <p>
-                Create new dataset revisions, submit for review, and track
-                approval outcomes with per-version diffs.
-              </p>
-            </div>
-          </div>
-          {!lineageDataset ? (
-            <div className="dataset-card">
-              <div className="dataset-title">
-                No dataset selected for versioning
-              </div>
-              <p className="dataset-description">
-                Select a dataset from audit controls to start a revision
-                workflow.
-              </p>
-            </div>
-          ) : (
-            <div className="version-grid">
-              <article className="version-card">
-                <div className="version-card__title">Create draft revision</div>
-                <p className="version-card__subtitle">
-                  Base dataset #{lineageDataset.id} ({lineageDataset.name})
+            <div className="section-header">
+              <div>
+                <h2>Dataset versioning and approval workflow</h2>
+                <p>
+                  Create new dataset revisions, submit for review, and track
+                  approval outcomes with per-version diffs.
                 </p>
-                <div className="field-grid">
-                  <textarea
-                    rows={4}
-                    value={versionDraft.description}
-                    onChange={(event) =>
-                      setVersionDraft((prev) => ({
-                        ...prev,
-                        description: readValue(event),
-                      }))
-                    }
-                    placeholder="Updated description for this revision"
-                  />
-                  <input
-                    value={versionDraft.ipfsHash}
-                    onChange={(event) =>
-                      setVersionDraft((prev) => ({
-                        ...prev,
-                        ipfsHash: readValue(event),
-                      }))
-                    }
-                    placeholder="Updated IPFS hash"
-                  />
-                  <label className="checkbox-row">
-                    <input
-                      type="checkbox"
-                      checked={versionDraft.isPublic}
+              </div>
+            </div>
+            {!lineageDataset ? (
+              <div className="dataset-card">
+                <div className="dataset-title">
+                  No dataset selected for versioning
+                </div>
+                <p className="dataset-description">
+                  Select a dataset from audit controls to start a revision
+                  workflow.
+                </p>
+              </div>
+            ) : (
+              <div className="version-grid">
+                <article className="version-card">
+                  <div className="version-card__title">
+                    Create draft revision
+                  </div>
+                  <p className="version-card__subtitle">
+                    Base dataset #{lineageDataset.id} ({lineageDataset.name})
+                  </p>
+                  <div className="field-grid">
+                    <textarea
+                      rows={4}
+                      value={versionDraft.description}
                       onChange={(event) =>
                         setVersionDraft((prev) => ({
                           ...prev,
-                          isPublic: readChecked(event),
+                          description: readValue(event),
                         }))
                       }
+                      placeholder="Updated description for this revision"
                     />
-                    <span>Keep revision public</span>
-                  </label>
-                </div>
-                <div className="version-actions">
-                  <button
-                    className="primary-btn compact"
-                    type="button"
-                    onClick={handleCreateVersionDraft}
-                  >
-                    Create draft version
-                  </button>
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() =>
-                      setVersionDraft({
-                        description: lineageDataset.description,
-                        ipfsHash: lineageDataset.ipfsHash,
-                        isPublic: lineageDataset.isPublic,
-                      })
-                    }
-                  >
-                    Reset draft
-                  </button>
-                </div>
-                {versionMessage && (
-                  <div className="form-note">{versionMessage}</div>
-                )}
-              </article>
-
-              <article className="version-card">
-                <div className="version-card__title">Version timeline</div>
-                <div className="version-list">
-                  {versionTimeline.map((record) => (
-                    <button
-                      key={record.id}
-                      className={`version-item ${
-                        selectedVersion?.id === record.id ? "active" : ""
-                      }`}
-                      type="button"
-                      onClick={() => setSelectedVersionId(record.id)}
-                    >
-                      <div>
-                        <strong>v{record.version}</strong>{" "}
-                        <span className="version-source">{record.source}</span>
-                      </div>
-                      <span
-                        className={`status-pill ${getVersionStatusClass(record.status)}`}
-                      >
-                        {record.status}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                {selectedVersion && selectedVersion.source === "local" && (
-                  <div className="version-actions">
-                    {selectedVersion.status === "draft" && (
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={() =>
-                          handleVersionTransition(selectedVersion.id, "pending")
+                    <input
+                      value={versionDraft.ipfsHash}
+                      onChange={(event) =>
+                        setVersionDraft((prev) => ({
+                          ...prev,
+                          ipfsHash: readValue(event),
+                        }))
+                      }
+                      placeholder="Updated IPFS hash"
+                    />
+                    <label className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={versionDraft.isPublic}
+                        onChange={(event) =>
+                          setVersionDraft((prev) => ({
+                            ...prev,
+                            isPublic: readChecked(event),
+                          }))
                         }
-                      >
-                        Submit for review
-                      </button>
-                    )}
-                    {selectedVersion.status === "pending" && (
-                      <>
-                        <button
-                          className="ghost-btn"
-                          type="button"
-                          onClick={() =>
-                            handleVersionTransition(
-                              selectedVersion.id,
-                              "approved",
-                            )
-                          }
-                        >
-                          Approve
-                        </button>
-                        <button
-                          className="ghost-btn"
-                          type="button"
-                          onClick={() =>
-                            handleVersionTransition(
-                              selectedVersion.id,
-                              "rejected",
-                            )
-                          }
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
+                      />
+                      <span>Keep revision public</span>
+                    </label>
                   </div>
-                )}
-              </article>
+                  <div className="version-actions">
+                    <button
+                      className="primary-btn compact"
+                      type="button"
+                      onClick={handleCreateVersionDraft}
+                    >
+                      Create draft version
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() =>
+                        setVersionDraft({
+                          description: lineageDataset.description,
+                          ipfsHash: lineageDataset.ipfsHash,
+                          isPublic: lineageDataset.isPublic,
+                        })
+                      }
+                    >
+                      Reset draft
+                    </button>
+                  </div>
+                  {versionMessage && (
+                    <div className="form-note">{versionMessage}</div>
+                  )}
+                </article>
 
-              <article className="version-card version-card--full">
-                <div className="version-card__title">Version diff view</div>
-                {!selectedVersion ? (
-                  <p className="dataset-description">No version selected.</p>
-                ) : (
-                  <div className="version-diff">
-                    <div className="version-summary">
-                      <span>Selected: v{selectedVersion.version}</span>
-                      <span>
-                        Created: {formatChainValue(selectedVersion.createdAt)}
-                      </span>
-                      {selectedVersion.reviewer && (
-                        <span>Reviewer: {selectedVersion.reviewer}</span>
+                <article className="version-card">
+                  <div className="version-card__title">Version timeline</div>
+                  <div className="version-list">
+                    {versionTimeline.map((record) => (
+                      <button
+                        key={record.id}
+                        className={`version-item ${
+                          selectedVersion?.id === record.id ? "active" : ""
+                        }`}
+                        type="button"
+                        onClick={() => setSelectedVersionId(record.id)}
+                      >
+                        <div>
+                          <strong>v{record.version}</strong>{" "}
+                          <span className="version-source">
+                            {record.source}
+                          </span>
+                        </div>
+                        <span
+                          className={`status-pill ${getVersionStatusClass(record.status)}`}
+                        >
+                          {record.status}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  {selectedVersion && selectedVersion.source === "local" && (
+                    <div className="version-actions">
+                      {selectedVersion.status === "draft" && (
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() =>
+                            handleVersionTransition(
+                              selectedVersion.id,
+                              "pending",
+                            )
+                          }
+                        >
+                          Submit for review
+                        </button>
+                      )}
+                      {selectedVersion.status === "pending" && (
+                        <>
+                          <button
+                            className="ghost-btn"
+                            type="button"
+                            onClick={() =>
+                              handleVersionTransition(
+                                selectedVersion.id,
+                                "approved",
+                              )
+                            }
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="ghost-btn"
+                            type="button"
+                            onClick={() =>
+                              handleVersionTransition(
+                                selectedVersion.id,
+                                "rejected",
+                              )
+                            }
+                          >
+                            Reject
+                          </button>
+                        </>
                       )}
                     </div>
-                    {!previousVersion && (
-                      <p className="dataset-description">
-                        v{selectedVersion.version} is the initial baseline
-                        version.
-                      </p>
-                    )}
-                    {previousVersion && versionDiffs.length === 0 && (
-                      <p className="dataset-description">
-                        No field-level differences from v
-                        {previousVersion.version}.
-                      </p>
-                    )}
-                    {previousVersion && versionDiffs.length > 0 && (
-                      <div className="diff-table">
-                        {versionDiffs.map((diff) => (
-                          <div
-                            className="diff-row"
-                            key={`${selectedVersion.id}-${diff.field}`}
-                          >
-                            <div>{diff.field}</div>
-                            <div>{diff.from}</div>
-                            <div>{diff.to}</div>
-                          </div>
-                        ))}
+                  )}
+                </article>
+
+                <article className="version-card version-card--full">
+                  <div className="version-card__title">Version diff view</div>
+                  {!selectedVersion ? (
+                    <p className="dataset-description">No version selected.</p>
+                  ) : (
+                    <div className="version-diff">
+                      <div className="version-summary">
+                        <span>Selected: v{selectedVersion.version}</span>
+                        <span>
+                          Created: {formatChainValue(selectedVersion.createdAt)}
+                        </span>
+                        {selectedVersion.reviewer && (
+                          <span>Reviewer: {selectedVersion.reviewer}</span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
-              </article>
-            </div>
-          )}
-        </section>
+                      {!previousVersion && (
+                        <p className="dataset-description">
+                          v{selectedVersion.version} is the initial baseline
+                          version.
+                        </p>
+                      )}
+                      {previousVersion && versionDiffs.length === 0 && (
+                        <p className="dataset-description">
+                          No field-level differences from v
+                          {previousVersion.version}.
+                        </p>
+                      )}
+                      {previousVersion && versionDiffs.length > 0 && (
+                        <div className="diff-table">
+                          {versionDiffs.map((diff) => (
+                            <div
+                              className="diff-row"
+                              key={`${selectedVersion.id}-${diff.field}`}
+                            >
+                              <div>{diff.field}</div>
+                              <div>{diff.from}</div>
+                              <div>{diff.to}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </article>
+              </div>
+            )}
+          </section>
         )}
 
         {featureTab === "datasets" && (
@@ -3134,714 +2991,758 @@ function App() {
               </>
             )}
 
-        {datasetView === "add" && (
-          <section className="section" id="register-dataset">
-          <div className="section-header">
-            <div>
-              <h2>Register a dataset</h2>
-              <p>Submit a new dataset to the Atmos mainnet registry.</p>
-            </div>
-          </div>
-          <div className="form-grid">
-            <div className="form-card">
-              <div className="field-grid">
-                <input
-                  value={registerForm.name}
-                  onChange={updateRegisterField("name")}
-                  placeholder="Dataset name"
-                />
-                <input
-                  value={registerForm.dataType}
-                  onChange={updateRegisterField("dataType")}
-                  placeholder="Data type"
-                />
-                <textarea
-                  value={registerForm.description}
-                  onChange={updateRegisterField("description")}
-                  placeholder="Short description"
-                  rows={4}
-                />
-                <div className="field-row">
-                  <input
-                    value={registerForm.collectionDate}
-                    onChange={updateRegisterField("collectionDate")}
-                    placeholder="Collection date (unix or block height)"
-                  />
-                  <input
-                    value={registerForm.ipfsHash}
-                    onChange={updateRegisterField("ipfsHash")}
-                    placeholder="IPFS hash"
-                  />
-                </div>
-                <div className="field-row">
-                  <input
-                    value={registerForm.altitudeMin}
-                    onChange={updateRegisterField("altitudeMin")}
-                    placeholder="Altitude min (m)"
-                  />
-                  <input
-                    value={registerForm.altitudeMax}
-                    onChange={updateRegisterField("altitudeMax")}
-                    placeholder="Altitude max (m)"
-                  />
-                </div>
-                <div className="field-row">
-                  <input
-                    value={registerForm.latitude}
-                    onChange={updateRegisterField("latitude")}
-                    placeholder="Latitude (deg)"
-                  />
-                  <input
-                    value={registerForm.longitude}
-                    onChange={updateRegisterField("longitude")}
-                    placeholder="Longitude (deg)"
-                  />
-                </div>
-                <label className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={registerForm.isPublic}
-                    onChange={(event) =>
-                      setRegisterForm((prev) => ({
-                        ...prev,
-                        isPublic: readChecked(event),
-                      }))
-                    }
-                  />
-                  <span>Mark dataset as public</span>
-                </label>
-              </div>
-              <div className="form-actions">
-                <button className="primary-btn" onClick={handleRegisterSubmit}>
-                  Submit dataset
-                </button>
-                {txStatus && <div className="form-note">{txStatus}</div>}
-              </div>
-            </div>
-            <div className="form-card form-card--info">
-              <h3>Registry requirements</h3>
-              <ul>
-                <li>Latitude and longitude are stored in micro-degrees.</li>
-                <li>Altitude range must be positive and ordered.</li>
-                <li>Metadata can be frozen later by the dataset owner.</li>
-                <li>IPFS hash is optional but recommended.</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-        )}
-
-        {datasetView === "list" && (
-          <section className="section" id="dataset-list">
-          <div className="section-header">
-            <div>
-              <h2>
-                {activeTab === "explore"
-                  ? "Latest submissions"
-                  : "Your datasets"}
-              </h2>
-              <p>
-                {activeTab === "explore"
-                  ? "The most recent records pushed to Atmos on mainnet."
-                  : "Load datasets indexed to a specific Stacks address."}
-              </p>
-            </div>
-            {activeTab === "mine" && (
-              <div className="owner-form">
-                <input
-                  value={ownerInput}
-                  onChange={(event) => setOwnerInput(readValue(event))}
-                  placeholder="Paste your Stacks address"
-                />
-                <button
-                  className="primary-btn compact"
-                  onClick={handleOwnerSubmit}
-                  disabled={loading}
-                >
-                  Load
-                </button>
-                {walletAddress && (
-                  <button
-                    className="ghost-btn"
-                    onClick={() => {
-                      setOwnerInput(walletAddress);
-                      setOwnerAddress(walletAddress);
-                      loadOwnerDatasets(walletAddress);
-                    }}
-                  >
-                    Use wallet
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="section-tools">
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyFilterSummary}
-              >
-                Copy filter summary
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={exportFilteredDatasets}
-                disabled={sortedDatasets.length === 0}
-              >
-                Export visible JSON
-              </button>
-            </div>
-          </div>
-          <div className="saved-view-card">
-            <div className="saved-view-head">
-              <h3>Saved views</h3>
-              <p>
-                Save and restore your current filters, explorer state, compare
-                picks, and watchlist setup.
-              </p>
-            </div>
-            <div className="saved-view-create">
-              <input
-                value={savedViewName}
-                onChange={(event) => setSavedViewName(readValue(event))}
-                placeholder="View name (e.g. Verified Public Global)"
-              />
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={saveCurrentView}
-              >
-                Save view
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyShareLink}
-              >
-                Copy share link
-              </button>
-            </div>
-            <div className="saved-view-list">
-              {savedViews.length === 0 && (
-                <span className="saved-view-empty">No saved views yet.</span>
-              )}
-              {savedViews.map((view) => (
-                <div className="saved-view-item" key={view.id}>
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() => applySavedView(view)}
-                  >
-                    {view.name}
-                  </button>
-                  <span>{formatChainValue(view.createdAt)}</span>
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() => deleteSavedView(view.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="filter-card">
-            <div className="filter-grid">
-              <input
-                value={filters.search}
-                onChange={updateFilterField("search")}
-                placeholder="Search id, name, description, hash"
-              />
-              <select
-                value={filters.status}
-                onChange={updateFilterField("status")}
-              >
-                <option value="all">All status</option>
-                <option value="active">Active</option>
-                <option value="verified">Verified</option>
-                <option value="pending">Pending</option>
-                <option value="rejected">Rejected</option>
-                <option value="deprecated">Deprecated</option>
-              </select>
-              <select
-                value={filters.visibility}
-                onChange={updateFilterField("visibility")}
-              >
-                <option value="all">All visibility</option>
-                <option value="public">Public</option>
-                <option value="private">Private</option>
-              </select>
-              <select
-                value={filters.dataType}
-                onChange={updateFilterField("dataType")}
-              >
-                <option value="all">All data types</option>
-                {dataTypeOptions.map((option) => (
-                  <option key={`type-${option}`} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={filters.owner}
-                onChange={updateFilterField("owner")}
-                placeholder="Owner contains..."
-              />
-              <div className="filter-range">
-                <input
-                  value={filters.altitudeMin}
-                  onChange={updateFilterField("altitudeMin")}
-                  placeholder="Altitude min"
-                />
-                <input
-                  value={filters.altitudeMax}
-                  onChange={updateFilterField("altitudeMax")}
-                  placeholder="Altitude max"
-                />
-              </div>
-            </div>
-            <div className="filter-actions">
-              <span>
-                Showing {filteredDatasets.length} of {activeDatasets.length}
-              </span>
-              <div className="filter-sort">
-                <label htmlFor="dataset-sort">Sort by</label>
-                <select
-                  id="dataset-sort"
-                  value={sortMode}
-                  onChange={(event) =>
-                    setSortMode(event.currentTarget.value as SortMode)
-                  }
-                >
-                  <option value="quality-desc">
-                    Quality score (high to low)
-                  </option>
-                  <option value="recent-desc">Newest collection first</option>
-                  <option value="recent-asc">Oldest collection first</option>
-                  <option value="altitude-desc">Highest altitude first</option>
-                  <option value="status-priority">Status priority</option>
-                </select>
-              </div>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={() => setFilters(defaultFilters)}
-                disabled={!hasActiveFilters}
-              >
-                Reset filters
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={exportFilteredDatasets}
-                disabled={filteredDatasets.length === 0}
-              >
-                Export filtered JSON
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={openRandomFilteredDataset}
-                disabled={filteredDatasets.length === 0}
-              >
-                Surprise me
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyFilterSummary}
-              >
-                Copy summary
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyVisibleDatasetIds}
-                disabled={filteredDatasets.length === 0}
-              >
-                Copy visible IDs
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyVisibleOwners}
-                disabled={filteredDatasets.length === 0}
-              >
-                Copy owners
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyVisibleDatasetNames}
-                disabled={filteredDatasets.length === 0}
-              >
-                Copy names
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyVisibleStatuses}
-                disabled={filteredDatasets.length === 0}
-              >
-                Copy statuses
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={useVisibleAsWatchlist}
-                disabled={filteredDatasets.length === 0}
-              >
-                Watch visible
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={copyVisibleIpfsHashes}
-                disabled={filteredDatasets.length === 0}
-              >
-                Copy IPFS
-              </button>
-              <button
-                className="ghost-btn"
-                type="button"
-                onClick={auditTopVisibleDataset}
-                disabled={filteredDatasets.length === 0}
-              >
-                Audit top result
-              </button>
-            </div>
-          </div>
-          <div className="geo-card">
-            <div className="geo-header">
-              <div>
-                <h3>Geospatial explorer</h3>
-                <p>
-                  Plot datasets by coordinates and scrub collection time to
-                  inspect spatial coverage changes.
-                </p>
-              </div>
-              <div className="geo-summary">
-                <span>
-                  Visible points: {geoDatasets.length}/{filteredDatasets.length}
-                </span>
-                {geoTimeCutoff && (
-                  <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>
-                )}
-              </div>
-            </div>
-            <div className="geo-timeline">
-              <label htmlFor="geo-time-slider">Time window</label>
-              <input
-                id="geo-time-slider"
-                type="range"
-                min={0}
-                max={100}
-                value={geoTimePercent}
-                onChange={(event) =>
-                  setGeoTimePercent(Number.parseInt(readValue(event), 10) || 0)
-                }
-                disabled={!geoTimeBounds}
-              />
-              <span>{geoTimePercent}%</span>
-            </div>
-            <div className="geo-layout">
-              <div className="geo-map">
-                <div className="geo-map__grid" />
-                {geoDatasets.map((dataset) => {
-                  const left =
-                    ((dataset.longitude / 1_000_000 + 180) / 360) * 100;
-                  const top =
-                    (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
-                  return (
-                    <button
-                      key={`geo-${dataset.id}`}
-                      className={`geo-point ${
-                        selectedGeoDataset?.id === dataset.id ? "active" : ""
-                      }`}
-                      title={`#${dataset.id} ${dataset.name}`}
-                      type="button"
-                      style={{ left: `${left}%`, top: `${top}%` }}
-                      onClick={() => setGeoTarget(dataset.id)}
-                    />
-                  );
-                })}
-                {geoDatasets.length === 0 && (
-                  <div className="geo-empty">
-                    No points in the current time window.
+            {datasetView === "add" && (
+              <section className="section" id="register-dataset">
+                <div className="section-header">
+                  <div>
+                    <h2>Register a dataset</h2>
+                    <p>Submit a new dataset to the Atmos mainnet registry.</p>
                   </div>
-                )}
-              </div>
-              <aside className="geo-detail">
-                {!selectedGeoDataset ? (
-                  <p className="dataset-description">
-                    Select a point to inspect details.
-                  </p>
-                ) : (
-                  <>
-                    <div className="geo-detail__title">
-                      #{selectedGeoDataset.id} {selectedGeoDataset.name}
+                </div>
+                <div className="form-grid">
+                  <div className="form-card">
+                    <div className="field-grid">
+                      <input
+                        value={registerForm.name}
+                        onChange={updateRegisterField("name")}
+                        placeholder="Dataset name"
+                      />
+                      <input
+                        value={registerForm.dataType}
+                        onChange={updateRegisterField("dataType")}
+                        placeholder="Data type"
+                      />
+                      <textarea
+                        value={registerForm.description}
+                        onChange={updateRegisterField("description")}
+                        placeholder="Short description"
+                        rows={4}
+                      />
+                      <div className="field-row">
+                        <input
+                          value={registerForm.collectionDate}
+                          onChange={updateRegisterField("collectionDate")}
+                          placeholder="Collection date (unix or block height)"
+                        />
+                        <input
+                          value={registerForm.ipfsHash}
+                          onChange={updateRegisterField("ipfsHash")}
+                          placeholder="IPFS hash"
+                        />
+                      </div>
+                      <div className="field-row">
+                        <input
+                          value={registerForm.altitudeMin}
+                          onChange={updateRegisterField("altitudeMin")}
+                          placeholder="Altitude min (m)"
+                        />
+                        <input
+                          value={registerForm.altitudeMax}
+                          onChange={updateRegisterField("altitudeMax")}
+                          placeholder="Altitude max (m)"
+                        />
+                      </div>
+                      <div className="field-row">
+                        <input
+                          value={registerForm.latitude}
+                          onChange={updateRegisterField("latitude")}
+                          placeholder="Latitude (deg)"
+                        />
+                        <input
+                          value={registerForm.longitude}
+                          onChange={updateRegisterField("longitude")}
+                          placeholder="Longitude (deg)"
+                        />
+                      </div>
+                      <label className="checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={registerForm.isPublic}
+                          onChange={(event) =>
+                            setRegisterForm((prev) => ({
+                              ...prev,
+                              isPublic: readChecked(event),
+                            }))
+                          }
+                        />
+                        <span>Mark dataset as public</span>
+                      </label>
                     </div>
-                    <p className="dataset-description">
-                      {selectedGeoDataset.description}
-                    </p>
-                    <div className="geo-detail__meta">
-                      <span>
-                        Lat/Lng: {formatCoord(selectedGeoDataset.latitude)},{" "}
-                        {formatCoord(selectedGeoDataset.longitude)}
-                      </span>
-                      <span>
-                        Altitude: {selectedGeoDataset.altitudeMin}-
-                        {selectedGeoDataset.altitudeMax} m
-                      </span>
-                      <span>
-                        Collected:{" "}
-                        {formatChainValue(selectedGeoDataset.collectionDate)}
-                      </span>
-                    </div>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={() => setLineageTarget(selectedGeoDataset.id)}
-                    >
-                      Open in audit trail
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={() => openDatasetDetail(selectedGeoDataset.id)}
-                    >
-                      Open detail
-                    </button>
-                  </>
-                )}
-              </aside>
-            </div>
-          </div>
-          <div className="compare-card">
-            <div className="compare-header">
-              <div>
-                <h3>Comparative analysis panel</h3>
-                <p>
-                  Select up to 4 datasets for side-by-side metric comparison.
-                </p>
-              </div>
-              <div className="compare-actions">
-                <span>Selected: {compareDatasets.length}/4</span>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={compareTopVisibleDatasets}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Compare top 4
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={clearCompareSelection}
-                  disabled={compareDatasets.length === 0}
-                >
-                  Clear compare
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={exportComparison}
-                  disabled={compareDatasets.length === 0}
-                >
-                  Export JSON
-                </button>
-              </div>
-            </div>
-            <div className="compare-picks">
-              {filteredDatasets.slice(0, 12).map((dataset) => {
-                const selected = compareSelectionIds.includes(
-                  String(dataset.id),
-                );
-                return (
-                  <button
-                    key={`cmp-pick-${dataset.id}`}
-                    type="button"
-                    className={`compare-pick ${selected ? "active" : ""}`}
-                    onClick={() => toggleCompareDataset(dataset.id)}
-                  >
-                    #{dataset.id} {dataset.name}
-                  </button>
-                );
-              })}
-            </div>
-            {compareDatasets.length === 0 && (
-              <p className="dataset-description">
-                Choose datasets above to populate the comparison matrix.
-              </p>
-            )}
-            {compareDatasets.length > 0 && (
-              <div className="compare-grid">
-                <div className="compare-grid__header">Metric</div>
-                {compareDatasets.map((dataset) => (
-                  <div
-                    key={`cmp-header-${dataset.id}`}
-                    className="compare-grid__header"
-                  >
-                    #{dataset.id} {dataset.name}
-                    {compareMetrics.best?.id === dataset.id && (
-                      <span className="compare-best">Best quality</span>
-                    )}
-                  </div>
-                ))}
-                {compareMetrics.rows.map((row) => (
-                  <div key={`cmp-row-${row.key}`} className="compare-row">
-                    <div
-                      className={`compare-cell compare-cell--label ${
-                        row.changed ? "diff" : ""
-                      }`}
-                    >
-                      {row.label}
-                    </div>
-                    {row.values.map((value, index) => (
-                      <div
-                        key={`cmp-row-${row.key}-${compareDatasets[index].id}`}
-                        className={`compare-cell ${row.changed ? "diff" : ""}`}
+                    <div className="form-actions">
+                      <button
+                        className="primary-btn"
+                        onClick={handleRegisterSubmit}
                       >
-                        {value}
+                        Submit dataset
+                      </button>
+                      {txStatus && <div className="form-note">{txStatus}</div>}
+                    </div>
+                  </div>
+                  <div className="form-card form-card--info">
+                    <h3>Registry requirements</h3>
+                    <ul>
+                      <li>
+                        Latitude and longitude are stored in micro-degrees.
+                      </li>
+                      <li>Altitude range must be positive and ordered.</li>
+                      <li>
+                        Metadata can be frozen later by the dataset owner.
+                      </li>
+                      <li>IPFS hash is optional but recommended.</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {datasetView === "list" && (
+              <section className="section" id="dataset-list">
+                <div className="section-header">
+                  <div>
+                    <h2>
+                      {activeTab === "explore"
+                        ? "Latest submissions"
+                        : "Your datasets"}
+                    </h2>
+                    <p>
+                      {activeTab === "explore"
+                        ? "The most recent records pushed to Atmos on mainnet."
+                        : "Load datasets indexed to a specific Stacks address."}
+                    </p>
+                  </div>
+                  {activeTab === "mine" && (
+                    <div className="owner-form">
+                      <input
+                        value={ownerInput}
+                        onChange={(event) => setOwnerInput(readValue(event))}
+                        placeholder="Paste your Stacks address"
+                      />
+                      <button
+                        className="primary-btn compact"
+                        onClick={handleOwnerSubmit}
+                        disabled={loading}
+                      >
+                        Load
+                      </button>
+                      {walletAddress && (
+                        <button
+                          className="ghost-btn"
+                          onClick={() => {
+                            setOwnerInput(walletAddress);
+                            setOwnerAddress(walletAddress);
+                            loadOwnerDatasets(walletAddress);
+                          }}
+                        >
+                          Use wallet
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="section-tools">
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyFilterSummary}
+                    >
+                      Copy filter summary
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={exportFilteredDatasets}
+                      disabled={sortedDatasets.length === 0}
+                    >
+                      Export visible JSON
+                    </button>
+                  </div>
+                </div>
+                <div className="saved-view-card">
+                  <div className="saved-view-head">
+                    <h3>Saved views</h3>
+                    <p>
+                      Save and restore your current filters, explorer state,
+                      compare picks, and watchlist setup.
+                    </p>
+                  </div>
+                  <div className="saved-view-create">
+                    <input
+                      value={savedViewName}
+                      onChange={(event) => setSavedViewName(readValue(event))}
+                      placeholder="View name (e.g. Verified Public Global)"
+                    />
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={saveCurrentView}
+                    >
+                      Save view
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyShareLink}
+                    >
+                      Copy share link
+                    </button>
+                  </div>
+                  <div className="saved-view-list">
+                    {savedViews.length === 0 && (
+                      <span className="saved-view-empty">
+                        No saved views yet.
+                      </span>
+                    )}
+                    {savedViews.map((view) => (
+                      <div className="saved-view-item" key={view.id}>
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() => applySavedView(view)}
+                        >
+                          {view.name}
+                        </button>
+                        <span>{formatChainValue(view.createdAt)}</span>
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() => deleteSavedView(view.id)}
+                        >
+                          Delete
+                        </button>
                       </div>
                     ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="story-card">
-            <div className="story-head">
-              <div>
-                <h3>Data story mode</h3>
-                <p>
-                  Auto-generated narrative from your current filtered and ranked
-                  dataset view.
-                </p>
-              </div>
-              <div className="story-controls">
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={() => setStoryPlaying((prev) => !prev)}
-                  disabled={storyChapters.length <= 1}
-                >
-                  {storyPlaying ? "Pause" : "Play"}
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={() =>
-                    setStoryStepIndex((prev) =>
-                      prev <= 0
-                        ? Math.max(storyChapters.length - 1, 0)
-                        : prev - 1,
-                    )
-                  }
-                  disabled={storyChapters.length === 0}
-                >
-                  Prev
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={() =>
-                    setStoryStepIndex((prev) =>
-                      storyChapters.length === 0
-                        ? 0
-                        : (prev + 1) % storyChapters.length,
-                    )
-                  }
-                  disabled={storyChapters.length === 0}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-            {storyChapters.length === 0 && (
-              <p className="dataset-description">
-                Add or load datasets to generate a narrative.
-              </p>
-            )}
-            {activeStoryChapter && (
-              <article className="story-chapter">
-                <div className="story-progress">
-                  <span>
-                    Chapter {storyStepIndex + 1} / {storyChapters.length}
-                  </span>
-                  <div className="story-dots">
-                    {storyChapters.map((chapter, index) => (
-                      <button
-                        key={chapter.id}
-                        type="button"
-                        className={`story-dot ${index === storyStepIndex ? "active" : ""}`}
-                        onClick={() => setStoryStepIndex(index)}
+                </div>
+                <div className="filter-card">
+                  <div className="filter-grid">
+                    <input
+                      value={filters.search}
+                      onChange={updateFilterField("search")}
+                      placeholder="Search id, name, description, hash"
+                    />
+                    <select
+                      value={filters.status}
+                      onChange={updateFilterField("status")}
+                    >
+                      <option value="all">All status</option>
+                      <option value="active">Active</option>
+                      <option value="verified">Verified</option>
+                      <option value="pending">Pending</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="deprecated">Deprecated</option>
+                    </select>
+                    <select
+                      value={filters.visibility}
+                      onChange={updateFilterField("visibility")}
+                    >
+                      <option value="all">All visibility</option>
+                      <option value="public">Public</option>
+                      <option value="private">Private</option>
+                    </select>
+                    <select
+                      value={filters.dataType}
+                      onChange={updateFilterField("dataType")}
+                    >
+                      <option value="all">All data types</option>
+                      {dataTypeOptions.map((option) => (
+                        <option key={`type-${option}`} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={filters.owner}
+                      onChange={updateFilterField("owner")}
+                      placeholder="Owner contains..."
+                    />
+                    <div className="filter-range">
+                      <input
+                        value={filters.altitudeMin}
+                        onChange={updateFilterField("altitudeMin")}
+                        placeholder="Altitude min"
                       />
-                    ))}
+                      <input
+                        value={filters.altitudeMax}
+                        onChange={updateFilterField("altitudeMax")}
+                        placeholder="Altitude max"
+                      />
+                    </div>
+                  </div>
+                  <div className="filter-actions">
+                    <span>
+                      Showing {filteredDatasets.length} of{" "}
+                      {activeDatasets.length}
+                    </span>
+                    <div className="filter-sort">
+                      <label htmlFor="dataset-sort">Sort by</label>
+                      <select
+                        id="dataset-sort"
+                        value={sortMode}
+                        onChange={(event) =>
+                          setSortMode(event.currentTarget.value as SortMode)
+                        }
+                      >
+                        <option value="quality-desc">
+                          Quality score (high to low)
+                        </option>
+                        <option value="recent-desc">
+                          Newest collection first
+                        </option>
+                        <option value="recent-asc">
+                          Oldest collection first
+                        </option>
+                        <option value="altitude-desc">
+                          Highest altitude first
+                        </option>
+                        <option value="status-priority">Status priority</option>
+                      </select>
+                    </div>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => setFilters(defaultFilters)}
+                      disabled={!hasActiveFilters}
+                    >
+                      Reset filters
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={exportFilteredDatasets}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Export filtered JSON
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={openRandomFilteredDataset}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Surprise me
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyFilterSummary}
+                    >
+                      Copy summary
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyVisibleDatasetIds}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Copy visible IDs
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyVisibleOwners}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Copy owners
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyVisibleDatasetNames}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Copy names
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyVisibleStatuses}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Copy statuses
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={useVisibleAsWatchlist}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Watch visible
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={copyVisibleIpfsHashes}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Copy IPFS
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={auditTopVisibleDataset}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Audit top result
+                    </button>
                   </div>
                 </div>
-                <h4>{activeStoryChapter.title}</h4>
-                <p>{activeStoryChapter.body}</p>
-                {activeStoryChapter.datasetId && (
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() =>
-                      setLineageTarget(activeStoryChapter.datasetId!)
-                    }
-                  >
-                    Open dataset #{activeStoryChapter.datasetId} in audit
-                  </button>
-                )}
-              </article>
-            )}
-          </div>
+                <div className="geo-card">
+                  <div className="geo-header">
+                    <div>
+                      <h3>Geospatial explorer</h3>
+                      <p>
+                        Plot datasets by coordinates and scrub collection time
+                        to inspect spatial coverage changes.
+                      </p>
+                    </div>
+                    <div className="geo-summary">
+                      <span>
+                        Visible points: {geoDatasets.length}/
+                        {filteredDatasets.length}
+                      </span>
+                      {geoTimeCutoff && (
+                        <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="geo-timeline">
+                    <label htmlFor="geo-time-slider">Time window</label>
+                    <input
+                      id="geo-time-slider"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={geoTimePercent}
+                      onChange={(event) =>
+                        setGeoTimePercent(
+                          Number.parseInt(readValue(event), 10) || 0,
+                        )
+                      }
+                      disabled={!geoTimeBounds}
+                    />
+                    <span>{geoTimePercent}%</span>
+                  </div>
+                  <div className="geo-layout">
+                    <div className="geo-map">
+                      <div className="geo-map__grid" />
+                      {geoDatasets.map((dataset) => {
+                        const left =
+                          ((dataset.longitude / 1_000_000 + 180) / 360) * 100;
+                        const top =
+                          (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
+                        return (
+                          <button
+                            key={`geo-${dataset.id}`}
+                            className={`geo-point ${
+                              selectedGeoDataset?.id === dataset.id
+                                ? "active"
+                                : ""
+                            }`}
+                            title={`#${dataset.id} ${dataset.name}`}
+                            type="button"
+                            style={{ left: `${left}%`, top: `${top}%` }}
+                            onClick={() => setGeoTarget(dataset.id)}
+                          />
+                        );
+                      })}
+                      {geoDatasets.length === 0 && (
+                        <div className="geo-empty">
+                          No points in the current time window.
+                        </div>
+                      )}
+                    </div>
+                    <aside className="geo-detail">
+                      {!selectedGeoDataset ? (
+                        <p className="dataset-description">
+                          Select a point to inspect details.
+                        </p>
+                      ) : (
+                        <>
+                          <div className="geo-detail__title">
+                            #{selectedGeoDataset.id} {selectedGeoDataset.name}
+                          </div>
+                          <p className="dataset-description">
+                            {selectedGeoDataset.description}
+                          </p>
+                          <div className="geo-detail__meta">
+                            <span>
+                              Lat/Lng:{" "}
+                              {formatCoord(selectedGeoDataset.latitude)},{" "}
+                              {formatCoord(selectedGeoDataset.longitude)}
+                            </span>
+                            <span>
+                              Altitude: {selectedGeoDataset.altitudeMin}-
+                              {selectedGeoDataset.altitudeMax} m
+                            </span>
+                            <span>
+                              Collected:{" "}
+                              {formatChainValue(
+                                selectedGeoDataset.collectionDate,
+                              )}
+                            </span>
+                          </div>
+                          <button
+                            className="ghost-btn"
+                            type="button"
+                            onClick={() =>
+                              setLineageTarget(selectedGeoDataset.id)
+                            }
+                          >
+                            Open in audit trail
+                          </button>
+                          <button
+                            className="ghost-btn"
+                            type="button"
+                            onClick={() =>
+                              openDatasetDetail(selectedGeoDataset.id)
+                            }
+                          >
+                            Open detail
+                          </button>
+                        </>
+                      )}
+                    </aside>
+                  </div>
+                </div>
+                <div className="compare-card">
+                  <div className="compare-header">
+                    <div>
+                      <h3>Comparative analysis panel</h3>
+                      <p>
+                        Select up to 4 datasets for side-by-side metric
+                        comparison.
+                      </p>
+                    </div>
+                    <div className="compare-actions">
+                      <span>Selected: {compareDatasets.length}/4</span>
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={compareTopVisibleDatasets}
+                        disabled={filteredDatasets.length === 0}
+                      >
+                        Compare top 4
+                      </button>
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={clearCompareSelection}
+                        disabled={compareDatasets.length === 0}
+                      >
+                        Clear compare
+                      </button>
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={exportComparison}
+                        disabled={compareDatasets.length === 0}
+                      >
+                        Export JSON
+                      </button>
+                    </div>
+                  </div>
+                  <div className="compare-picks">
+                    {filteredDatasets.slice(0, 12).map((dataset) => {
+                      const selected = compareSelectionIds.includes(
+                        String(dataset.id),
+                      );
+                      return (
+                        <button
+                          key={`cmp-pick-${dataset.id}`}
+                          type="button"
+                          className={`compare-pick ${selected ? "active" : ""}`}
+                          onClick={() => toggleCompareDataset(dataset.id)}
+                        >
+                          #{dataset.id} {dataset.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {compareDatasets.length === 0 && (
+                    <p className="dataset-description">
+                      Choose datasets above to populate the comparison matrix.
+                    </p>
+                  )}
+                  {compareDatasets.length > 0 && (
+                    <div className="compare-grid">
+                      <div className="compare-grid__header">Metric</div>
+                      {compareDatasets.map((dataset) => (
+                        <div
+                          key={`cmp-header-${dataset.id}`}
+                          className="compare-grid__header"
+                        >
+                          #{dataset.id} {dataset.name}
+                          {compareMetrics.best?.id === dataset.id && (
+                            <span className="compare-best">Best quality</span>
+                          )}
+                        </div>
+                      ))}
+                      {compareMetrics.rows.map((row) => (
+                        <div key={`cmp-row-${row.key}`} className="compare-row">
+                          <div
+                            className={`compare-cell compare-cell--label ${
+                              row.changed ? "diff" : ""
+                            }`}
+                          >
+                            {row.label}
+                          </div>
+                          {row.values.map((value, index) => (
+                            <div
+                              key={`cmp-row-${row.key}-${compareDatasets[index].id}`}
+                              className={`compare-cell ${row.changed ? "diff" : ""}`}
+                            >
+                              {value}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="story-card">
+                  <div className="story-head">
+                    <div>
+                      <h3>Data story mode</h3>
+                      <p>
+                        Auto-generated narrative from your current filtered and
+                        ranked dataset view.
+                      </p>
+                    </div>
+                    <div className="story-controls">
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() => setStoryPlaying((prev) => !prev)}
+                        disabled={storyChapters.length <= 1}
+                      >
+                        {storyPlaying ? "Pause" : "Play"}
+                      </button>
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() =>
+                          setStoryStepIndex((prev) =>
+                            prev <= 0
+                              ? Math.max(storyChapters.length - 1, 0)
+                              : prev - 1,
+                          )
+                        }
+                        disabled={storyChapters.length === 0}
+                      >
+                        Prev
+                      </button>
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() =>
+                          setStoryStepIndex((prev) =>
+                            storyChapters.length === 0
+                              ? 0
+                              : (prev + 1) % storyChapters.length,
+                          )
+                        }
+                        disabled={storyChapters.length === 0}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                  {storyChapters.length === 0 && (
+                    <p className="dataset-description">
+                      Add or load datasets to generate a narrative.
+                    </p>
+                  )}
+                  {activeStoryChapter && (
+                    <article className="story-chapter">
+                      <div className="story-progress">
+                        <span>
+                          Chapter {storyStepIndex + 1} / {storyChapters.length}
+                        </span>
+                        <div className="story-dots">
+                          {storyChapters.map((chapter, index) => (
+                            <button
+                              key={chapter.id}
+                              type="button"
+                              className={`story-dot ${index === storyStepIndex ? "active" : ""}`}
+                              onClick={() => setStoryStepIndex(index)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <h4>{activeStoryChapter.title}</h4>
+                      <p>{activeStoryChapter.body}</p>
+                      {activeStoryChapter.datasetId && (
+                        <button
+                          className="ghost-btn"
+                          type="button"
+                          onClick={() =>
+                            setLineageTarget(activeStoryChapter.datasetId!)
+                          }
+                        >
+                          Open dataset #{activeStoryChapter.datasetId} in audit
+                        </button>
+                      )}
+                    </article>
+                  )}
+                </div>
 
-          <div className="dataset-grid">
-            {activeDatasets.length === 0 && (
-              <div className="dataset-card">
-                <div className="dataset-title">No datasets loaded yet</div>
-                <p className="dataset-description">
-                  {activeTab === "explore"
-                    ? "Refresh to pull the latest records from mainnet."
-                    : "Paste a Stacks address to load datasets tied to that owner."}
-                </p>
-              </div>
+                <div className="dataset-grid">
+                  {activeDatasets.length === 0 && (
+                    <div className="dataset-card">
+                      <div className="dataset-title">
+                        No datasets loaded yet
+                      </div>
+                      <p className="dataset-description">
+                        {activeTab === "explore"
+                          ? "Refresh to pull the latest records from mainnet."
+                          : "Paste a Stacks address to load datasets tied to that owner."}
+                      </p>
+                    </div>
+                  )}
+                  {activeDatasets.length > 0 && sortedDatasets.length === 0 && (
+                    <div className="dataset-card">
+                      <div className="dataset-title">
+                        No datasets match filters
+                      </div>
+                      <p className="dataset-description">
+                        Try broadening your filter criteria or reset all
+                        filters.
+                      </p>
+                    </div>
+                  )}
+                  {sortedDatasets.map((dataset) => (
+                    <DatasetCard
+                      key={`${activeTab}-${dataset.id}`}
+                      dataset={dataset}
+                      statusClass={getStatusClass(dataset.status)}
+                      rank={datasetRankById.get(dataset.id) ?? "-"}
+                      qualityScore={getQualityScore(dataset)}
+                      stewardshipSignal={stewardshipSignalByDatasetId.get(
+                        dataset.id,
+                      )}
+                      isStewardStaked={stewardshipSignalByDatasetId.has(
+                        dataset.id,
+                      )}
+                      compareActive={compareSelectionIds.includes(
+                        String(dataset.id),
+                      )}
+                      watchActive={watchlistIds.includes(String(dataset.id))}
+                      formatCoord={formatCoord}
+                      onCopyId={() =>
+                        copyText(String(dataset.id), "Dataset ID")
+                      }
+                      onCopyOwner={() => copyText(dataset.owner, "Owner")}
+                      onCopyIpfs={() =>
+                        copyText(dataset.ipfsHash || "", "IPFS hash")
+                      }
+                      onOpenDetail={() => openDatasetDetail(dataset.id)}
+                      onAudit={() => setLineageTarget(dataset.id)}
+                      onToggleCompare={() => toggleCompareDataset(dataset.id)}
+                      onToggleWatch={() => toggleWatchlistDataset(dataset.id)}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
-            {activeDatasets.length > 0 && sortedDatasets.length === 0 && (
-              <div className="dataset-card">
-                <div className="dataset-title">No datasets match filters</div>
-                <p className="dataset-description">
-                  Try broadening your filter criteria or reset all filters.
-                </p>
-              </div>
-            )}
-            {sortedDatasets.map((dataset) => (
-              <DatasetCard
-                key={`${activeTab}-${dataset.id}`}
-                dataset={dataset}
-                statusClass={getStatusClass(dataset.status)}
-                rank={datasetRankById.get(dataset.id) ?? "-"}
-                qualityScore={getQualityScore(dataset)}
-                stewardshipSignal={stewardshipSignalByDatasetId.get(dataset.id)}
-                isStewardStaked={stewardshipSignalByDatasetId.has(dataset.id)}
-                compareActive={compareSelectionIds.includes(String(dataset.id))}
-                watchActive={watchlistIds.includes(String(dataset.id))}
-                formatCoord={formatCoord}
-                onCopyId={() => copyText(String(dataset.id), "Dataset ID")}
-                onCopyOwner={() => copyText(dataset.owner, "Owner")}
-                onCopyIpfs={() => copyText(dataset.ipfsHash || "", "IPFS hash")}
-                onOpenDetail={() => openDatasetDetail(dataset.id)}
-                onAudit={() => setLineageTarget(dataset.id)}
-                onToggleCompare={() => toggleCompareDataset(dataset.id)}
-                onToggleWatch={() => toggleWatchlistDataset(dataset.id)}
-              />
-            ))}
-          </div>
-        </section>
-        )}
           </>
         )}
       </main>

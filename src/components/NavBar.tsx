@@ -7,7 +7,6 @@ type Props = {
     action:
       | "home"
       | "add-dataset"
-      | "datasets"
       | "staking"
       | "alerts"
       | "audit"
@@ -120,9 +119,6 @@ export function NavBar({
                 </button>
                 <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("add-dataset"); }}>
                   Add dataset
-                </button>
-                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("datasets"); }}>
-                  Dataset list
                 </button>
                 <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("staking"); }}>
                   Staking

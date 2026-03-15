@@ -161,6 +161,13 @@ textarea {
   scrollbar-width: thin;
 }
 
+.nav__toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .nav__tabs--sub {
   opacity: 0.95;
 }
@@ -1962,6 +1969,12 @@ textarea:focus {
   .nav__tabs {
     flex-wrap: nowrap;
     width: 100%;
+  }
+
+  .nav__toggle {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 
   .nav__dropdown {
