@@ -81,6 +81,9 @@ const APP_DETAILS = {
 
 function App() {
   const hasHydratedUrlRef = useRef(false);
+  const [featureTab, setFeatureTab] = useState<
+    "datasets" | "staking" | "alerts" | "audit" | "versions"
+  >("datasets");
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
   const [datasetCount, setDatasetCount] = useState<number | null>(null);
   const [latestDatasets, setLatestDatasets] = useState<Dataset[]>([]);
@@ -99,7 +102,6 @@ function App() {
   const [geoTimePercent, setGeoTimePercent] = useState(100);
   const [selectedGeoDatasetId, setSelectedGeoDatasetId] = useState("");
   const [compareSelectionIds, setCompareSelectionIds] = useState<string[]>([]);
-  const [showAlerts, setShowAlerts] = useState(false);
   const [mutedAlertKinds, setMutedAlertKinds] = useState<string[]>([]);
   const [readAlertIds, setReadAlertIds] = useState<string[]>([]);
   const [dismissedAlertIds, setDismissedAlertIds] = useState<string[]>([]);
@@ -1877,6 +1879,7 @@ function App() {
       label: "Switch to Explore",
       detail: "Show latest submissions tab",
       run: () => {
+        setFeatureTab("datasets");
         setActiveTab("explore");
       },
     },
@@ -1885,7 +1888,48 @@ function App() {
       label: "Switch to My Datasets",
       detail: "Show owner dataset tab",
       run: () => {
+        setFeatureTab("datasets");
         setActiveTab("mine");
+      },
+    },
+    {
+      id: "tab-datasets",
+      label: "Open Datasets",
+      detail: "Jump to dataset workflows",
+      run: () => {
+        setFeatureTab("datasets");
+      },
+    },
+    {
+      id: "tab-staking",
+      label: "Open Staking",
+      detail: "Jump to staking dashboard",
+      run: () => {
+        setFeatureTab("staking");
+      },
+    },
+    {
+      id: "tab-alerts",
+      label: "Open Alerts",
+      detail: "Jump to smart alert center",
+      run: () => {
+        setFeatureTab("alerts");
+      },
+    },
+    {
+      id: "tab-audit",
+      label: "Open Audit",
+      detail: "Jump to lineage and audit trail",
+      run: () => {
+        setFeatureTab("audit");
+      },
+    },
+    {
+      id: "tab-versions",
+      label: "Open Versions",
+      detail: "Jump to version workflow",
+      run: () => {
+        setFeatureTab("versions");
       },
     },
     {
@@ -1901,7 +1945,7 @@ function App() {
       label: "Toggle Alert Center",
       detail: "Open or close Smart Alerts panel",
       run: () => {
-        setShowAlerts((prev) => !prev);
+        setFeatureTab("alerts");
       },
     },
     {
@@ -1978,12 +2022,15 @@ function App() {
     <div className="app">
       <div className="glow-layer" />
       <NavBar
+        featureTab={featureTab}
+        onFeatureTabChange={setFeatureTab}
+        showDatasetTabs={featureTab === "datasets"}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         loading={loading}
         onSyncMainnet={loadLatest}
         unreadAlertCount={unreadAlertCount}
-        onToggleAlerts={() => setShowAlerts((prev) => !prev)}
+        onToggleAlerts={() => setFeatureTab("alerts")}
         onOpenCommandPalette={() => setShowCommandPalette(true)}
         walletAddress={walletAddress}
         onConnectWallet={connectWallet}
@@ -2263,7 +2310,9 @@ function App() {
 
       {/* Main content */}
       <main className="container">
-        <section className="hero">
+        {featureTab === "datasets" && (
+          <>
+            <section className="hero">
           <div className="hero__content">
             <p className="eyebrow">Atmospheric data registry</p>
             <h1>Trusted climate signals, anchored on Stacks.</h1>
@@ -2401,8 +2450,11 @@ function App() {
             </article>
           ))}
         </section>
+          </>
+        )}
 
-        <section className="section stake-section">
+        {featureTab === "staking" && (
+          <section className="section stake-section">
           <div className="section-header">
             <div>
               <h2>ATMOS staking and trust layer</h2>
@@ -2575,8 +2627,9 @@ function App() {
             </article>
           </div>
         </section>
+        )}
 
-        {showAlerts && (
+        {featureTab === "alerts" && (
           <section className="section alert-section">
             <div className="section-header">
               <div>
@@ -2711,7 +2764,8 @@ function App() {
           </section>
         )}
 
-        <section className="section lineage-section" id="lineage-audit">
+        {featureTab === "audit" && (
+          <section className="section lineage-section" id="lineage-audit">
           <div className="section-header">
             <div>
               <h2>Verifiable lineage and audit trail</h2>
@@ -2790,8 +2844,10 @@ function App() {
             </div>
           )}
         </section>
+        )}
 
-        <section className="section version-section" id="version-workflow">
+        {featureTab === "versions" && (
+          <section className="section version-section" id="version-workflow">
           <div className="section-header">
             <div>
               <h2>Dataset versioning and approval workflow</h2>
@@ -2997,8 +3053,11 @@ function App() {
             </div>
           )}
         </section>
+        )}
 
-        {statusMessage && <div className="status-banner">{statusMessage}</div>}
+        {featureTab === "datasets" && (
+          <>
+            {statusMessage && <div className="status-banner">{statusMessage}</div>}
 
         <section className="section">
           <div className="section-header">
@@ -3704,6 +3763,8 @@ function App() {
             ))}
           </div>
         </section>
+          </>
+        )}
       </main>
       {showBackToTop && (
         <button

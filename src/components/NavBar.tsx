@@ -1,4 +1,9 @@
 type Props = {
+  featureTab: "datasets" | "staking" | "alerts" | "audit" | "versions";
+  onFeatureTabChange: (
+    tab: "datasets" | "staking" | "alerts" | "audit" | "versions",
+  ) => void;
+  showDatasetTabs: boolean;
   activeTab: "explore" | "mine";
   onTabChange: (tab: "explore" | "mine") => void;
   loading: boolean;
@@ -12,6 +17,9 @@ type Props = {
 };
 
 export function NavBar({
+  featureTab,
+  onFeatureTabChange,
+  showDatasetTabs,
   activeTab,
   onTabChange,
   loading,
@@ -23,6 +31,14 @@ export function NavBar({
   onConnectWallet,
   onDisconnectWallet,
 }: Props) {
+  const featureTabs = [
+    { id: "datasets", label: "Datasets" },
+    { id: "staking", label: "Staking" },
+    { id: "alerts", label: "Alerts" },
+    { id: "audit", label: "Audit" },
+    { id: "versions", label: "Versions" },
+  ] as const;
+
   return (
     <nav className="nav">
       <div className="nav__brand">
@@ -33,18 +49,33 @@ export function NavBar({
         </div>
       </div>
       <div className="nav__actions">
-        <button
-          className={`tab-btn ${activeTab === "explore" ? "active" : ""}`}
-          onClick={() => onTabChange("explore")}
-        >
-          Explore
-        </button>
-        <button
-          className={`tab-btn ${activeTab === "mine" ? "active" : ""}`}
-          onClick={() => onTabChange("mine")}
-        >
-          My Datasets
-        </button>
+        <div className="nav__tabs">
+          {featureTabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`tab-btn ${featureTab === tab.id ? "active" : ""}`}
+              onClick={() => onFeatureTabChange(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {showDatasetTabs && (
+          <div className="nav__tabs nav__tabs--sub">
+            <button
+              className={`tab-btn ${activeTab === "explore" ? "active" : ""}`}
+              onClick={() => onTabChange("explore")}
+            >
+              Explore
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "mine" ? "active" : ""}`}
+              onClick={() => onTabChange("mine")}
+            >
+              My Datasets
+            </button>
+          </div>
+        )}
         <button
           className="ghost-btn"
           onClick={onSyncMainnet}
@@ -81,4 +112,3 @@ export function NavBar({
     </nav>
   );
 }
-
