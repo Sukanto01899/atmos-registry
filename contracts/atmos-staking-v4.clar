@@ -68,7 +68,7 @@
   (let ((pending (calculate-reward (get amount entry) (get last-claim-block entry))))
     (begin
       (if (> pending u0)
-        (try! (contract-call? .atmos-token-v3 mint-staking-reward staker pending))
+        (try! (contract-call? .atmos-token-v4 mint-staking-reward staker pending))
         true
       )
       (ok pending)
@@ -81,7 +81,7 @@
     (let ((pending (unwrap! (mint-pending-reward tx-sender existing) ERR-REWARD-MINT-FAILED)))
       (begin
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
-        (unwrap! (contract-call? .atmos-token-v3 transfer amount tx-sender .atmos-staking-v1)
+        (unwrap! (contract-call? .atmos-token-v4 transfer amount tx-sender .atmos-staking-v4)
           ERR-TOKEN-TRANSFER-FAILED
         )
         (map-set stakes
@@ -132,7 +132,7 @@
       (begin
         (asserts! (> amount u0) ERR-INVALID-AMOUNT)
         (asserts! (>= current-amount amount) ERR-INSUFFICIENT-STAKE)
-        (try! (as-contract (contract-call? .atmos-token-v3 transfer amount .atmos-staking-v1 staker)))
+        (try! (as-contract (contract-call? .atmos-token-v4 transfer amount .atmos-staking-v4 staker)))
         (map-set stakes
           { staker: staker }
           {
@@ -159,3 +159,8 @@
     (ok new-apy-bps)
   )
 )
+
+
+
+
+

@@ -54,23 +54,23 @@ const tupleFromResponse = (cv: unknown) => {
 };
 
 const getDatasetCount = () => {
-  const { result } = simnet.callReadOnlyFn("atmos-v3", "get-dataset-count", [], deployer);
+  const { result } = simnet.callReadOnlyFn("atmos-v4", "get-dataset-count", [], deployer);
   return uintFromResponse(result);
 };
 
 const getRewardBalance = (owner: string) => {
-  const { result } = simnet.callReadOnlyFn("atmos-token-v3", "get-balance", [Cl.principal(owner)], deployer);
+  const { result } = simnet.callReadOnlyFn("atmos-token-v4", "get-balance", [Cl.principal(owner)], deployer);
   return uintFromResponse(result);
 };
 
 const getStakeAmount = (owner: string) => {
-  const { result } = simnet.callReadOnlyFn("atmos-staking-v1", "get-stake-info", [Cl.principal(owner)], deployer);
+  const { result } = simnet.callReadOnlyFn("atmos-staking-v4", "get-stake-info", [Cl.principal(owner)], deployer);
   const tuple = tupleFromResponse(result);
   return Number.parseInt(String(tuple.amount.value ?? "0"), 10);
 };
 
 const registerDataset = (sender: string, name: string, dataType = "temperature") => {
-  const { result } = simnet.callPublicFn("atmos-v3", "register-dataset", [
+  const { result } = simnet.callPublicFn("atmos-v4", "register-dataset", [
     Cl.stringUtf8(name),
     Cl.stringUtf8("Atmospheric dataset"),
     Cl.stringUtf8(dataType),
@@ -86,7 +86,7 @@ const registerDataset = (sender: string, name: string, dataType = "temperature")
   return uintFromResponse(result);
 };
 
-describe("atmos-v3 contract tests", () => {
+describe("atmos-v4 contract tests", () => {
   it("ensures simnet is well initialised", () => {
     expect(simnet.blockHeight).toBeDefined();
   });
@@ -97,7 +97,7 @@ describe("atmos-v3 contract tests", () => {
   });
 
   it("should return contract admin", () => {
-    const { result } = simnet.callReadOnlyFn("atmos-v3", "get-contract-admin", [], deployer);
+    const { result } = simnet.callReadOnlyFn("atmos-v4", "get-contract-admin", [], deployer);
     expect(result).toBeOk(Cl.principal(deployer));
   });
 
@@ -122,7 +122,7 @@ describe("atmos-v3 contract tests", () => {
   });
 
   it("should reject direct reward mint calls from users", () => {
-    const { result } = simnet.callPublicFn("atmos-token-v3", "mint-registration-reward", [
+    const { result } = simnet.callPublicFn("atmos-token-v4", "mint-registration-reward", [
       Cl.principal(wallet1),
       Cl.uint(REGISTER_REWARD_AMOUNT),
     ], wallet1);
@@ -131,7 +131,7 @@ describe("atmos-v3 contract tests", () => {
   });
 
   it("should reject direct staking reward mint calls from users", () => {
-    const { result } = simnet.callPublicFn("atmos-token-v3", "mint-staking-reward", [
+    const { result } = simnet.callPublicFn("atmos-token-v4", "mint-staking-reward", [
       Cl.principal(wallet1),
       Cl.uint(REGISTER_REWARD_AMOUNT),
     ], wallet1);
@@ -143,7 +143,7 @@ describe("atmos-v3 contract tests", () => {
     registerDataset(wallet3, "Stake Seed");
     const balanceBefore = getRewardBalance(wallet3);
 
-    const { result } = simnet.callPublicFn("atmos-staking-v1", "stake", [
+    const { result } = simnet.callPublicFn("atmos-staking-v4", "stake", [
       Cl.uint(500_000),
     ], wallet3);
 
@@ -158,11 +158,11 @@ describe("atmos-v3 contract tests", () => {
 
   it("should accrue and allow claiming APY rewards", () => {
     registerDataset(wallet4, "Stake Reward Seed");
-    simnet.callPublicFn("atmos-staking-v1", "stake", [Cl.uint(900_000)], wallet4);
+    simnet.callPublicFn("atmos-staking-v4", "stake", [Cl.uint(900_000)], wallet4);
     simnet.mineEmptyBurnBlocks(2000);
     const before = getRewardBalance(wallet4);
 
-    const claim = simnet.callPublicFn("atmos-staking-v1", "claim-rewards", [], wallet4);
+    const claim = simnet.callPublicFn("atmos-staking-v4", "claim-rewards", [], wallet4);
     const claimed = uintFromResponse(claim.result);
 
     expect(claimed).toBeGreaterThan(0);
@@ -172,11 +172,11 @@ describe("atmos-v3 contract tests", () => {
 
   it("should allow unstaking tokens", () => {
     registerDataset(wallet2, "Unstake Seed");
-    simnet.callPublicFn("atmos-staking-v1", "stake", [Cl.uint(300_000)], wallet2);
+    simnet.callPublicFn("atmos-staking-v4", "stake", [Cl.uint(300_000)], wallet2);
     const beforeStake = getStakeAmount(wallet2);
     const beforeBalance = getRewardBalance(wallet2);
 
-    const { result } = simnet.callPublicFn("atmos-staking-v1", "unstake", [
+    const { result } = simnet.callPublicFn("atmos-staking-v4", "unstake", [
       Cl.uint(200_000),
     ], wallet2);
 
@@ -192,7 +192,7 @@ describe("atmos-v3 contract tests", () => {
   it("should retrieve dataset information", () => {
     const id = registerDataset(wallet1, "Pressure Data", "pressure");
 
-    const { result } = simnet.callReadOnlyFn("atmos-v3", "get-dataset", [Cl.uint(id)], deployer);
+    const { result } = simnet.callReadOnlyFn("atmos-v4", "get-dataset", [Cl.uint(id)], deployer);
     const tuple = tupleFromResponse(result);
     expect(tuple.owner.value).toBe(wallet1);
     expect(tuple.name.value).toBe("Pressure Data");
@@ -204,7 +204,7 @@ describe("atmos-v3 contract tests", () => {
 
   it("should return datasets by owner", () => {
     const id = registerDataset(wallet2, "Wind Data", "wind");
-    const { result } = simnet.callReadOnlyFn("atmos-v3", "get-datasets-by-owner", [Cl.principal(wallet2)], deployer);
+    const { result } = simnet.callReadOnlyFn("atmos-v4", "get-datasets-by-owner", [Cl.principal(wallet2)], deployer);
     const json = cvToJSON(result as any) as any;
     const ids = (json.value ?? []).map((item: any) => Number.parseInt(String(item.value ?? "0"), 10));
     expect(ids).toContain(id);
@@ -213,7 +213,7 @@ describe("atmos-v3 contract tests", () => {
   it("should allow owner to update dataset metadata", () => {
     const id = registerDataset(wallet1, "Original Name");
 
-    const { result } = simnet.callPublicFn("atmos-v3", "update-dataset-metadata", [
+    const { result } = simnet.callPublicFn("atmos-v4", "update-dataset-metadata", [
       Cl.uint(id),
       Cl.stringUtf8("Updated Name"),
       Cl.stringUtf8("Updated description"),
@@ -227,7 +227,7 @@ describe("atmos-v3 contract tests", () => {
   it("should not allow non-owner to update dataset metadata", () => {
     const id = registerDataset(wallet1, "Protected Data");
 
-    const { result } = simnet.callPublicFn("atmos-v3", "update-dataset-metadata", [
+    const { result } = simnet.callPublicFn("atmos-v4", "update-dataset-metadata", [
       Cl.uint(id),
       Cl.stringUtf8("Hacked Name"),
       Cl.stringUtf8("Hacked description"),
@@ -241,12 +241,12 @@ describe("atmos-v3 contract tests", () => {
   it("should allow owner to freeze dataset metadata", () => {
     const id = registerDataset(wallet1, "Freezable Data");
 
-    const { result } = simnet.callPublicFn("atmos-v3", "freeze-dataset-metadata", [Cl.uint(id)], wallet1);
+    const { result } = simnet.callPublicFn("atmos-v4", "freeze-dataset-metadata", [Cl.uint(id)], wallet1);
     expect(result).toBeOk(Cl.bool(true));
   });
 
   it("should allow admin to set validator", () => {
-    const { result } = simnet.callPublicFn("atmos-v3", "set-validator", [
+    const { result } = simnet.callPublicFn("atmos-v4", "set-validator", [
       Cl.principal(wallet2),
       Cl.bool(true),
     ], deployer);
@@ -255,7 +255,7 @@ describe("atmos-v3 contract tests", () => {
   });
 
   it("should reject non-admin validator updates", () => {
-    const { result } = simnet.callPublicFn("atmos-v3", "set-validator", [
+    const { result } = simnet.callPublicFn("atmos-v4", "set-validator", [
       Cl.principal(wallet2),
       Cl.bool(true),
     ], wallet1);
@@ -265,12 +265,12 @@ describe("atmos-v3 contract tests", () => {
 
   it("should allow validator to verify dataset", () => {
     const id = registerDataset(wallet1, "Validator Target");
-    simnet.callPublicFn("atmos-v3", "set-validator", [Cl.principal(wallet2), Cl.bool(true)], deployer);
+    simnet.callPublicFn("atmos-v4", "set-validator", [Cl.principal(wallet2), Cl.bool(true)], deployer);
 
-    const verify = simnet.callPublicFn("atmos-v3", "verify-dataset", [Cl.uint(id)], wallet2);
+    const verify = simnet.callPublicFn("atmos-v4", "verify-dataset", [Cl.uint(id)], wallet2);
     expect(verify.result).toBeOk(Cl.bool(true));
 
-    const fetched = simnet.callReadOnlyFn("atmos-v3", "get-dataset", [Cl.uint(id)], deployer);
+    const fetched = simnet.callReadOnlyFn("atmos-v4", "get-dataset", [Cl.uint(id)], deployer);
     const tuple = tupleFromResponse(fetched.result);
     expect(tuple.status.value).toBe("verified");
     expect(tuple.verified.value).toBe(true);
@@ -279,25 +279,25 @@ describe("atmos-v3 contract tests", () => {
 
   it("should reject verification by non-validator", () => {
     const id = registerDataset(wallet1, "No Validator");
-    const { result } = simnet.callPublicFn("atmos-v3", "verify-dataset", [Cl.uint(id)], wallet2);
+    const { result } = simnet.callPublicFn("atmos-v4", "verify-dataset", [Cl.uint(id)], wallet2);
     expect(result).toBeErr(Cl.uint(405));
   });
 
   it("should allow validator to reject dataset", () => {
     const id = registerDataset(wallet1, "Reject Target");
-    simnet.callPublicFn("atmos-v3", "set-validator", [Cl.principal(wallet2), Cl.bool(true)], deployer);
+    simnet.callPublicFn("atmos-v4", "set-validator", [Cl.principal(wallet2), Cl.bool(true)], deployer);
 
-    const reject = simnet.callPublicFn("atmos-v3", "reject-dataset", [Cl.uint(id)], wallet2);
+    const reject = simnet.callPublicFn("atmos-v4", "reject-dataset", [Cl.uint(id)], wallet2);
     expect(reject.result).toBeOk(Cl.bool(true));
 
-    const fetched = simnet.callReadOnlyFn("atmos-v3", "get-dataset", [Cl.uint(id)], deployer);
+    const fetched = simnet.callReadOnlyFn("atmos-v4", "get-dataset", [Cl.uint(id)], deployer);
     const tuple = tupleFromResponse(fetched.result);
     expect(tuple.status.value).toBe("rejected");
     expect(tuple.verified.value).toBe(false);
   });
 
   it("should reject invalid latitude", () => {
-    const { result } = simnet.callPublicFn("atmos-v3", "register-dataset", [
+    const { result } = simnet.callPublicFn("atmos-v4", "register-dataset", [
       Cl.stringUtf8("Invalid Lat Data"),
       Cl.stringUtf8("Dataset with invalid latitude"),
       Cl.stringUtf8("invalid"),
@@ -314,7 +314,7 @@ describe("atmos-v3 contract tests", () => {
   });
 
   it("should reject invalid longitude", () => {
-    const { result } = simnet.callPublicFn("atmos-v3", "register-dataset", [
+    const { result } = simnet.callPublicFn("atmos-v4", "register-dataset", [
       Cl.stringUtf8("Invalid Lon Data"),
       Cl.stringUtf8("Dataset with invalid longitude"),
       Cl.stringUtf8("invalid"),
@@ -331,7 +331,7 @@ describe("atmos-v3 contract tests", () => {
   });
 
   it("should reject invalid altitude range", () => {
-    const { result } = simnet.callPublicFn("atmos-v3", "register-dataset", [
+    const { result } = simnet.callPublicFn("atmos-v4", "register-dataset", [
       Cl.stringUtf8("Invalid Alt Data"),
       Cl.stringUtf8("Dataset with invalid altitude range"),
       Cl.stringUtf8("invalid"),
@@ -347,3 +347,4 @@ describe("atmos-v3 contract tests", () => {
     expect(result).toBeErr(Cl.uint(400)); // ERR-INVALID-PARAMS
   });
 });
+

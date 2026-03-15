@@ -1,10 +1,10 @@
 ;; Atmos Token Contract
-;; Dedicated reward token minted by the atmos-v3 registry contract
+;; Dedicated reward token minted by the atmos-v4 registry contract
 
 (define-constant ERR-NOT-AUTHORIZED (err u401))
 (define-constant ERR-INSUFFICIENT-BALANCE (err u402))
-(define-constant REGISTRY-CONTRACT .atmos-v3)
-(define-constant DEFAULT-STAKING-CONTRACT .atmos-staking-v1)
+(define-constant REGISTRY-CONTRACT .atmos-v4)
+(define-constant DEFAULT-STAKING-CONTRACT .atmos-staking-v4)
 
 (define-data-var staking-contract principal DEFAULT-STAKING-CONTRACT)
 
@@ -53,7 +53,7 @@
     (amount uint)
   )
   (begin
-    ;; Only the atmos-v3 registry contract can mint registration rewards.
+    ;; Only the atmos-v4 registry contract can mint registration rewards.
     (asserts! (is-eq contract-caller REGISTRY-CONTRACT) ERR-NOT-AUTHORIZED)
     (ft-mint? atmos-token amount recipient)
   )
@@ -64,7 +64,7 @@
     (amount uint)
   )
   (begin
-    ;; Only the atmos-staking-v1 contract can mint APY rewards.
+    ;; Only the atmos-staking-v4 contract can mint APY rewards.
     (asserts! (is-eq contract-caller (var-get staking-contract)) ERR-NOT-AUTHORIZED)
     (ft-mint? atmos-token amount recipient)
   )
@@ -77,3 +77,8 @@
     (ok true)
   )
 )
+
+
+
+
+

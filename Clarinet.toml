@@ -5,16 +5,16 @@ authors = []
 telemetry = false
 cache_dir = './.cache'
 requirements = []
-[contracts.atmos-v3]
-path = 'contracts/atmos.clar'
+[contracts.atmos-v4]
+path = 'contracts/atmos-v4.clar'
 clarity_version = 3
 epoch = 3.0
-[contracts.atmos-token-v3]
-path = 'contracts/atmos-token.clar'
+[contracts.atmos-token-v4]
+path = 'contracts/atmos-token-v4.clar'
 clarity_version = 3
 epoch = 3.0
-[contracts.atmos-staking-v1]
-path = 'contracts/atmos-staking-v1.clar'
+[contracts.atmos-staking-v4]
+path = 'contracts/atmos-staking-v4.clar'
 clarity_version = 3
 epoch = 3.0
 [repl.analysis]
@@ -27,3 +27,4 @@ callee_filter = false
 [repl.remote_data]
 enabled = false
 api_url = 'https://api.hiro.so'
+

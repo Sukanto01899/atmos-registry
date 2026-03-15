@@ -176,7 +176,7 @@
 
     (unwrap! (add-dataset-to-owner owner-principal dataset-id) ERR-INVALID-PARAMS)
     (unwrap!
-      (contract-call? .atmos-token-v3 mint-registration-reward owner-principal
+      (contract-call? .atmos-token-v4 mint-registration-reward owner-principal
         REGISTER-REWARD-AMOUNT
       )
       ERR-REWARD-MINT-FAILED
@@ -305,3 +305,8 @@
     (ok paused)
   )
 )
+
+
+
+
+
