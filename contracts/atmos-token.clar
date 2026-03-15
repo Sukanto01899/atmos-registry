@@ -4,7 +4,9 @@
 (define-constant ERR-NOT-AUTHORIZED (err u401))
 (define-constant ERR-INSUFFICIENT-BALANCE (err u402))
 (define-constant REGISTRY-CONTRACT .atmos-v3)
-(define-constant STAKING-CONTRACT .atmos-staking-v1)
+(define-constant DEFAULT-STAKING-CONTRACT .atmos-staking-v1)
+
+(define-data-var staking-contract principal DEFAULT-STAKING-CONTRACT)
 
 (define-fungible-token atmos-token)
 
@@ -26,6 +28,10 @@
 
 (define-read-only (get-total-supply)
   (ok (ft-get-supply atmos-token))
+)
+
+(define-read-only (get-staking-contract)
+  (ok (var-get staking-contract))
 )
 
 (define-public (transfer
@@ -59,7 +65,15 @@
   )
   (begin
     ;; Only the atmos-staking-v1 contract can mint APY rewards.
-    (asserts! (is-eq contract-caller STAKING-CONTRACT) ERR-NOT-AUTHORIZED)
+    (asserts! (is-eq contract-caller (var-get staking-contract)) ERR-NOT-AUTHORIZED)
     (ft-mint? atmos-token amount recipient)
+  )
+)
+
+(define-public (set-staking-contract (next principal))
+  (begin
+    (asserts! (is-eq contract-caller REGISTRY-CONTRACT) ERR-NOT-AUTHORIZED)
+    (var-set staking-contract next)
+    (ok true)
   )
 )
