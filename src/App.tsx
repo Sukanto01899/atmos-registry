@@ -9,10 +9,12 @@ import {
   cvToJSON,
   fetchCallReadOnlyFunction,
   intCV,
+  PostConditionMode,
   principalCV,
   stringAsciiCV,
   stringUtf8CV,
   uintCV,
+  Pc,
 } from "@stacks/transactions";
 import {
   buildUrlViewSearch,
@@ -84,6 +86,9 @@ function App() {
   const [featureTab, setFeatureTab] = useState<
     "datasets" | "staking" | "alerts" | "audit" | "versions"
   >("datasets");
+  const [datasetView, setDatasetView] = useState<
+    "home" | "add" | "list"
+  >("home");
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
   const [datasetCount, setDatasetCount] = useState<number | null>(null);
   const [latestDatasets, setLatestDatasets] = useState<Dataset[]>([]);
@@ -1478,11 +1483,15 @@ function App() {
     functionArgs,
     onFinish,
     onCancel,
+    postConditions,
+    postConditionMode,
   }: {
     functionName: string;
     functionArgs: any[];
     onFinish: (data: { txId: string }) => void;
     onCancel: () => void;
+    postConditions?: any[];
+    postConditionMode?: PostConditionMode;
   }) => {
     const uiReady = await ensureConnectUi();
     if (!uiReady) {
@@ -1500,7 +1509,8 @@ function App() {
       contractName: STAKING_CONTRACT_NAME,
       functionName,
       functionArgs,
-      postConditions: [],
+      postConditions: postConditions ?? [],
+      postConditionMode: postConditionMode ?? PostConditionMode.Allow,
       stxAddress: walletAddress || undefined,
       onFinish,
       onCancel,
@@ -1619,9 +1629,22 @@ function App() {
     }
     setStakeStatus("Opening wallet for staking approval...");
     try {
+      const assetContractId = `${CONTRACT_ADDRESS}.${TOKEN_CONTRACT_NAME}` as `${string}.${string}`;
+      const shouldGuardSpend = functionName === "stake";
+      const postConditions = shouldGuardSpend
+        ? [
+            Pc.principal(walletAddress)
+              .willSendLte(BigInt(amount))
+              .ft(assetContractId, "atmos-token"),
+          ]
+        : [];
       await requestContractCall({
         functionName,
         functionArgs: [uintCV(amount)],
+        postConditions,
+        postConditionMode: shouldGuardSpend
+          ? PostConditionMode.Deny
+          : PostConditionMode.Allow,
         onFinish: (data) => {
           setStakeStatus(`Transaction submitted: ${data.txId}`);
           loadTokenSnapshot(walletAddress);
@@ -1645,6 +1668,7 @@ function App() {
       await requestContractCall({
         functionName: "claim-rewards",
         functionArgs: [],
+        postConditionMode: PostConditionMode.Allow,
         onFinish: (data) => {
           setStakeStatus(`Claim submitted: ${data.txId}`);
           loadTokenSnapshot(walletAddress);
@@ -2028,11 +2052,13 @@ function App() {
           if (typeof window === "undefined") return;
           if (action === "home") {
             setFeatureTab("datasets");
+            setDatasetView("home");
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
           }
           if (action === "add-dataset") {
             setFeatureTab("datasets");
+            setDatasetView("add");
             window.setTimeout(() => {
               document
                 .getElementById("register-dataset")
@@ -2042,6 +2068,7 @@ function App() {
           }
           if (action === "datasets") {
             setFeatureTab("datasets");
+            setDatasetView("list");
             window.setTimeout(() => {
               document
                 .getElementById("dataset-list")
@@ -2065,9 +2092,6 @@ function App() {
             setFeatureTab("versions");
           }
         }}
-        showDatasetTabs={featureTab === "datasets"}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         loading={loading}
         onSyncMainnet={loadLatest}
         unreadAlertCount={unreadAlertCount}
@@ -2353,7 +2377,9 @@ function App() {
       <main className="container">
         {featureTab === "datasets" && (
           <>
-            <section className="hero" id="home">
+            {datasetView === "home" && (
+              <>
+                <section className="hero" id="home">
           <div className="hero__content">
             <p className="eyebrow">Atmospheric data registry</p>
             <h1>Trusted climate signals, anchored on Stacks.</h1>
@@ -2491,6 +2517,8 @@ function App() {
             </article>
           ))}
         </section>
+              </>
+            )}
           </>
         )}
 
@@ -3098,9 +3126,16 @@ function App() {
 
         {featureTab === "datasets" && (
           <>
-            {statusMessage && <div className="status-banner">{statusMessage}</div>}
+            {(datasetView === "add" || datasetView === "list") && (
+              <>
+                {statusMessage && (
+                  <div className="status-banner">{statusMessage}</div>
+                )}
+              </>
+            )}
 
-        <section className="section" id="register-dataset">
+        {datasetView === "add" && (
+          <section className="section" id="register-dataset">
           <div className="section-header">
             <div>
               <h2>Register a dataset</h2>
@@ -3194,8 +3229,10 @@ function App() {
             </div>
           </div>
         </section>
+        )}
 
-        <section className="section" id="dataset-list">
+        {datasetView === "list" && (
+          <section className="section" id="dataset-list">
           <div className="section-header">
             <div>
               <h2>
@@ -3804,6 +3841,7 @@ function App() {
             ))}
           </div>
         </section>
+        )}
           </>
         )}
       </main>

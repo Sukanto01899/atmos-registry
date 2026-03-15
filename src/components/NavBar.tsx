@@ -13,9 +13,6 @@ type Props = {
       | "audit"
       | "versions",
   ) => void;
-  showDatasetTabs: boolean;
-  activeTab: "explore" | "mine";
-  onTabChange: (tab: "explore" | "mine") => void;
   loading: boolean;
   onSyncMainnet: () => void;
   unreadAlertCount: number;
@@ -32,9 +29,6 @@ export function NavBar({
   featureTab,
   onFeatureTabChange,
   onMenuAction,
-  showDatasetTabs,
-  activeTab,
-  onTabChange,
   loading,
   onSyncMainnet,
   unreadAlertCount,
@@ -146,22 +140,6 @@ export function NavBar({
             )}
           </div>
         </div>
-        {showDatasetTabs && (
-          <div className="nav__tabs nav__tabs--sub">
-            <button
-              className={`tab-btn ${activeTab === "explore" ? "active" : ""}`}
-              onClick={() => onTabChange("explore")}
-            >
-              Explore
-            </button>
-            <button
-              className={`tab-btn ${activeTab === "mine" ? "active" : ""}`}
-              onClick={() => onTabChange("mine")}
-            >
-              My Datasets
-            </button>
-          </div>
-        )}
       </div>
     </nav>
   );
