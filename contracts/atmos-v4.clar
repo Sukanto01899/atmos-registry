@@ -289,7 +289,10 @@
 )
 
 ;; Admin: Add/Remove Validator
-(define-public (set-validator (validator principal) (enabled bool))
+(define-public (set-validator
+    (validator principal)
+    (enabled bool)
+  )
   (begin
     (asserts! (is-eq tx-sender (var-get contract-admin)) ERR-NOT-AUTHORIZED)
     (map-set validators { validator: validator } { enabled: enabled })
@@ -305,8 +308,3 @@
     (ok paused)
   )
 )
-
-
-
-
-

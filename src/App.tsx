@@ -2024,6 +2024,47 @@ function App() {
       <NavBar
         featureTab={featureTab}
         onFeatureTabChange={setFeatureTab}
+        onMenuAction={(action) => {
+          if (typeof window === "undefined") return;
+          if (action === "home") {
+            setFeatureTab("datasets");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+          }
+          if (action === "add-dataset") {
+            setFeatureTab("datasets");
+            window.setTimeout(() => {
+              document
+                .getElementById("register-dataset")
+                ?.scrollIntoView({ behavior: "smooth" });
+            }, 0);
+            return;
+          }
+          if (action === "datasets") {
+            setFeatureTab("datasets");
+            window.setTimeout(() => {
+              document
+                .getElementById("dataset-list")
+                ?.scrollIntoView({ behavior: "smooth" });
+            }, 0);
+            return;
+          }
+          if (action === "staking") {
+            setFeatureTab("staking");
+            return;
+          }
+          if (action === "alerts") {
+            setFeatureTab("alerts");
+            return;
+          }
+          if (action === "audit") {
+            setFeatureTab("audit");
+            return;
+          }
+          if (action === "versions") {
+            setFeatureTab("versions");
+          }
+        }}
         showDatasetTabs={featureTab === "datasets"}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -2312,7 +2353,7 @@ function App() {
       <main className="container">
         {featureTab === "datasets" && (
           <>
-            <section className="hero">
+            <section className="hero" id="home">
           <div className="hero__content">
             <p className="eyebrow">Atmospheric data registry</p>
             <h1>Trusted climate signals, anchored on Stacks.</h1>
@@ -2454,7 +2495,7 @@ function App() {
         )}
 
         {featureTab === "staking" && (
-          <section className="section stake-section">
+          <section className="section stake-section" id="staking">
           <div className="section-header">
             <div>
               <h2>ATMOS staking and trust layer</h2>
@@ -2630,7 +2671,7 @@ function App() {
         )}
 
         {featureTab === "alerts" && (
-          <section className="section alert-section">
+          <section className="section alert-section" id="alerts">
             <div className="section-header">
               <div>
                 <h2>Smart alert center</h2>
@@ -3059,7 +3100,7 @@ function App() {
           <>
             {statusMessage && <div className="status-banner">{statusMessage}</div>}
 
-        <section className="section">
+        <section className="section" id="register-dataset">
           <div className="section-header">
             <div>
               <h2>Register a dataset</h2>
@@ -3154,7 +3195,7 @@ function App() {
           </div>
         </section>
 
-        <section className="section">
+        <section className="section" id="dataset-list">
           <div className="section-header">
             <div>
               <h2>
