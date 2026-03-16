@@ -140,6 +140,8 @@ function App() {
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
   const activeDatasets = activeTab === "explore" ? latestDatasets : myDatasets;
+
+  // In a real application, you would likely want to fetch available data types from the contract or a backend rather than deriving them from the currently loaded datasets. This approach is simpler for this example but may not capture all possible data types if your dataset collection is large or if some types are not represented in the latest/my datasets.
   const dataTypeOptions = useMemo(
     () =>
       Array.from(
