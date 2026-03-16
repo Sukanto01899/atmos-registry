@@ -2,6 +2,7 @@
 
 :root {
   color-scheme: dark;
+  --nav-offset: 8rem;
   --bg: #0b1015;
   --bg-soft: #0f1721;
   --card: #131c26;
@@ -30,6 +31,11 @@ body {
   color: var(--text);
   min-height: 100vh;
 }
+
+html {
+  scroll-padding-top: var(--nav-offset);
+}
+
 
 h1, h2, h3 {
   font-family: "Fraunces", "Space Grotesk", serif;
@@ -137,8 +143,6 @@ textarea {
   gap: 0.65rem;
   padding: 0.6rem 0 0.2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  position: sticky;
-  top: 0;
   background: rgba(12, 17, 22, 0.9);
   backdrop-filter: blur(14px);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
@@ -262,6 +266,11 @@ textarea {
   padding: 2.5rem 3.5vw 4rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.hero,
+.section {
+  scroll-margin-top: var(--nav-offset);
 }
 
 .hero {
