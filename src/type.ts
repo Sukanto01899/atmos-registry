@@ -143,3 +143,13 @@ export type AlertItem = {
   level: AlertLevel;
   timestamp: number;
 };
+
+export type Notice = {
+  id: string;
+  tone: "info" | "warning" | "critical";
+  message: string;
+};
+
+export type Props = {
+  notices: Notice[];
+};

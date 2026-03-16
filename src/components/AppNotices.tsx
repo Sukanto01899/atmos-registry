@@ -1,12 +1,4 @@
-type Notice = {
-  id: string;
-  tone: "info" | "warning" | "critical";
-  message: string;
-};
-
-type Props = {
-  notices: Notice[];
-};
+import { Props } from "../type";
 
 export function AppNotices({ notices }: Props) {
   if (notices.length === 0) return null;
@@ -24,4 +16,3 @@ export function AppNotices({ notices }: Props) {
     </div>
   );
 }
-
