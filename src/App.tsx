@@ -84,10 +84,9 @@ const APP_DETAILS = {
 function App() {
   const hasHydratedUrlRef = useRef(false);
   const [featureTab, setFeatureTab] = useState<
-    "datasets" | "staking" | "alerts" | "audit" | "versions"
+    "datasets" | "add-dataset" | "staking" | "alerts" | "audit" | "versions"
   >("datasets");
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
-  const [datasetCount, setDatasetCount] = useState<number | null>(null);
   const [latestDatasets, setLatestDatasets] = useState<Dataset[]>([]);
   const [myDatasets, setMyDatasets] = useState<Dataset[]>([]);
   const [ownerInput, setOwnerInput] = useState("");
@@ -114,7 +113,6 @@ function App() {
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showDatasetDetail, setShowDatasetDetail] = useState(false);
-  const [datasetView, setDatasetView] = useState<"list" | "add">("list");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
@@ -808,7 +806,6 @@ function App() {
       });
       const countValue = unwrapResponseOk(countResponse);
       const total = Number.parseInt(String(countValue.value ?? "0"), 10);
-      setDatasetCount(total);
 
       if (total === 0) {
         setLatestDatasets([]);
@@ -1663,9 +1660,8 @@ function App() {
   ]);
 
   useEffect(() => {
-    if (featureTab !== "datasets") {
-      setDatasetView("list");
-    }
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [featureTab]);
 
   useEffect(() => {
@@ -1961,38 +1957,28 @@ function App() {
           if (typeof window === "undefined") return;
           if (action === "home") {
             setFeatureTab("datasets");
-            setDatasetView("list");
             window.scrollTo({ top: 0, behavior: "smooth" });
             return;
           }
           if (action === "add-dataset") {
-            setFeatureTab("datasets");
-            setDatasetView("add");
-            window.setTimeout(() => {
-              document
-                .getElementById("register-dataset")
-                ?.scrollIntoView({ behavior: "smooth" });
-            }, 0);
+            setFeatureTab("add-dataset");
+            window.scrollTo({ top: 0, behavior: "smooth" });
             return;
           }
           if (action === "staking") {
             setFeatureTab("staking");
-            setDatasetView("list");
             return;
           }
           if (action === "alerts") {
             setFeatureTab("alerts");
-            setDatasetView("list");
             return;
           }
           if (action === "audit") {
             setFeatureTab("audit");
-            setDatasetView("list");
             return;
           }
           if (action === "versions") {
             setFeatureTab("versions");
-            setDatasetView("list");
           }
         }}
         loading={loading}
@@ -2984,768 +2970,805 @@ function App() {
         )}
 
         {featureTab === "datasets" && (
-          <>
-            {(datasetView === "add" || datasetView === "list") && (
-              <>
-                {statusMessage && (
-                  <div className="status-banner">{statusMessage}</div>
+          <section className="section" id="dataset-list">
+            {statusMessage && (
+              <div className="status-banner">{statusMessage}</div>
+            )}
+            <div className="section-header">
+              <div>
+                <h2>
+                  {activeTab === "explore"
+                    ? "Latest submissions"
+                    : "Your datasets"}
+                </h2>
+                <p>
+                  {activeTab === "explore"
+                    ? "The most recent records pushed to Atmos on mainnet."
+                    : "Load datasets indexed to a specific Stacks address."}
+                </p>
+              </div>
+              {activeTab === "mine" && (
+                <div className="owner-form">
+                  <input
+                    value={ownerInput}
+                    onChange={(event) => setOwnerInput(readValue(event))}
+                    placeholder="Paste your Stacks address"
+                  />
+                  <button
+                    className="primary-btn compact"
+                    onClick={handleOwnerSubmit}
+                    disabled={loading}
+                  >
+                    Load
+                  </button>
+                  {walletAddress && (
+                    <button
+                      className="ghost-btn"
+                      onClick={() => {
+                        setOwnerInput(walletAddress);
+                        setOwnerAddress(walletAddress);
+                        loadOwnerDatasets(walletAddress);
+                      }}
+                    >
+                      Use wallet
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="section-tools">
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyFilterSummary}
+                >
+                  Copy filter summary
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={exportFilteredDatasets}
+                  disabled={sortedDatasets.length === 0}
+                >
+                  Export visible JSON
+                </button>
+              </div>
+            </div>
+            <div className="saved-view-card">
+              <div className="saved-view-head">
+                <h3>Saved views</h3>
+                <p>
+                  Save and restore your current filters, explorer state, compare
+                  picks, and watchlist setup.
+                </p>
+              </div>
+              <div className="saved-view-create">
+                <input
+                  value={savedViewName}
+                  onChange={(event) => setSavedViewName(readValue(event))}
+                  placeholder="View name (e.g. Verified Public Global)"
+                />
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={saveCurrentView}
+                >
+                  Save view
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyShareLink}
+                >
+                  Copy share link
+                </button>
+              </div>
+              <div className="saved-view-list">
+                {savedViews.length === 0 && (
+                  <span className="saved-view-empty">No saved views yet.</span>
                 )}
-              </>
-            )}
-
-            {datasetView === "add" && (
-              <section className="section" id="register-dataset">
-                <div className="section-header">
-                  <div>
-                    <h2>Register a dataset</h2>
-                    <p>Submit a new dataset to the Atmos mainnet registry.</p>
+                {savedViews.map((view) => (
+                  <div className="saved-view-item" key={view.id}>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => applySavedView(view)}
+                    >
+                      {view.name}
+                    </button>
+                    <span>{formatChainValue(view.createdAt)}</span>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => deleteSavedView(view.id)}
+                    >
+                      Delete
+                    </button>
                   </div>
+                ))}
+              </div>
+            </div>
+            <div className="filter-card">
+              <div className="filter-grid">
+                <input
+                  value={filters.search}
+                  onChange={updateFilterField("search")}
+                  placeholder="Search id, name, description, hash"
+                />
+                <select
+                  value={filters.status}
+                  onChange={updateFilterField("status")}
+                >
+                  <option value="all">All status</option>
+                  <option value="active">Active</option>
+                  <option value="verified">Verified</option>
+                  <option value="pending">Pending</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="deprecated">Deprecated</option>
+                </select>
+                <select
+                  value={filters.visibility}
+                  onChange={updateFilterField("visibility")}
+                >
+                  <option value="all">All visibility</option>
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+                <select
+                  value={filters.dataType}
+                  onChange={updateFilterField("dataType")}
+                >
+                  <option value="all">All data types</option>
+                  {dataTypeOptions.map((option) => (
+                    <option key={`type-${option}`} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={filters.owner}
+                  onChange={updateFilterField("owner")}
+                  placeholder="Owner contains..."
+                />
+                <div className="filter-range">
+                  <input
+                    value={filters.altitudeMin}
+                    onChange={updateFilterField("altitudeMin")}
+                    placeholder="Altitude min"
+                  />
+                  <input
+                    value={filters.altitudeMax}
+                    onChange={updateFilterField("altitudeMax")}
+                    placeholder="Altitude max"
+                  />
                 </div>
-                <div className="form-grid">
-                  <div className="form-card">
-                    <div className="field-grid">
-                      <input
-                        value={registerForm.name}
-                        onChange={updateRegisterField("name")}
-                        placeholder="Dataset name"
-                      />
-                      <input
-                        value={registerForm.dataType}
-                        onChange={updateRegisterField("dataType")}
-                        placeholder="Data type"
-                      />
-                      <textarea
-                        value={registerForm.description}
-                        onChange={updateRegisterField("description")}
-                        placeholder="Short description"
-                        rows={4}
-                      />
-                      <div className="field-row">
-                        <input
-                          value={registerForm.collectionDate}
-                          onChange={updateRegisterField("collectionDate")}
-                          placeholder="Collection date (unix or block height)"
-                        />
-                        <input
-                          value={registerForm.ipfsHash}
-                          onChange={updateRegisterField("ipfsHash")}
-                          placeholder="IPFS hash"
-                        />
-                      </div>
-                      <div className="field-row">
-                        <input
-                          value={registerForm.altitudeMin}
-                          onChange={updateRegisterField("altitudeMin")}
-                          placeholder="Altitude min (m)"
-                        />
-                        <input
-                          value={registerForm.altitudeMax}
-                          onChange={updateRegisterField("altitudeMax")}
-                          placeholder="Altitude max (m)"
-                        />
-                      </div>
-                      <div className="field-row">
-                        <input
-                          value={registerForm.latitude}
-                          onChange={updateRegisterField("latitude")}
-                          placeholder="Latitude (deg)"
-                        />
-                        <input
-                          value={registerForm.longitude}
-                          onChange={updateRegisterField("longitude")}
-                          placeholder="Longitude (deg)"
-                        />
-                      </div>
-                      <label className="checkbox-row">
-                        <input
-                          type="checkbox"
-                          checked={registerForm.isPublic}
-                          onChange={(event) =>
-                            setRegisterForm((prev) => ({
-                              ...prev,
-                              isPublic: readChecked(event),
-                            }))
-                          }
-                        />
-                        <span>Mark dataset as public</span>
-                      </label>
-                    </div>
-                    <div className="form-actions">
-                      <button
-                        className="primary-btn"
-                        onClick={handleRegisterSubmit}
-                      >
-                        Submit dataset
-                      </button>
-                      {txStatus && <div className="form-note">{txStatus}</div>}
-                    </div>
-                  </div>
-                  <div className="form-card form-card--info">
-                    <h3>Registry requirements</h3>
-                    <ul>
-                      <li>
-                        Latitude and longitude are stored in micro-degrees.
-                      </li>
-                      <li>Altitude range must be positive and ordered.</li>
-                      <li>
-                        Metadata can be frozen later by the dataset owner.
-                      </li>
-                      <li>IPFS hash is optional but recommended.</li>
-                    </ul>
-                  </div>
+              </div>
+              <div className="filter-actions">
+                <span>
+                  Showing {filteredDatasets.length} of {activeDatasets.length}
+                </span>
+                <div className="filter-sort">
+                  <label htmlFor="dataset-sort">Sort by</label>
+                  <select
+                    id="dataset-sort"
+                    value={sortMode}
+                    onChange={(event) =>
+                      setSortMode(event.currentTarget.value as SortMode)
+                    }
+                  >
+                    <option value="quality-desc">
+                      Quality score (high to low)
+                    </option>
+                    <option value="recent-desc">Newest collection first</option>
+                    <option value="recent-asc">Oldest collection first</option>
+                    <option value="altitude-desc">
+                      Highest altitude first
+                    </option>
+                    <option value="status-priority">Status priority</option>
+                  </select>
                 </div>
-              </section>
-            )}
-
-            {datasetView === "list" && (
-              <section className="section" id="dataset-list">
-                <div className="section-header">
-                  <div>
-                    <h2>
-                      {activeTab === "explore"
-                        ? "Latest submissions"
-                        : "Your datasets"}
-                    </h2>
-                    <p>
-                      {activeTab === "explore"
-                        ? "The most recent records pushed to Atmos on mainnet."
-                        : "Load datasets indexed to a specific Stacks address."}
-                    </p>
-                  </div>
-                  {activeTab === "mine" && (
-                    <div className="owner-form">
-                      <input
-                        value={ownerInput}
-                        onChange={(event) => setOwnerInput(readValue(event))}
-                        placeholder="Paste your Stacks address"
-                      />
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => setFilters(defaultFilters)}
+                  disabled={!hasActiveFilters}
+                >
+                  Reset filters
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={exportFilteredDatasets}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Export filtered JSON
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={openRandomFilteredDataset}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Surprise me
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyFilterSummary}
+                >
+                  Copy summary
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleDatasetIds}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy visible IDs
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleOwners}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy owners
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleDatasetNames}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy names
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleStatuses}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy statuses
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={useVisibleAsWatchlist}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Watch visible
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleIpfsHashes}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy IPFS
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={auditTopVisibleDataset}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Audit top result
+                </button>
+              </div>
+            </div>
+            <div className="geo-card">
+              <div className="geo-header">
+                <div>
+                  <h3>Geospatial explorer</h3>
+                  <p>
+                    Plot datasets by coordinates and scrub collection time to
+                    inspect spatial coverage changes.
+                  </p>
+                </div>
+                <div className="geo-summary">
+                  <span>
+                    Visible points: {geoDatasets.length}/
+                    {filteredDatasets.length}
+                  </span>
+                  {geoTimeCutoff && (
+                    <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>
+                  )}
+                </div>
+              </div>
+              <div className="geo-timeline">
+                <label htmlFor="geo-time-slider">Time window</label>
+                <input
+                  id="geo-time-slider"
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={geoTimePercent}
+                  onChange={(event) =>
+                    setGeoTimePercent(
+                      Number.parseInt(readValue(event), 10) || 0,
+                    )
+                  }
+                  disabled={!geoTimeBounds}
+                />
+                <span>{geoTimePercent}%</span>
+              </div>
+              <div className="geo-layout">
+                <div className="geo-map">
+                  <div className="geo-map__grid" />
+                  {geoDatasets.map((dataset) => {
+                    const left =
+                      ((dataset.longitude / 1_000_000 + 180) / 360) * 100;
+                    const top =
+                      (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
+                    return (
                       <button
-                        className="primary-btn compact"
-                        onClick={handleOwnerSubmit}
-                        disabled={loading}
-                      >
-                        Load
-                      </button>
-                      {walletAddress && (
-                        <button
-                          className="ghost-btn"
-                          onClick={() => {
-                            setOwnerInput(walletAddress);
-                            setOwnerAddress(walletAddress);
-                            loadOwnerDatasets(walletAddress);
-                          }}
-                        >
-                          Use wallet
-                        </button>
-                      )}
+                        key={`geo-${dataset.id}`}
+                        className={`geo-point ${
+                          selectedGeoDataset?.id === dataset.id ? "active" : ""
+                        }`}
+                        title={`#${dataset.id} ${dataset.name}`}
+                        type="button"
+                        style={{ left: `${left}%`, top: `${top}%` }}
+                        onClick={() => setGeoTarget(dataset.id)}
+                      />
+                    );
+                  })}
+                  {geoDatasets.length === 0 && (
+                    <div className="geo-empty">
+                      No points in the current time window.
                     </div>
                   )}
-                  <div className="section-tools">
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyFilterSummary}
-                    >
-                      Copy filter summary
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={exportFilteredDatasets}
-                      disabled={sortedDatasets.length === 0}
-                    >
-                      Export visible JSON
-                    </button>
-                  </div>
                 </div>
-                <div className="saved-view-card">
-                  <div className="saved-view-head">
-                    <h3>Saved views</h3>
-                    <p>
-                      Save and restore your current filters, explorer state,
-                      compare picks, and watchlist setup.
-                    </p>
-                  </div>
-                  <div className="saved-view-create">
-                    <input
-                      value={savedViewName}
-                      onChange={(event) => setSavedViewName(readValue(event))}
-                      placeholder="View name (e.g. Verified Public Global)"
-                    />
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={saveCurrentView}
-                    >
-                      Save view
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyShareLink}
-                    >
-                      Copy share link
-                    </button>
-                  </div>
-                  <div className="saved-view-list">
-                    {savedViews.length === 0 && (
-                      <span className="saved-view-empty">
-                        No saved views yet.
-                      </span>
-                    )}
-                    {savedViews.map((view) => (
-                      <div className="saved-view-item" key={view.id}>
-                        <button
-                          className="ghost-btn"
-                          type="button"
-                          onClick={() => applySavedView(view)}
-                        >
-                          {view.name}
-                        </button>
-                        <span>{formatChainValue(view.createdAt)}</span>
-                        <button
-                          className="ghost-btn"
-                          type="button"
-                          onClick={() => deleteSavedView(view.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="filter-card">
-                  <div className="filter-grid">
-                    <input
-                      value={filters.search}
-                      onChange={updateFilterField("search")}
-                      placeholder="Search id, name, description, hash"
-                    />
-                    <select
-                      value={filters.status}
-                      onChange={updateFilterField("status")}
-                    >
-                      <option value="all">All status</option>
-                      <option value="active">Active</option>
-                      <option value="verified">Verified</option>
-                      <option value="pending">Pending</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="deprecated">Deprecated</option>
-                    </select>
-                    <select
-                      value={filters.visibility}
-                      onChange={updateFilterField("visibility")}
-                    >
-                      <option value="all">All visibility</option>
-                      <option value="public">Public</option>
-                      <option value="private">Private</option>
-                    </select>
-                    <select
-                      value={filters.dataType}
-                      onChange={updateFilterField("dataType")}
-                    >
-                      <option value="all">All data types</option>
-                      {dataTypeOptions.map((option) => (
-                        <option key={`type-${option}`} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      value={filters.owner}
-                      onChange={updateFilterField("owner")}
-                      placeholder="Owner contains..."
-                    />
-                    <div className="filter-range">
-                      <input
-                        value={filters.altitudeMin}
-                        onChange={updateFilterField("altitudeMin")}
-                        placeholder="Altitude min"
-                      />
-                      <input
-                        value={filters.altitudeMax}
-                        onChange={updateFilterField("altitudeMax")}
-                        placeholder="Altitude max"
-                      />
-                    </div>
-                  </div>
-                  <div className="filter-actions">
-                    <span>
-                      Showing {filteredDatasets.length} of{" "}
-                      {activeDatasets.length}
-                    </span>
-                    <div className="filter-sort">
-                      <label htmlFor="dataset-sort">Sort by</label>
-                      <select
-                        id="dataset-sort"
-                        value={sortMode}
-                        onChange={(event) =>
-                          setSortMode(event.currentTarget.value as SortMode)
-                        }
-                      >
-                        <option value="quality-desc">
-                          Quality score (high to low)
-                        </option>
-                        <option value="recent-desc">
-                          Newest collection first
-                        </option>
-                        <option value="recent-asc">
-                          Oldest collection first
-                        </option>
-                        <option value="altitude-desc">
-                          Highest altitude first
-                        </option>
-                        <option value="status-priority">Status priority</option>
-                      </select>
-                    </div>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={() => setFilters(defaultFilters)}
-                      disabled={!hasActiveFilters}
-                    >
-                      Reset filters
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={exportFilteredDatasets}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Export filtered JSON
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={openRandomFilteredDataset}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Surprise me
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyFilterSummary}
-                    >
-                      Copy summary
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyVisibleDatasetIds}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Copy visible IDs
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyVisibleOwners}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Copy owners
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyVisibleDatasetNames}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Copy names
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyVisibleStatuses}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Copy statuses
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={useVisibleAsWatchlist}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Watch visible
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={copyVisibleIpfsHashes}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Copy IPFS
-                    </button>
-                    <button
-                      className="ghost-btn"
-                      type="button"
-                      onClick={auditTopVisibleDataset}
-                      disabled={filteredDatasets.length === 0}
-                    >
-                      Audit top result
-                    </button>
-                  </div>
-                </div>
-                <div className="geo-card">
-                  <div className="geo-header">
-                    <div>
-                      <h3>Geospatial explorer</h3>
-                      <p>
-                        Plot datasets by coordinates and scrub collection time
-                        to inspect spatial coverage changes.
-                      </p>
-                    </div>
-                    <div className="geo-summary">
-                      <span>
-                        Visible points: {geoDatasets.length}/
-                        {filteredDatasets.length}
-                      </span>
-                      {geoTimeCutoff && (
-                        <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="geo-timeline">
-                    <label htmlFor="geo-time-slider">Time window</label>
-                    <input
-                      id="geo-time-slider"
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={geoTimePercent}
-                      onChange={(event) =>
-                        setGeoTimePercent(
-                          Number.parseInt(readValue(event), 10) || 0,
-                        )
-                      }
-                      disabled={!geoTimeBounds}
-                    />
-                    <span>{geoTimePercent}%</span>
-                  </div>
-                  <div className="geo-layout">
-                    <div className="geo-map">
-                      <div className="geo-map__grid" />
-                      {geoDatasets.map((dataset) => {
-                        const left =
-                          ((dataset.longitude / 1_000_000 + 180) / 360) * 100;
-                        const top =
-                          (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
-                        return (
-                          <button
-                            key={`geo-${dataset.id}`}
-                            className={`geo-point ${
-                              selectedGeoDataset?.id === dataset.id
-                                ? "active"
-                                : ""
-                            }`}
-                            title={`#${dataset.id} ${dataset.name}`}
-                            type="button"
-                            style={{ left: `${left}%`, top: `${top}%` }}
-                            onClick={() => setGeoTarget(dataset.id)}
-                          />
-                        );
-                      })}
-                      {geoDatasets.length === 0 && (
-                        <div className="geo-empty">
-                          No points in the current time window.
-                        </div>
-                      )}
-                    </div>
-                    <aside className="geo-detail">
-                      {!selectedGeoDataset ? (
-                        <p className="dataset-description">
-                          Select a point to inspect details.
-                        </p>
-                      ) : (
-                        <>
-                          <div className="geo-detail__title">
-                            #{selectedGeoDataset.id} {selectedGeoDataset.name}
-                          </div>
-                          <p className="dataset-description">
-                            {selectedGeoDataset.description}
-                          </p>
-                          <div className="geo-detail__meta">
-                            <span>
-                              Lat/Lng:{" "}
-                              {formatCoord(selectedGeoDataset.latitude)},{" "}
-                              {formatCoord(selectedGeoDataset.longitude)}
-                            </span>
-                            <span>
-                              Altitude: {selectedGeoDataset.altitudeMin}-
-                              {selectedGeoDataset.altitudeMax} m
-                            </span>
-                            <span>
-                              Collected:{" "}
-                              {formatChainValue(
-                                selectedGeoDataset.collectionDate,
-                              )}
-                            </span>
-                          </div>
-                          <button
-                            className="ghost-btn"
-                            type="button"
-                            onClick={() =>
-                              setLineageTarget(selectedGeoDataset.id)
-                            }
-                          >
-                            Open in audit trail
-                          </button>
-                          <button
-                            className="ghost-btn"
-                            type="button"
-                            onClick={() =>
-                              openDatasetDetail(selectedGeoDataset.id)
-                            }
-                          >
-                            Open detail
-                          </button>
-                        </>
-                      )}
-                    </aside>
-                  </div>
-                </div>
-                <div className="compare-card">
-                  <div className="compare-header">
-                    <div>
-                      <h3>Comparative analysis panel</h3>
-                      <p>
-                        Select up to 4 datasets for side-by-side metric
-                        comparison.
-                      </p>
-                    </div>
-                    <div className="compare-actions">
-                      <span>Selected: {compareDatasets.length}/4</span>
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={compareTopVisibleDatasets}
-                        disabled={filteredDatasets.length === 0}
-                      >
-                        Compare top 4
-                      </button>
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={clearCompareSelection}
-                        disabled={compareDatasets.length === 0}
-                      >
-                        Clear compare
-                      </button>
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={exportComparison}
-                        disabled={compareDatasets.length === 0}
-                      >
-                        Export JSON
-                      </button>
-                    </div>
-                  </div>
-                  <div className="compare-picks">
-                    {filteredDatasets.slice(0, 12).map((dataset) => {
-                      const selected = compareSelectionIds.includes(
-                        String(dataset.id),
-                      );
-                      return (
-                        <button
-                          key={`cmp-pick-${dataset.id}`}
-                          type="button"
-                          className={`compare-pick ${selected ? "active" : ""}`}
-                          onClick={() => toggleCompareDataset(dataset.id)}
-                        >
-                          #{dataset.id} {dataset.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {compareDatasets.length === 0 && (
+                <aside className="geo-detail">
+                  {!selectedGeoDataset ? (
                     <p className="dataset-description">
-                      Choose datasets above to populate the comparison matrix.
+                      Select a point to inspect details.
                     </p>
-                  )}
-                  {compareDatasets.length > 0 && (
-                    <div className="compare-grid">
-                      <div className="compare-grid__header">Metric</div>
-                      {compareDatasets.map((dataset) => (
-                        <div
-                          key={`cmp-header-${dataset.id}`}
-                          className="compare-grid__header"
-                        >
-                          #{dataset.id} {dataset.name}
-                          {compareMetrics.best?.id === dataset.id && (
-                            <span className="compare-best">Best quality</span>
-                          )}
-                        </div>
-                      ))}
-                      {compareMetrics.rows.map((row) => (
-                        <div key={`cmp-row-${row.key}`} className="compare-row">
-                          <div
-                            className={`compare-cell compare-cell--label ${
-                              row.changed ? "diff" : ""
-                            }`}
-                          >
-                            {row.label}
-                          </div>
-                          {row.values.map((value, index) => (
-                            <div
-                              key={`cmp-row-${row.key}-${compareDatasets[index].id}`}
-                              className={`compare-cell ${row.changed ? "diff" : ""}`}
-                            >
-                              {value}
-                            </div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="story-card">
-                  <div className="story-head">
-                    <div>
-                      <h3>Data story mode</h3>
-                      <p>
-                        Auto-generated narrative from your current filtered and
-                        ranked dataset view.
+                  ) : (
+                    <>
+                      <div className="geo-detail__title">
+                        #{selectedGeoDataset.id} {selectedGeoDataset.name}
+                      </div>
+                      <p className="dataset-description">
+                        {selectedGeoDataset.description}
                       </p>
-                    </div>
-                    <div className="story-controls">
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={() => setStoryPlaying((prev) => !prev)}
-                        disabled={storyChapters.length <= 1}
-                      >
-                        {storyPlaying ? "Pause" : "Play"}
-                      </button>
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={() =>
-                          setStoryStepIndex((prev) =>
-                            prev <= 0
-                              ? Math.max(storyChapters.length - 1, 0)
-                              : prev - 1,
-                          )
-                        }
-                        disabled={storyChapters.length === 0}
-                      >
-                        Prev
-                      </button>
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={() =>
-                          setStoryStepIndex((prev) =>
-                            storyChapters.length === 0
-                              ? 0
-                              : (prev + 1) % storyChapters.length,
-                          )
-                        }
-                        disabled={storyChapters.length === 0}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                  {storyChapters.length === 0 && (
-                    <p className="dataset-description">
-                      Add or load datasets to generate a narrative.
-                    </p>
-                  )}
-                  {activeStoryChapter && (
-                    <article className="story-chapter">
-                      <div className="story-progress">
+                      <div className="geo-detail__meta">
                         <span>
-                          Chapter {storyStepIndex + 1} / {storyChapters.length}
+                          Lat/Lng: {formatCoord(selectedGeoDataset.latitude)},{" "}
+                          {formatCoord(selectedGeoDataset.longitude)}
                         </span>
-                        <div className="story-dots">
-                          {storyChapters.map((chapter, index) => (
-                            <button
-                              key={chapter.id}
-                              type="button"
-                              className={`story-dot ${index === storyStepIndex ? "active" : ""}`}
-                              onClick={() => setStoryStepIndex(index)}
-                            />
-                          ))}
-                        </div>
+                        <span>
+                          Altitude: {selectedGeoDataset.altitudeMin}-
+                          {selectedGeoDataset.altitudeMax} m
+                        </span>
+                        <span>
+                          Collected:{" "}
+                          {formatChainValue(selectedGeoDataset.collectionDate)}
+                        </span>
                       </div>
-                      <h4>{activeStoryChapter.title}</h4>
-                      <p>{activeStoryChapter.body}</p>
-                      {activeStoryChapter.datasetId && (
-                        <button
-                          className="ghost-btn"
-                          type="button"
-                          onClick={() =>
-                            setLineageTarget(activeStoryChapter.datasetId!)
-                          }
-                        >
-                          Open dataset #{activeStoryChapter.datasetId} in audit
-                        </button>
-                      )}
-                    </article>
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() => setLineageTarget(selectedGeoDataset.id)}
+                      >
+                        Open in audit trail
+                      </button>
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() => openDatasetDetail(selectedGeoDataset.id)}
+                      >
+                        Open detail
+                      </button>
+                    </>
                   )}
+                </aside>
+              </div>
+            </div>
+            <div className="compare-card">
+              <div className="compare-header">
+                <div>
+                  <h3>Comparative analysis panel</h3>
+                  <p>
+                    Select up to 4 datasets for side-by-side metric comparison.
+                  </p>
                 </div>
-
-                <div className="dataset-grid">
-                  {activeDatasets.length === 0 && (
-                    <div className="dataset-card">
-                      <div className="dataset-title">
-                        No datasets loaded yet
-                      </div>
-                      <p className="dataset-description">
-                        {activeTab === "explore"
-                          ? "Refresh to pull the latest records from mainnet."
-                          : "Paste a Stacks address to load datasets tied to that owner."}
-                      </p>
+                <div className="compare-actions">
+                  <span>Selected: {compareDatasets.length}/4</span>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={compareTopVisibleDatasets}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Compare top 4
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={clearCompareSelection}
+                    disabled={compareDatasets.length === 0}
+                  >
+                    Clear compare
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportComparison}
+                    disabled={compareDatasets.length === 0}
+                  >
+                    Export JSON
+                  </button>
+                </div>
+              </div>
+              <div className="compare-picks">
+                {filteredDatasets.slice(0, 12).map((dataset) => {
+                  const selected = compareSelectionIds.includes(
+                    String(dataset.id),
+                  );
+                  return (
+                    <button
+                      key={`cmp-pick-${dataset.id}`}
+                      type="button"
+                      className={`compare-pick ${selected ? "active" : ""}`}
+                      onClick={() => toggleCompareDataset(dataset.id)}
+                    >
+                      #{dataset.id} {dataset.name}
+                    </button>
+                  );
+                })}
+              </div>
+              {compareDatasets.length === 0 && (
+                <p className="dataset-description">
+                  Choose datasets above to populate the comparison matrix.
+                </p>
+              )}
+              {compareDatasets.length > 0 && (
+                <div className="compare-grid">
+                  <div className="compare-grid__header">Metric</div>
+                  {compareDatasets.map((dataset) => (
+                    <div
+                      key={`cmp-header-${dataset.id}`}
+                      className="compare-grid__header"
+                    >
+                      #{dataset.id} {dataset.name}
+                      {compareMetrics.best?.id === dataset.id && (
+                        <span className="compare-best">Best quality</span>
+                      )}
                     </div>
-                  )}
-                  {activeDatasets.length > 0 && sortedDatasets.length === 0 && (
-                    <div className="dataset-card">
-                      <div className="dataset-title">
-                        No datasets match filters
+                  ))}
+                  {compareMetrics.rows.map((row) => (
+                    <div key={`cmp-row-${row.key}`} className="compare-row">
+                      <div
+                        className={`compare-cell compare-cell--label ${
+                          row.changed ? "diff" : ""
+                        }`}
+                      >
+                        {row.label}
                       </div>
-                      <p className="dataset-description">
-                        Try broadening your filter criteria or reset all
-                        filters.
-                      </p>
+                      {row.values.map((value, index) => (
+                        <div
+                          key={`cmp-row-${row.key}-${compareDatasets[index].id}`}
+                          className={`compare-cell ${row.changed ? "diff" : ""}`}
+                        >
+                          {value}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  {sortedDatasets.map((dataset) => (
-                    <DatasetCard
-                      key={`${activeTab}-${dataset.id}`}
-                      dataset={dataset}
-                      statusClass={getStatusClass(dataset.status)}
-                      rank={datasetRankById.get(dataset.id) ?? "-"}
-                      qualityScore={getQualityScore(dataset)}
-                      stewardshipSignal={stewardshipSignalByDatasetId.get(
-                        dataset.id,
-                      )}
-                      isStewardStaked={stewardshipSignalByDatasetId.has(
-                        dataset.id,
-                      )}
-                      compareActive={compareSelectionIds.includes(
-                        String(dataset.id),
-                      )}
-                      watchActive={watchlistIds.includes(String(dataset.id))}
-                      formatCoord={formatCoord}
-                      onCopyId={() =>
-                        copyText(String(dataset.id), "Dataset ID")
-                      }
-                      onCopyOwner={() => copyText(dataset.owner, "Owner")}
-                      onCopyIpfs={() =>
-                        copyText(dataset.ipfsHash || "", "IPFS hash")
-                      }
-                      onOpenDetail={() => openDatasetDetail(dataset.id)}
-                      onAudit={() => setLineageTarget(dataset.id)}
-                      onToggleCompare={() => toggleCompareDataset(dataset.id)}
-                      onToggleWatch={() => toggleWatchlistDataset(dataset.id)}
-                    />
                   ))}
                 </div>
-              </section>
+              )}
+            </div>
+            <div className="story-card">
+              <div className="story-head">
+                <div>
+                  <h3>Data story mode</h3>
+                  <p>
+                    Auto-generated narrative from your current filtered and
+                    ranked dataset view.
+                  </p>
+                </div>
+                <div className="story-controls">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => setStoryPlaying((prev) => !prev)}
+                    disabled={storyChapters.length <= 1}
+                  >
+                    {storyPlaying ? "Pause" : "Play"}
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      setStoryStepIndex((prev) =>
+                        prev <= 0
+                          ? Math.max(storyChapters.length - 1, 0)
+                          : prev - 1,
+                      )
+                    }
+                    disabled={storyChapters.length === 0}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      setStoryStepIndex((prev) =>
+                        storyChapters.length === 0
+                          ? 0
+                          : (prev + 1) % storyChapters.length,
+                      )
+                    }
+                    disabled={storyChapters.length === 0}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+              {storyChapters.length === 0 && (
+                <p className="dataset-description">
+                  Add or load datasets to generate a narrative.
+                </p>
+              )}
+              {activeStoryChapter && (
+                <article className="story-chapter">
+                  <div className="story-progress">
+                    <span>
+                      Chapter {storyStepIndex + 1} / {storyChapters.length}
+                    </span>
+                    <div className="story-dots">
+                      {storyChapters.map((chapter, index) => (
+                        <button
+                          key={chapter.id}
+                          type="button"
+                          className={`story-dot ${index === storyStepIndex ? "active" : ""}`}
+                          onClick={() => setStoryStepIndex(index)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <h4>{activeStoryChapter.title}</h4>
+                  <p>{activeStoryChapter.body}</p>
+                  {activeStoryChapter.datasetId && (
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() =>
+                        setLineageTarget(activeStoryChapter.datasetId!)
+                      }
+                    >
+                      Open dataset #{activeStoryChapter.datasetId} in audit
+                    </button>
+                  )}
+                </article>
+              )}
+            </div>
+
+            <div className="dataset-grid">
+              {activeDatasets.length === 0 && (
+                <div className="dataset-card">
+                  <div className="dataset-title">No datasets loaded yet</div>
+                  <p className="dataset-description">
+                    {activeTab === "explore"
+                      ? "Refresh to pull the latest records from mainnet."
+                      : "Paste a Stacks address to load datasets tied to that owner."}
+                  </p>
+                </div>
+              )}
+              {activeDatasets.length > 0 && sortedDatasets.length === 0 && (
+                <div className="dataset-card">
+                  <div className="dataset-title">No datasets match filters</div>
+                  <p className="dataset-description">
+                    Try broadening your filter criteria or reset all filters.
+                  </p>
+                </div>
+              )}
+              {sortedDatasets.map((dataset) => (
+                <DatasetCard
+                  key={`${activeTab}-${dataset.id}`}
+                  dataset={dataset}
+                  statusClass={getStatusClass(dataset.status)}
+                  rank={datasetRankById.get(dataset.id) ?? "-"}
+                  qualityScore={getQualityScore(dataset)}
+                  stewardshipSignal={stewardshipSignalByDatasetId.get(
+                    dataset.id,
+                  )}
+                  isStewardStaked={stewardshipSignalByDatasetId.has(dataset.id)}
+                  compareActive={compareSelectionIds.includes(
+                    String(dataset.id),
+                  )}
+                  watchActive={watchlistIds.includes(String(dataset.id))}
+                  formatCoord={formatCoord}
+                  onCopyId={() => copyText(String(dataset.id), "Dataset ID")}
+                  onCopyOwner={() => copyText(dataset.owner, "Owner")}
+                  onCopyIpfs={() =>
+                    copyText(dataset.ipfsHash || "", "IPFS hash")
+                  }
+                  onOpenDetail={() => openDatasetDetail(dataset.id)}
+                  onAudit={() => setLineageTarget(dataset.id)}
+                  onToggleCompare={() => toggleCompareDataset(dataset.id)}
+                  onToggleWatch={() => toggleWatchlistDataset(dataset.id)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {featureTab === "add-dataset" && (
+          <section className="section" id="register-dataset">
+            {statusMessage && (
+              <div className="status-banner">{statusMessage}</div>
             )}
-          </>
+            <div className="section-header">
+              <div>
+                <h2>Register a dataset</h2>
+                <p>Submit a new dataset to the Atmos mainnet registry.</p>
+              </div>
+            </div>
+            <form
+              className="form-grid"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleRegisterSubmit();
+              }}
+            >
+              <div className="form-card">
+                <div className="form-header">
+                  <h3>Dataset details</h3>
+                  <p className="form-help">
+                    Required fields are marked with an asterisk (*). The data
+                    you enter will be stored on-chain.
+                  </p>
+                </div>
+                <div className="field-grid">
+                  <label className="field-label" htmlFor="dataset-name">
+                    Name <span className="field-required">*</span>
+                  </label>
+                  <input
+                    id="dataset-name"
+                    value={registerForm.name}
+                    onChange={updateRegisterField("name")}
+                    placeholder="Dataset name"
+                  />
+
+                  <label className="field-label" htmlFor="dataset-type">
+                    Data type <span className="field-required">*</span>
+                  </label>
+                  <input
+                    id="dataset-type"
+                    value={registerForm.dataType}
+                    onChange={updateRegisterField("dataType")}
+                    placeholder="Data type (e.g. imagery, sensor, model)"
+                  />
+
+                  <label className="field-label" htmlFor="dataset-description">
+                    Description <span className="field-required">*</span>
+                  </label>
+                  <textarea
+                    id="dataset-description"
+                    value={registerForm.description}
+                    onChange={updateRegisterField("description")}
+                    placeholder="Short description"
+                    rows={4}
+                  />
+
+                  <div className="field-row">
+                    <div>
+                      <label className="field-label" htmlFor="collection-date">
+                        Collection date
+                      </label>
+                      <input
+                        id="collection-date"
+                        value={registerForm.collectionDate}
+                        onChange={updateRegisterField("collectionDate")}
+                        placeholder="Unix timestamp or block height"
+                      />
+                    </div>
+                    <div>
+                      <label className="field-label" htmlFor="ipfs-hash">
+                        IPFS hash
+                      </label>
+                      <input
+                        id="ipfs-hash"
+                        value={registerForm.ipfsHash}
+                        onChange={updateRegisterField("ipfsHash")}
+                        placeholder="Optional (Qm... or bafy...)"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="field-row">
+                    <div>
+                      <label className="field-label" htmlFor="altitude-min">
+                        Altitude min (m)
+                      </label>
+                      <input
+                        id="altitude-min"
+                        value={registerForm.altitudeMin}
+                        onChange={updateRegisterField("altitudeMin")}
+                        placeholder="e.g. 0"
+                      />
+                    </div>
+                    <div>
+                      <label className="field-label" htmlFor="altitude-max">
+                        Altitude max (m)
+                      </label>
+                      <input
+                        id="altitude-max"
+                        value={registerForm.altitudeMax}
+                        onChange={updateRegisterField("altitudeMax")}
+                        placeholder="e.g. 1200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="field-row">
+                    <div>
+                      <label className="field-label" htmlFor="latitude">
+                        Latitude (deg)
+                      </label>
+                      <input
+                        id="latitude"
+                        value={registerForm.latitude}
+                        onChange={updateRegisterField("latitude")}
+                        placeholder="e.g. 37.7749"
+                      />
+                    </div>
+                    <div>
+                      <label className="field-label" htmlFor="longitude">
+                        Longitude (deg)
+                      </label>
+                      <input
+                        id="longitude"
+                        value={registerForm.longitude}
+                        onChange={updateRegisterField("longitude")}
+                        placeholder="e.g. -122.4194"
+                      />
+                    </div>
+                  </div>
+
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={registerForm.isPublic}
+                      onChange={(event) =>
+                        setRegisterForm((prev) => ({
+                          ...prev,
+                          isPublic: readChecked(event),
+                        }))
+                      }
+                    />
+                    <span>Mark dataset as public</span>
+                  </label>
+                </div>
+                <div className="form-actions">
+                  <div className="form-actions-row">
+                    <button className="primary-btn" type="submit">
+                      Submit dataset
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => setFeatureTab("datasets")}
+                    >
+                      Back to list
+                    </button>
+                  </div>
+                  {txStatus && <div className="form-note">{txStatus}</div>}
+                </div>
+              </div>
+              <div className="form-card form-card--info">
+                <h3>Registry requirements</h3>
+                <ul>
+                  <li>Latitude and longitude are stored in micro-degrees.</li>
+                  <li>Altitude range must be positive and ordered.</li>
+                  <li>Metadata can be frozen later by the dataset owner.</li>
+                  <li>IPFS hash is optional but recommended.</li>
+                </ul>
+              </div>
+            </form>
+          </section>
         )}
       </main>
       {showBackToTop && (

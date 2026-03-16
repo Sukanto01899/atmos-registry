@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
 :root {
   color-scheme: dark;
-  --nav-offset: 8rem;
+  --nav-offset: 10rem;
   --bg: #0b1015;
   --bg-soft: #0f1721;
   --card: #131c26;
@@ -23,21 +23,40 @@
 
 body {
   margin: 0;
-  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
-  background: radial-gradient(circle at 12% 18%, rgba(245, 159, 75, 0.12), transparent 48%),
-    radial-gradient(circle at 80% 6%, rgba(55, 209, 161, 0.18), transparent 52%),
-    radial-gradient(circle at 70% 90%, rgba(106, 166, 255, 0.16), transparent 58%),
+  font-family:
+    "Space Grotesk",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background:
+    radial-gradient(
+      circle at 12% 18%,
+      rgba(245, 159, 75, 0.12),
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 80% 6%,
+      rgba(55, 209, 161, 0.18),
+      transparent 52%
+    ),
+    radial-gradient(
+      circle at 70% 90%,
+      rgba(106, 166, 255, 0.16),
+      transparent 58%
+    ),
     var(--bg);
   color: var(--text);
   min-height: 100vh;
 }
 
-html {
+html,
+body {
   scroll-padding-top: var(--nav-offset);
 }
 
-
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: "Fraunces", "Space Grotesk", serif;
   margin: 0;
   letter-spacing: 0.01em;
@@ -47,12 +66,22 @@ p {
   margin: 0;
 }
 
-input, button, select {
-  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+input,
+button,
+select {
+  font-family:
+    "Space Grotesk",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 textarea {
-  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  font-family:
+    "Space Grotesk",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .app {
@@ -64,9 +93,22 @@ textarea {
 .glow-layer {
   position: absolute;
   inset: -200px;
-  background: radial-gradient(circle at 15% 25%, rgba(245, 159, 75, 0.18), transparent 45%),
-    radial-gradient(circle at 72% 12%, rgba(55, 209, 161, 0.16), transparent 40%),
-    radial-gradient(circle at 85% 80%, rgba(106, 166, 255, 0.14), transparent 45%);
+  background:
+    radial-gradient(
+      circle at 15% 25%,
+      rgba(245, 159, 75, 0.18),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 72% 12%,
+      rgba(55, 209, 161, 0.16),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 85% 80%,
+      rgba(106, 166, 255, 0.14),
+      transparent 45%
+    );
   pointer-events: none;
   opacity: 0.6;
   z-index: 0;
@@ -220,7 +262,8 @@ textarea {
   transition: all 0.2s ease;
 }
 
-.tab-btn.active, .tab-btn:hover {
+.tab-btn.active,
+.tab-btn:hover {
   color: var(--text);
   border-color: rgba(245, 159, 75, 0.45);
   background: rgba(245, 159, 75, 0.12);
@@ -399,7 +442,9 @@ textarea {
   border-radius: 12px;
   cursor: pointer;
   box-shadow: 0 18px 38px rgba(245, 159, 75, 0.32);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .primary-btn:hover {
@@ -593,7 +638,11 @@ textarea:focus {
 
 .stake-card--overview {
   background:
-    radial-gradient(circle at top right, rgba(245, 138, 61, 0.14), transparent 36%),
+    radial-gradient(
+      circle at top right,
+      rgba(245, 138, 61, 0.14),
+      transparent 36%
+    ),
     rgba(17, 25, 34, 0.84);
 }
 
@@ -1121,8 +1170,16 @@ textarea:focus {
   border-radius: 14px;
   border: 1px solid var(--border);
   background:
-    radial-gradient(circle at 25% 20%, rgba(90, 160, 255, 0.2), transparent 40%),
-    radial-gradient(circle at 75% 80%, rgba(32, 201, 151, 0.18), transparent 42%),
+    radial-gradient(
+      circle at 25% 20%,
+      rgba(90, 160, 255, 0.2),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 75% 80%,
+      rgba(32, 201, 151, 0.18),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(24, 33, 44, 0.9), rgba(12, 17, 22, 0.95));
   overflow: hidden;
 }
@@ -1498,7 +1555,11 @@ textarea:focus {
   border: 1px solid var(--border);
   border-radius: 22px;
   background:
-    radial-gradient(circle at top right, rgba(90, 160, 255, 0.12), transparent 28%),
+    radial-gradient(
+      circle at top right,
+      rgba(90, 160, 255, 0.12),
+      transparent 28%
+    ),
     rgba(17, 25, 34, 0.98);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.48);
   padding: 1.3rem;
@@ -1904,6 +1965,72 @@ textarea:focus {
   gap: 1.5rem;
 }
 
+.form-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.form-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.form-help {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  display: inline-block;
+}
+
+.field-required {
+  color: rgba(245, 138, 61, 0.85);
+}
+
+.dataset-view-tabs {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.dataset-view-btn {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(22, 31, 43, 0.7);
+  color: var(--text);
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.dataset-view-btn:hover {
+  border-color: rgba(55, 209, 161, 0.55);
+  background: rgba(55, 209, 161, 0.1);
+}
+
+.dataset-view-btn.active {
+  border-color: rgba(245, 159, 75, 0.6);
+  background: rgba(245, 159, 75, 0.15);
+  color: var(--text);
+}
+
+.form-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .form-card {
   padding: 1.5rem;
   border-radius: 20px;
@@ -1992,7 +2119,8 @@ textarea:focus {
     width: min(92vw, 320px);
   }
 
-  .field-row, .owner-form {
+  .field-row,
+  .owner-form {
     grid-template-columns: 1fr;
   }
 

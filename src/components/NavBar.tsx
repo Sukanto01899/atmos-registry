@@ -1,7 +1,19 @@
 type Props = {
-  featureTab: "datasets" | "staking" | "alerts" | "audit" | "versions";
+  featureTab:
+    | "datasets"
+    | "add-dataset"
+    | "staking"
+    | "alerts"
+    | "audit"
+    | "versions";
   onFeatureTabChange: (
-    tab: "datasets" | "staking" | "alerts" | "audit" | "versions",
+    tab:
+      | "datasets"
+      | "add-dataset"
+      | "staking"
+      | "alerts"
+      | "audit"
+      | "versions",
   ) => void;
   onMenuAction: (
     action:
@@ -40,6 +52,7 @@ export function NavBar({
   const [menuOpen, setMenuOpen] = useState(false);
   const featureTabs = [
     { id: "datasets", label: "Home" },
+    { id: "add-dataset", label: "Add dataset" },
     { id: "staking", label: "Staking" },
     { id: "alerts", label: "Alerts" },
     { id: "audit", label: "Audit" },
@@ -70,11 +83,17 @@ export function NavBar({
             onClick={onToggleAlerts}
           >
             Alerts
-            <span className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}>
+            <span
+              className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}
+            >
               {unreadAlertCount}
             </span>
           </button>
-          <button className="ghost-btn" type="button" onClick={onOpenCommandPalette}>
+          <button
+            className="ghost-btn"
+            type="button"
+            onClick={onOpenCommandPalette}
+          >
             Command
           </button>
           {walletAddress ? (
@@ -114,22 +133,58 @@ export function NavBar({
             </button>
             {menuOpen && (
               <div className="nav__dropdown">
-                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("home"); }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onMenuAction("home");
+                  }}
+                >
                   Home
                 </button>
-                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("add-dataset"); }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onMenuAction("add-dataset");
+                  }}
+                >
                   Add dataset
                 </button>
-                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("staking"); }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onMenuAction("staking");
+                  }}
+                >
                   Staking
                 </button>
-                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("alerts"); }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onMenuAction("alerts");
+                  }}
+                >
                   Alerts
                 </button>
-                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("audit"); }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onMenuAction("audit");
+                  }}
+                >
                   Audit
                 </button>
-                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("versions"); }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onMenuAction("versions");
+                  }}
+                >
                   Versions
                 </button>
               </div>
