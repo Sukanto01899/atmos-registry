@@ -1857,21 +1857,6 @@ textarea:focus {
   overflow: hidden;
 }
 
-.dataset-card--skeleton-inline {
-  padding: 1rem 1.2rem;
-}
-
-.dataset-card--skeleton-inline .skeleton-title {
-  width: 55%;
-  height: 0.95rem;
-}
-
-.dataset-card--skeleton-inline .skeleton-short {
-  width: 35%;
-  height: 0.75rem;
-  margin-bottom: 0;
-}
-
 .skeleton-line {
   height: 0.85rem;
   border-radius: 999px;
@@ -2033,6 +2018,41 @@ textarea:focus {
   color: rgba(255, 255, 255, 0.65);
   border-top: 1px solid var(--border);
   padding-top: 0.9rem;
+}
+
+.dataset-refresh {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.8);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.dataset-refresh__bar {
+  position: relative;
+  height: 8px;
+  flex: 1;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dataset-refresh__shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(245, 159, 75, 0.15) 0%,
+    rgba(55, 209, 161, 0.3) 50%,
+    rgba(245, 159, 75, 0.15) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 @keyframes shimmer {

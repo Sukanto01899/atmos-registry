@@ -3612,17 +3612,12 @@ function App() {
               }`}
             >
               {loading && activeDatasets.length > 0 && (
-                <>
-                  {[0, 1].map((item) => (
-                    <div
-                      className="dataset-card dataset-card--skeleton dataset-card--skeleton-inline"
-                      key={`dataset-skeleton-inline-${item}`}
-                    >
-                      <div className="skeleton-line skeleton-title" />
-                      <div className="skeleton-line skeleton-short" />
-                    </div>
-                  ))}
-                </>
+                <div className="dataset-refresh">
+                  <span>Refreshing…</span>
+                  <div className="dataset-refresh__bar">
+                    <div className="dataset-refresh__shimmer" />
+                  </div>
+                </div>
               )}
               {loading && activeDatasets.length === 0 && (
                 <>
