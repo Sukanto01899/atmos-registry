@@ -81,8 +81,11 @@ const APP_DETAILS = {
   icon: getAppIcon(),
 };
 
+const REGISTER_DRAFT_KEY = "atmos-register-draft";
+
 function App() {
   const hasHydratedUrlRef = useRef(false);
+  const hasHydratedRegisterDraft = useRef(false);
   const [featureTab, setFeatureTab] = useState<
     "datasets" | "add-dataset" | "staking" | "alerts" | "audit" | "versions"
   >("datasets");
@@ -220,6 +223,38 @@ function App() {
     () => parseMicroTokenInput(unstakeAmount),
     [unstakeAmount],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const rawDraft = window.localStorage.getItem(REGISTER_DRAFT_KEY);
+    if (!rawDraft) {
+      hasHydratedRegisterDraft.current = true;
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawDraft) as Partial<RegisterFormState>;
+      setRegisterForm((prev) => ({ ...prev, ...parsed }));
+    } catch {
+      window.localStorage.removeItem(REGISTER_DRAFT_KEY);
+    } finally {
+      hasHydratedRegisterDraft.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!hasHydratedRegisterDraft.current) {
+      return;
+    }
+    window.localStorage.setItem(
+      REGISTER_DRAFT_KEY,
+      JSON.stringify(registerForm),
+    );
+  }, [registerForm]);
   const hasActiveFilters = useMemo(
     () =>
       Boolean(
@@ -1509,6 +1544,9 @@ function App() {
           setTxStatus(`Transaction submitted: ${data.txId}`);
           loadLatest();
           setRegisterForm(defaultRegisterForm);
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(REGISTER_DRAFT_KEY);
+          }
         },
         onCancel: () => {
           setTxStatus("Transaction canceled.");
