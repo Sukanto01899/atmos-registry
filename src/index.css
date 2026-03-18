@@ -1040,6 +1040,36 @@ textarea:focus {
   gap: 1.4rem;
 }
 
+.dataset-grid--compact {
+  gap: 0.95rem;
+}
+
+.dataset-grid--compact .dataset-card {
+  padding: 1.1rem;
+}
+
+.dataset-grid--compact .dataset-title {
+  font-size: 1.05rem;
+}
+
+.dataset-grid--compact .dataset-description {
+  margin: 0.55rem 0 0.9rem;
+  font-size: 0.88rem;
+}
+
+.dataset-grid--compact .dataset-meta {
+  gap: 0.65rem;
+}
+
+.dataset-grid--compact .dataset-meta strong {
+  font-size: 0.9rem;
+}
+
+.dataset-grid--compact .dataset-foot {
+  gap: 0.65rem;
+  padding-top: 0.7rem;
+}
+
 .filter-card {
   margin-bottom: 1.25rem;
   padding: 1rem;

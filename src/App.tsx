@@ -122,6 +122,9 @@ function App() {
   const [storyStepIndex, setStoryStepIndex] = useState(0);
   const [storyPlaying, setStoryPlaying] = useState(false);
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
+  const [datasetDensity, setDatasetDensity] = useState<
+    "comfortable" | "compact"
+  >("comfortable");
   const [versionStore, setVersionStore] = useState<
     Record<number, VersionRecord[]>
   >({});
@@ -3054,6 +3057,26 @@ function App() {
                 </div>
               )}
               <div className="section-tools">
+                <div className="dataset-view-tabs">
+                  <button
+                    className={`dataset-view-btn ${
+                      datasetDensity === "comfortable" ? "active" : ""
+                    }`}
+                    type="button"
+                    onClick={() => setDatasetDensity("comfortable")}
+                  >
+                    Comfort
+                  </button>
+                  <button
+                    className={`dataset-view-btn ${
+                      datasetDensity === "compact" ? "active" : ""
+                    }`}
+                    type="button"
+                    onClick={() => setDatasetDensity("compact")}
+                  >
+                    Compact
+                  </button>
+                </div>
                 <button
                   className="ghost-btn"
                   type="button"
@@ -3583,7 +3606,11 @@ function App() {
               )}
             </div>
 
-            <div className="dataset-grid">
+            <div
+              className={`dataset-grid ${
+                datasetDensity === "compact" ? "dataset-grid--compact" : ""
+              }`}
+            >
               {activeDatasets.length === 0 && (
                 <div className="dataset-card">
                   <div className="dataset-title">No datasets loaded yet</div>
