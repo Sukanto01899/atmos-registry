@@ -1,23 +1,4 @@
-import type { Dataset } from "../type";
-
-type Props = {
-  dataset: Dataset;
-  statusClass: string;
-  rank: number | string;
-  qualityScore: number;
-  stewardshipSignal?: string;
-  isStewardStaked: boolean;
-  compareActive: boolean;
-  watchActive: boolean;
-  formatCoord: (value: number) => string;
-  onCopyId: () => void;
-  onCopyOwner: () => void;
-  onCopyIpfs: () => void;
-  onOpenDetail: () => void;
-  onAudit: () => void;
-  onToggleCompare: () => void;
-  onToggleWatch: () => void;
-};
+import type { Dataset, DatasetCardProps } from "../type";
 
 export function DatasetCard({
   dataset,
@@ -36,7 +17,7 @@ export function DatasetCard({
   onAudit,
   onToggleCompare,
   onToggleWatch,
-}: Props) {
+}: DatasetCardProps) {
   return (
     <article className="dataset-card">
       <div className="dataset-header">
@@ -44,11 +25,17 @@ export function DatasetCard({
           <div className="dataset-title">{dataset.name}</div>
           <div className="dataset-tags">
             <span className="tag">{dataset.dataType}</span>
-            <span className={`tag ${dataset.isPublic ? "tag--public" : "tag--private"}`}>
+            <span
+              className={`tag ${dataset.isPublic ? "tag--public" : "tag--private"}`}
+            >
               {dataset.isPublic ? "Public" : "Private"}
             </span>
-            {dataset.metadataFrozen && <span className="tag tag--frozen">Frozen</span>}
-            {isStewardStaked && <span className="tag tag--staked">Steward staked</span>}
+            {dataset.metadataFrozen && (
+              <span className="tag tag--frozen">Frozen</span>
+            )}
+            {isStewardStaked && (
+              <span className="tag tag--staked">Steward staked</span>
+            )}
           </div>
         </div>
         <span className={`status-pill ${statusClass}`}>{dataset.status}</span>
@@ -57,7 +44,9 @@ export function DatasetCard({
         Rank #{rank} | Quality {qualityScore}/100
       </div>
       {isStewardStaked && stewardshipSignal && (
-        <div className="dataset-rank dataset-rank--stake">{stewardshipSignal}</div>
+        <div className="dataset-rank dataset-rank--stake">
+          {stewardshipSignal}
+        </div>
       )}
       <p className="dataset-description">{dataset.description}</p>
       <div className="dataset-meta">
@@ -68,7 +57,8 @@ export function DatasetCard({
         <div>
           <span>Location</span>
           <strong>
-            {formatCoord(dataset.latitude)} deg, {formatCoord(dataset.longitude)} deg
+            {formatCoord(dataset.latitude)} deg,{" "}
+            {formatCoord(dataset.longitude)} deg
           </strong>
         </div>
         <div>
@@ -109,10 +99,18 @@ export function DatasetCard({
         >
           Copy IPFS
         </button>
-        <button className="ghost-btn dataset-foot__action" type="button" onClick={onOpenDetail}>
+        <button
+          className="ghost-btn dataset-foot__action"
+          type="button"
+          onClick={onOpenDetail}
+        >
           Open detail
         </button>
-        <button className="ghost-btn dataset-foot__action" type="button" onClick={onAudit}>
+        <button
+          className="ghost-btn dataset-foot__action"
+          type="button"
+          onClick={onAudit}
+        >
           Audit this
         </button>
         <button
@@ -137,4 +135,3 @@ export function DatasetCard({
     </article>
   );
 }
-

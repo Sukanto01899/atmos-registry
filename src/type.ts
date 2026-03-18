@@ -162,3 +162,22 @@ export type CommandPaletteProps = {
   onClose: () => void;
   onSelect: (action: CommandAction) => void;
 };
+
+export type DatasetCardProps = {
+  dataset: Dataset;
+  statusClass: string;
+  rank: number | string;
+  qualityScore: number;
+  stewardshipSignal?: string;
+  isStewardStaked: boolean;
+  compareActive: boolean;
+  watchActive: boolean;
+  formatCoord: (value: number) => string;
+  onCopyId: () => void;
+  onCopyOwner: () => void;
+  onCopyIpfs: () => void;
+  onOpenDetail: () => void;
+  onAudit: () => void;
+  onToggleCompare: () => void;
+  onToggleWatch: () => void;
+};
