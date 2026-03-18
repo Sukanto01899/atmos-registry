@@ -1,18 +1,4 @@
-type CommandAction = {
-  id: string;
-  label: string;
-  detail: string;
-  run: () => void;
-};
-
-type Props = {
-  open: boolean;
-  query: string;
-  onQueryChange: (value: string) => void;
-  actions: CommandAction[];
-  onClose: () => void;
-  onSelect: (action: CommandAction) => void;
-};
+import { CommandPaletteProps } from "../type";
 
 export function CommandPalette({
   open,
@@ -21,12 +7,15 @@ export function CommandPalette({
   actions,
   onClose,
   onSelect,
-}: Props) {
+}: CommandPaletteProps) {
   if (!open) return null;
 
   return (
     <div className="command-overlay" onClick={onClose}>
-      <div className="command-modal" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="command-modal"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="command-head">
           <strong>Command Palette</strong>
           <span>Ctrl/Cmd + K</span>
@@ -35,7 +24,9 @@ export function CommandPalette({
           className="command-search"
           autoFocus
           value={query}
-          onChange={(event) => onQueryChange((event.target as HTMLInputElement).value)}
+          onChange={(event) =>
+            onQueryChange((event.target as HTMLInputElement).value)
+          }
           placeholder="Search commands..."
         />
         <div className="command-list">
@@ -58,4 +49,3 @@ export function CommandPalette({
     </div>
   );
 }
-

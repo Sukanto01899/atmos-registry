@@ -153,3 +153,12 @@ export type Notice = {
 export type Props = {
   notices: Notice[];
 };
+
+export type CommandPaletteProps = {
+  open: boolean;
+  query: string;
+  onQueryChange: (value: string) => void;
+  actions: CommandAction[];
+  onClose: () => void;
+  onSelect: (action: CommandAction) => void;
+};
