@@ -1857,6 +1857,21 @@ textarea:focus {
   overflow: hidden;
 }
 
+.dataset-card--skeleton-inline {
+  padding: 1rem 1.2rem;
+}
+
+.dataset-card--skeleton-inline .skeleton-title {
+  width: 55%;
+  height: 0.95rem;
+}
+
+.dataset-card--skeleton-inline .skeleton-short {
+  width: 35%;
+  height: 0.75rem;
+  margin-bottom: 0;
+}
+
 .skeleton-line {
   height: 0.85rem;
   border-radius: 999px;
