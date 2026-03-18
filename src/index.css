@@ -1852,6 +1852,39 @@ textarea:focus {
   box-shadow: var(--shadow);
 }
 
+.dataset-card--skeleton {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-line {
+  height: 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.12) 45%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  margin-bottom: 0.65rem;
+}
+
+.skeleton-title {
+  height: 1.1rem;
+  width: 65%;
+}
+
+.skeleton-tag {
+  height: 0.7rem;
+  width: 35%;
+}
+
+.skeleton-short {
+  width: 45%;
+}
+
 .dataset-header {
   display: flex;
   justify-content: space-between;
@@ -1985,6 +2018,15 @@ textarea:focus {
   color: rgba(255, 255, 255, 0.65);
   border-top: 1px solid var(--border);
   padding-top: 0.9rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .dataset-foot__action {

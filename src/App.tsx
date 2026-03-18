@@ -3611,7 +3611,23 @@ function App() {
                 datasetDensity === "compact" ? "dataset-grid--compact" : ""
               }`}
             >
-              {activeDatasets.length === 0 && (
+              {loading && activeDatasets.length === 0 && (
+                <>
+                  {[0, 1, 2].map((item) => (
+                    <div
+                      className="dataset-card dataset-card--skeleton"
+                      key={`dataset-skeleton-${item}`}
+                    >
+                      <div className="skeleton-line skeleton-title" />
+                      <div className="skeleton-line skeleton-tag" />
+                      <div className="skeleton-line" />
+                      <div className="skeleton-line" />
+                      <div className="skeleton-line skeleton-short" />
+                    </div>
+                  ))}
+                </>
+              )}
+              {!loading && activeDatasets.length === 0 && (
                 <div className="dataset-card">
                   <div className="dataset-title">No datasets loaded yet</div>
                   <p className="dataset-description">
