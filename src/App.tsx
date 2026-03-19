@@ -148,28 +148,41 @@ function App() {
 
   const registerValidation = useMemo(() => {
     const issues: Partial<Record<keyof RegisterFormState, string>> = {};
+    const ok: Partial<Record<keyof RegisterFormState, boolean>> = {};
     if (!registerForm.name.trim()) {
       issues.name = "Name is required.";
+    } else {
+      ok.name = true;
     }
     if (!registerForm.dataType.trim()) {
       issues.dataType = "Data type is required.";
+    } else {
+      ok.dataType = true;
     }
     if (!registerForm.description.trim()) {
       issues.description = "Description is required.";
+    } else {
+      ok.description = true;
     }
 
     const collectionDate = Number.parseInt(registerForm.collectionDate, 10);
     if (registerForm.collectionDate.trim() && Number.isNaN(collectionDate)) {
       issues.collectionDate = "Use a valid number.";
+    } else if (registerForm.collectionDate.trim()) {
+      ok.collectionDate = true;
     }
 
     const altitudeMin = Number.parseInt(registerForm.altitudeMin, 10);
     const altitudeMax = Number.parseInt(registerForm.altitudeMax, 10);
     if (registerForm.altitudeMin.trim() && Number.isNaN(altitudeMin)) {
       issues.altitudeMin = "Use a valid number.";
+    } else if (registerForm.altitudeMin.trim()) {
+      ok.altitudeMin = true;
     }
     if (registerForm.altitudeMax.trim() && Number.isNaN(altitudeMax)) {
       issues.altitudeMax = "Use a valid number.";
+    } else if (registerForm.altitudeMax.trim()) {
+      ok.altitudeMax = true;
     }
     if (
       !Number.isNaN(altitudeMin) &&
@@ -179,6 +192,7 @@ function App() {
       altitudeMax < altitudeMin
     ) {
       issues.altitudeMax = "Max must be ≥ min.";
+      ok.altitudeMax = false;
     }
 
     const latitude = Number.parseFloat(registerForm.latitude);
@@ -187,6 +201,8 @@ function App() {
       issues.latitude = "Use a valid number.";
     } else if (!Number.isNaN(latitude) && (latitude < -90 || latitude > 90)) {
       issues.latitude = "Latitude must be between -90 and 90.";
+    } else if (registerForm.latitude.trim()) {
+      ok.latitude = true;
     }
     if (registerForm.longitude.trim() && Number.isNaN(longitude)) {
       issues.longitude = "Use a valid number.";
@@ -195,9 +211,11 @@ function App() {
       (longitude < -180 || longitude > 180)
     ) {
       issues.longitude = "Longitude must be between -180 and 180.";
+    } else if (registerForm.longitude.trim()) {
+      ok.longitude = true;
     }
 
-    return issues;
+    return { issues, ok };
   }, [registerForm]);
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
@@ -3784,12 +3802,19 @@ function App() {
                     }
                     placeholder="Dataset name"
                   />
-                  {registerValidation.name &&
+                  {registerValidation.issues.name &&
                     (registerTouched.name || registerSubmitAttempted) && (
                     <span className="field-hint field-hint--error">
-                      {registerValidation.name}
+                      {registerValidation.issues.name}
                     </span>
                   )}
+                  {!registerValidation.issues.name &&
+                    registerValidation.ok.name &&
+                    (registerTouched.name || registerSubmitAttempted) && (
+                      <span className="field-hint field-hint--ok">
+                        Looks good.
+                      </span>
+                    )}
 
                   <label className="field-label" htmlFor="dataset-type">
                     Data type <span className="field-required">*</span>
@@ -3803,12 +3828,19 @@ function App() {
                     }
                     placeholder="Data type (e.g. imagery, sensor, model)"
                   />
-                  {registerValidation.dataType &&
+                  {registerValidation.issues.dataType &&
                     (registerTouched.dataType || registerSubmitAttempted) && (
                     <span className="field-hint field-hint--error">
-                      {registerValidation.dataType}
+                      {registerValidation.issues.dataType}
                     </span>
                   )}
+                  {!registerValidation.issues.dataType &&
+                    registerValidation.ok.dataType &&
+                    (registerTouched.dataType || registerSubmitAttempted) && (
+                      <span className="field-hint field-hint--ok">
+                        Looks good.
+                      </span>
+                    )}
 
                   <label className="field-label" htmlFor="dataset-description">
                     Description <span className="field-required">*</span>
@@ -3826,13 +3858,21 @@ function App() {
                     placeholder="Short description"
                     rows={4}
                   />
-                  {registerValidation.description &&
+                  {registerValidation.issues.description &&
                     (registerTouched.description ||
                       registerSubmitAttempted) && (
                     <span className="field-hint field-hint--error">
-                      {registerValidation.description}
+                      {registerValidation.issues.description}
                     </span>
                   )}
+                  {!registerValidation.issues.description &&
+                    registerValidation.ok.description &&
+                    (registerTouched.description ||
+                      registerSubmitAttempted) && (
+                      <span className="field-hint field-hint--ok">
+                        Looks good.
+                      </span>
+                    )}
 
                   <div className="field-row">
                     <div>
@@ -3851,13 +3891,21 @@ function App() {
                         }
                         placeholder="Unix timestamp or block height"
                       />
-                      {registerValidation.collectionDate &&
+                      {registerValidation.issues.collectionDate &&
                         (registerTouched.collectionDate ||
                           registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
-                          {registerValidation.collectionDate}
+                          {registerValidation.issues.collectionDate}
                         </span>
                       )}
+                      {!registerValidation.issues.collectionDate &&
+                        registerValidation.ok.collectionDate &&
+                        (registerTouched.collectionDate ||
+                          registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--ok">
+                            Looks good.
+                          </span>
+                        )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="ipfs-hash">
@@ -3889,13 +3937,21 @@ function App() {
                         }
                         placeholder="e.g. 0"
                       />
-                      {registerValidation.altitudeMin &&
+                      {registerValidation.issues.altitudeMin &&
                         (registerTouched.altitudeMin ||
                           registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
-                          {registerValidation.altitudeMin}
+                          {registerValidation.issues.altitudeMin}
                         </span>
                       )}
+                      {!registerValidation.issues.altitudeMin &&
+                        registerValidation.ok.altitudeMin &&
+                        (registerTouched.altitudeMin ||
+                          registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--ok">
+                            Looks good.
+                          </span>
+                        )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="altitude-max">
@@ -3913,13 +3969,21 @@ function App() {
                         }
                         placeholder="e.g. 1200"
                       />
-                      {registerValidation.altitudeMax &&
+                      {registerValidation.issues.altitudeMax &&
                         (registerTouched.altitudeMax ||
                           registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
-                          {registerValidation.altitudeMax}
+                          {registerValidation.issues.altitudeMax}
                         </span>
                       )}
+                      {!registerValidation.issues.altitudeMax &&
+                        registerValidation.ok.altitudeMax &&
+                        (registerTouched.altitudeMax ||
+                          registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--ok">
+                            Looks good.
+                          </span>
+                        )}
                     </div>
                   </div>
 
@@ -3940,13 +4004,21 @@ function App() {
                         }
                         placeholder="e.g. 37.7749"
                       />
-                      {registerValidation.latitude &&
+                      {registerValidation.issues.latitude &&
                         (registerTouched.latitude ||
                           registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
-                          {registerValidation.latitude}
+                          {registerValidation.issues.latitude}
                         </span>
                       )}
+                      {!registerValidation.issues.latitude &&
+                        registerValidation.ok.latitude &&
+                        (registerTouched.latitude ||
+                          registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--ok">
+                            Looks good.
+                          </span>
+                        )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="longitude">
@@ -3964,13 +4036,21 @@ function App() {
                         }
                         placeholder="e.g. -122.4194"
                       />
-                      {registerValidation.longitude &&
+                      {registerValidation.issues.longitude &&
                         (registerTouched.longitude ||
                           registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
-                          {registerValidation.longitude}
+                          {registerValidation.issues.longitude}
                         </span>
                       )}
+                      {!registerValidation.issues.longitude &&
+                        registerValidation.ok.longitude &&
+                        (registerTouched.longitude ||
+                          registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--ok">
+                            Looks good.
+                          </span>
+                        )}
                     </div>
                   </div>
 
