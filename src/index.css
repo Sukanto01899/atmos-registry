@@ -2111,6 +2111,17 @@ textarea:focus {
   color: rgba(245, 138, 61, 0.85);
 }
 
+.field-hint {
+  display: block;
+  margin-top: -0.1rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.field-hint--error {
+  color: rgba(255, 138, 138, 0.9);
+}
+
 .dataset-view-tabs {
   display: flex;
   gap: 0.5rem;

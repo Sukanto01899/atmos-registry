@@ -142,6 +142,60 @@ function App() {
   const [unstakeAmount, setUnstakeAmount] = useState("10");
   const [stakeStatus, setStakeStatus] = useState("");
 
+  const registerValidation = useMemo(() => {
+    const issues: Partial<Record<keyof RegisterFormState, string>> = {};
+    if (!registerForm.name.trim()) {
+      issues.name = "Name is required.";
+    }
+    if (!registerForm.dataType.trim()) {
+      issues.dataType = "Data type is required.";
+    }
+    if (!registerForm.description.trim()) {
+      issues.description = "Description is required.";
+    }
+
+    const collectionDate = Number.parseInt(registerForm.collectionDate, 10);
+    if (registerForm.collectionDate.trim() && Number.isNaN(collectionDate)) {
+      issues.collectionDate = "Use a valid number.";
+    }
+
+    const altitudeMin = Number.parseInt(registerForm.altitudeMin, 10);
+    const altitudeMax = Number.parseInt(registerForm.altitudeMax, 10);
+    if (registerForm.altitudeMin.trim() && Number.isNaN(altitudeMin)) {
+      issues.altitudeMin = "Use a valid number.";
+    }
+    if (registerForm.altitudeMax.trim() && Number.isNaN(altitudeMax)) {
+      issues.altitudeMax = "Use a valid number.";
+    }
+    if (
+      !Number.isNaN(altitudeMin) &&
+      !Number.isNaN(altitudeMax) &&
+      registerForm.altitudeMin.trim() &&
+      registerForm.altitudeMax.trim() &&
+      altitudeMax < altitudeMin
+    ) {
+      issues.altitudeMax = "Max must be ≥ min.";
+    }
+
+    const latitude = Number.parseFloat(registerForm.latitude);
+    const longitude = Number.parseFloat(registerForm.longitude);
+    if (registerForm.latitude.trim() && Number.isNaN(latitude)) {
+      issues.latitude = "Use a valid number.";
+    } else if (!Number.isNaN(latitude) && (latitude < -90 || latitude > 90)) {
+      issues.latitude = "Latitude must be between -90 and 90.";
+    }
+    if (registerForm.longitude.trim() && Number.isNaN(longitude)) {
+      issues.longitude = "Use a valid number.";
+    } else if (
+      !Number.isNaN(longitude) &&
+      (longitude < -180 || longitude > 180)
+    ) {
+      issues.longitude = "Longitude must be between -180 and 180.";
+    }
+
+    return issues;
+  }, [registerForm]);
+
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
   const activeDatasets = activeTab === "explore" ? latestDatasets : myDatasets;
 
@@ -3720,6 +3774,11 @@ function App() {
                     onChange={updateRegisterField("name")}
                     placeholder="Dataset name"
                   />
+                  {registerValidation.name && (
+                    <span className="field-hint field-hint--error">
+                      {registerValidation.name}
+                    </span>
+                  )}
 
                   <label className="field-label" htmlFor="dataset-type">
                     Data type <span className="field-required">*</span>
@@ -3730,6 +3789,11 @@ function App() {
                     onChange={updateRegisterField("dataType")}
                     placeholder="Data type (e.g. imagery, sensor, model)"
                   />
+                  {registerValidation.dataType && (
+                    <span className="field-hint field-hint--error">
+                      {registerValidation.dataType}
+                    </span>
+                  )}
 
                   <label className="field-label" htmlFor="dataset-description">
                     Description <span className="field-required">*</span>
@@ -3741,6 +3805,11 @@ function App() {
                     placeholder="Short description"
                     rows={4}
                   />
+                  {registerValidation.description && (
+                    <span className="field-hint field-hint--error">
+                      {registerValidation.description}
+                    </span>
+                  )}
 
                   <div className="field-row">
                     <div>
@@ -3753,6 +3822,11 @@ function App() {
                         onChange={updateRegisterField("collectionDate")}
                         placeholder="Unix timestamp or block height"
                       />
+                      {registerValidation.collectionDate && (
+                        <span className="field-hint field-hint--error">
+                          {registerValidation.collectionDate}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="ipfs-hash">
@@ -3778,6 +3852,11 @@ function App() {
                         onChange={updateRegisterField("altitudeMin")}
                         placeholder="e.g. 0"
                       />
+                      {registerValidation.altitudeMin && (
+                        <span className="field-hint field-hint--error">
+                          {registerValidation.altitudeMin}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="altitude-max">
@@ -3789,6 +3868,11 @@ function App() {
                         onChange={updateRegisterField("altitudeMax")}
                         placeholder="e.g. 1200"
                       />
+                      {registerValidation.altitudeMax && (
+                        <span className="field-hint field-hint--error">
+                          {registerValidation.altitudeMax}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -3803,6 +3887,11 @@ function App() {
                         onChange={updateRegisterField("latitude")}
                         placeholder="e.g. 37.7749"
                       />
+                      {registerValidation.latitude && (
+                        <span className="field-hint field-hint--error">
+                          {registerValidation.latitude}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="longitude">
@@ -3814,6 +3903,11 @@ function App() {
                         onChange={updateRegisterField("longitude")}
                         placeholder="e.g. -122.4194"
                       />
+                      {registerValidation.longitude && (
+                        <span className="field-hint field-hint--error">
+                          {registerValidation.longitude}
+                        </span>
+                      )}
                     </div>
                   </div>
 
