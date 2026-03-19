@@ -99,6 +99,7 @@ const cloneDatasetToRegister = (dataset: Dataset): RegisterFormState => ({
 function App() {
   const hasHydratedUrlRef = useRef(false);
   const hasHydratedRegisterDraft = useRef(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [featureTab, setFeatureTab] = useState<
     "datasets" | "add-dataset" | "staking" | "alerts" | "audit" | "versions"
   >("datasets");
@@ -315,6 +316,39 @@ function App() {
     () => parseMicroTokenInput(unstakeAmount),
     [unstakeAmount],
   );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (event.key === "/" && featureTab === "datasets") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setShowCommandPalette(true);
+      }
+
+      if (event.key === "Escape" && showCommandPalette) {
+        setShowCommandPalette(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [featureTab, showCommandPalette]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -3259,6 +3293,7 @@ function App() {
             <div className="filter-card">
               <div className="filter-grid">
                 <input
+                  ref={searchInputRef}
                   value={filters.search}
                   onChange={updateFilterField("search")}
                   placeholder="Search id, name, description, hash"
