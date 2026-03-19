@@ -83,6 +83,19 @@ const APP_DETAILS = {
 
 const REGISTER_DRAFT_KEY = "atmos-register-draft";
 
+const cloneDatasetToRegister = (dataset: Dataset): RegisterFormState => ({
+  name: `${dataset.name} (copy)`,
+  description: dataset.description,
+  dataType: dataset.dataType,
+  collectionDate: String(dataset.collectionDate),
+  altitudeMin: String(dataset.altitudeMin),
+  altitudeMax: String(dataset.altitudeMax),
+  latitude: String(dataset.latitude / 1_000_000),
+  longitude: String(dataset.longitude / 1_000_000),
+  ipfsHash: dataset.ipfsHash || "",
+  isPublic: dataset.isPublic,
+});
+
 function App() {
   const hasHydratedUrlRef = useRef(false);
   const hasHydratedRegisterDraft = useRef(false);
@@ -2209,6 +2222,22 @@ function App() {
                     }
                   >
                     Copy ID
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => {
+                      setRegisterForm(cloneDatasetToRegister(lineageDataset));
+                      setRegisterTouched({});
+                      setRegisterSubmitAttempted(false);
+                      setFeatureTab("add-dataset");
+                      setShowDatasetDetail(false);
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    Clone to register
                   </button>
                   <button
                     className="ghost-btn"
