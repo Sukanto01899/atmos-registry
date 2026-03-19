@@ -141,6 +141,10 @@ function App() {
   const [stakeAmount, setStakeAmount] = useState("10");
   const [unstakeAmount, setUnstakeAmount] = useState("10");
   const [stakeStatus, setStakeStatus] = useState("");
+  const [registerTouched, setRegisterTouched] = useState<
+    Partial<Record<keyof RegisterFormState, boolean>>
+  >({});
+  const [registerSubmitAttempted, setRegisterSubmitAttempted] = useState(false);
 
   const registerValidation = useMemo(() => {
     const issues: Partial<Record<keyof RegisterFormState, string>> = {};
@@ -1515,6 +1519,7 @@ function App() {
   };
 
   const handleRegisterSubmit = async () => {
+    setRegisterSubmitAttempted(true);
     if (!walletAddress) {
       setWalletMessage("Connect your wallet to register a dataset.");
       return;
@@ -1601,6 +1606,8 @@ function App() {
           setTxStatus(`Transaction submitted: ${data.txId}`);
           loadLatest();
           setRegisterForm(defaultRegisterForm);
+          setRegisterTouched({});
+          setRegisterSubmitAttempted(false);
           if (typeof window !== "undefined") {
             window.localStorage.removeItem(REGISTER_DRAFT_KEY);
           }
@@ -3772,9 +3779,13 @@ function App() {
                     id="dataset-name"
                     value={registerForm.name}
                     onChange={updateRegisterField("name")}
+                    onBlur={() =>
+                      setRegisterTouched((prev) => ({ ...prev, name: true }))
+                    }
                     placeholder="Dataset name"
                   />
-                  {registerValidation.name && (
+                  {registerValidation.name &&
+                    (registerTouched.name || registerSubmitAttempted) && (
                     <span className="field-hint field-hint--error">
                       {registerValidation.name}
                     </span>
@@ -3787,9 +3798,13 @@ function App() {
                     id="dataset-type"
                     value={registerForm.dataType}
                     onChange={updateRegisterField("dataType")}
+                    onBlur={() =>
+                      setRegisterTouched((prev) => ({ ...prev, dataType: true }))
+                    }
                     placeholder="Data type (e.g. imagery, sensor, model)"
                   />
-                  {registerValidation.dataType && (
+                  {registerValidation.dataType &&
+                    (registerTouched.dataType || registerSubmitAttempted) && (
                     <span className="field-hint field-hint--error">
                       {registerValidation.dataType}
                     </span>
@@ -3802,10 +3817,18 @@ function App() {
                     id="dataset-description"
                     value={registerForm.description}
                     onChange={updateRegisterField("description")}
+                    onBlur={() =>
+                      setRegisterTouched((prev) => ({
+                        ...prev,
+                        description: true,
+                      }))
+                    }
                     placeholder="Short description"
                     rows={4}
                   />
-                  {registerValidation.description && (
+                  {registerValidation.description &&
+                    (registerTouched.description ||
+                      registerSubmitAttempted) && (
                     <span className="field-hint field-hint--error">
                       {registerValidation.description}
                     </span>
@@ -3820,9 +3843,17 @@ function App() {
                         id="collection-date"
                         value={registerForm.collectionDate}
                         onChange={updateRegisterField("collectionDate")}
+                        onBlur={() =>
+                          setRegisterTouched((prev) => ({
+                            ...prev,
+                            collectionDate: true,
+                          }))
+                        }
                         placeholder="Unix timestamp or block height"
                       />
-                      {registerValidation.collectionDate && (
+                      {registerValidation.collectionDate &&
+                        (registerTouched.collectionDate ||
+                          registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
                           {registerValidation.collectionDate}
                         </span>
@@ -3850,9 +3881,17 @@ function App() {
                         id="altitude-min"
                         value={registerForm.altitudeMin}
                         onChange={updateRegisterField("altitudeMin")}
+                        onBlur={() =>
+                          setRegisterTouched((prev) => ({
+                            ...prev,
+                            altitudeMin: true,
+                          }))
+                        }
                         placeholder="e.g. 0"
                       />
-                      {registerValidation.altitudeMin && (
+                      {registerValidation.altitudeMin &&
+                        (registerTouched.altitudeMin ||
+                          registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
                           {registerValidation.altitudeMin}
                         </span>
@@ -3866,9 +3905,17 @@ function App() {
                         id="altitude-max"
                         value={registerForm.altitudeMax}
                         onChange={updateRegisterField("altitudeMax")}
+                        onBlur={() =>
+                          setRegisterTouched((prev) => ({
+                            ...prev,
+                            altitudeMax: true,
+                          }))
+                        }
                         placeholder="e.g. 1200"
                       />
-                      {registerValidation.altitudeMax && (
+                      {registerValidation.altitudeMax &&
+                        (registerTouched.altitudeMax ||
+                          registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
                           {registerValidation.altitudeMax}
                         </span>
@@ -3885,9 +3932,17 @@ function App() {
                         id="latitude"
                         value={registerForm.latitude}
                         onChange={updateRegisterField("latitude")}
+                        onBlur={() =>
+                          setRegisterTouched((prev) => ({
+                            ...prev,
+                            latitude: true,
+                          }))
+                        }
                         placeholder="e.g. 37.7749"
                       />
-                      {registerValidation.latitude && (
+                      {registerValidation.latitude &&
+                        (registerTouched.latitude ||
+                          registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
                           {registerValidation.latitude}
                         </span>
@@ -3901,9 +3956,17 @@ function App() {
                         id="longitude"
                         value={registerForm.longitude}
                         onChange={updateRegisterField("longitude")}
+                        onBlur={() =>
+                          setRegisterTouched((prev) => ({
+                            ...prev,
+                            longitude: true,
+                          }))
+                        }
                         placeholder="e.g. -122.4194"
                       />
-                      {registerValidation.longitude && (
+                      {registerValidation.longitude &&
+                        (registerTouched.longitude ||
+                          registerSubmitAttempted) && (
                         <span className="field-hint field-hint--error">
                           {registerValidation.longitude}
                         </span>
