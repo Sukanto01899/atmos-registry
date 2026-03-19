@@ -3898,14 +3898,6 @@ function App() {
                           {registerValidation.issues.collectionDate}
                         </span>
                       )}
-                      {!registerValidation.issues.collectionDate &&
-                        registerValidation.ok.collectionDate &&
-                        (registerTouched.collectionDate ||
-                          registerSubmitAttempted) && (
-                          <span className="field-hint field-hint--ok">
-                            Looks good.
-                          </span>
-                        )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="ipfs-hash">
@@ -3944,14 +3936,6 @@ function App() {
                           {registerValidation.issues.altitudeMin}
                         </span>
                       )}
-                      {!registerValidation.issues.altitudeMin &&
-                        registerValidation.ok.altitudeMin &&
-                        (registerTouched.altitudeMin ||
-                          registerSubmitAttempted) && (
-                          <span className="field-hint field-hint--ok">
-                            Looks good.
-                          </span>
-                        )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="altitude-max">
@@ -3976,14 +3960,6 @@ function App() {
                           {registerValidation.issues.altitudeMax}
                         </span>
                       )}
-                      {!registerValidation.issues.altitudeMax &&
-                        registerValidation.ok.altitudeMax &&
-                        (registerTouched.altitudeMax ||
-                          registerSubmitAttempted) && (
-                          <span className="field-hint field-hint--ok">
-                            Looks good.
-                          </span>
-                        )}
                     </div>
                   </div>
 
@@ -4011,14 +3987,6 @@ function App() {
                           {registerValidation.issues.latitude}
                         </span>
                       )}
-                      {!registerValidation.issues.latitude &&
-                        registerValidation.ok.latitude &&
-                        (registerTouched.latitude ||
-                          registerSubmitAttempted) && (
-                          <span className="field-hint field-hint--ok">
-                            Looks good.
-                          </span>
-                        )}
                     </div>
                     <div>
                       <label className="field-label" htmlFor="longitude">
@@ -4043,14 +4011,6 @@ function App() {
                           {registerValidation.issues.longitude}
                         </span>
                       )}
-                      {!registerValidation.issues.longitude &&
-                        registerValidation.ok.longitude &&
-                        (registerTouched.longitude ||
-                          registerSubmitAttempted) && (
-                          <span className="field-hint field-hint--ok">
-                            Looks good.
-                          </span>
-                        )}
                     </div>
                   </div>
 
