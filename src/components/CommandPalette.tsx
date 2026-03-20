@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { CommandPaletteProps } from "../type";
 
 export function CommandPalette({
@@ -9,6 +10,17 @@ export function CommandPalette({
   onSelect,
 }: CommandPaletteProps) {
   if (!open) return null;
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const hasActions = actions.length > 0;
+  const boundedIndex = useMemo(() => {
+    if (!hasActions) return 0;
+    return Math.max(0, Math.min(actions.length - 1, activeIndex));
+  }, [actions.length, activeIndex, hasActions]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query, open, actions.length]);
 
   return (
     <div className="command-overlay" onClick={onClose}>
@@ -27,6 +39,34 @@ export function CommandPalette({
           onChange={(event) =>
             onQueryChange((event.target as HTMLInputElement).value)
           }
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              if (!hasActions) return;
+              setActiveIndex((prev) =>
+                prev + 1 >= actions.length ? 0 : prev + 1,
+              );
+              return;
+            }
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              if (!hasActions) return;
+              setActiveIndex((prev) =>
+                prev - 1 < 0 ? actions.length - 1 : prev - 1,
+              );
+              return;
+            }
+            if (event.key === "Enter") {
+              event.preventDefault();
+              if (!hasActions) return;
+              onSelect(actions[boundedIndex]);
+              return;
+            }
+            if (event.key === "Escape") {
+              event.preventDefault();
+              onClose();
+            }
+          }}
           placeholder="Search commands..."
         />
         <div className="command-list">
@@ -36,9 +76,16 @@ export function CommandPalette({
           {actions.map((action) => (
             <button
               key={action.id}
-              className="command-item"
+              className={`command-item ${
+                action.id === actions[boundedIndex]?.id ? "active" : ""
+              }`}
               type="button"
               onClick={() => onSelect(action)}
+              onMouseEnter={() =>
+                setActiveIndex(
+                  actions.findIndex((item) => item.id === action.id),
+                )
+              }
             >
               <span>{action.label}</span>
               <small>{action.detail}</small>
