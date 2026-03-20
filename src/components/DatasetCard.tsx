@@ -1,4 +1,131 @@
+import { useMemo, useState } from "react";
 import type { Dataset, DatasetCardProps } from "../type";
+
+const previewSeeds = (seed: number, index: number) =>
+  Math.abs((seed * (index + 3) * 37 + index * 71) % 100);
+
+const buildDatasetPreview = (
+  dataset: Dataset,
+  formatCoord: (value: number) => string,
+) => {
+  const lowerType = dataset.dataType.toLowerCase();
+  const baseType = lowerType.includes("image") || lowerType.includes("sat")
+    ? "imagery"
+    : lowerType.includes("sensor")
+      ? "sensor"
+      : lowerType.includes("model")
+        ? "model"
+        : "geo";
+  const seed = dataset.id * 9301 + (dataset.collectionDate % 1000);
+  const rowCount = 120_000 + previewSeeds(seed, 1) * 4_500;
+  const partitionCount = 4 + (previewSeeds(seed, 2) % 6);
+  const updatedLabel = `Block ${dataset.createdAt}`;
+  const spark = Array.from({ length: 14 }, (_, index) =>
+    30 + (previewSeeds(seed, index) % 70),
+  );
+
+  if (baseType === "imagery") {
+    return {
+      title: "Imagery sample",
+      summary: `${5} columns · ${rowCount.toLocaleString()} rows · ${partitionCount} partitions`,
+      updatedLabel,
+      columns: ["image_id", "lat", "lon", "cloud_pct", "resolution"],
+      rows: [
+        [
+          `img-${dataset.id}-a`,
+          formatCoord(dataset.latitude),
+          formatCoord(dataset.longitude),
+          `${previewSeeds(seed, 3)}%`,
+          `${10 + previewSeeds(seed, 4)}cm`,
+        ],
+        [
+          `img-${dataset.id}-b`,
+          formatCoord(dataset.latitude + 1200),
+          formatCoord(dataset.longitude - 900),
+          `${previewSeeds(seed, 5)}%`,
+          `${10 + previewSeeds(seed, 6)}cm`,
+        ],
+      ],
+      spark,
+    };
+  }
+
+  if (baseType === "model") {
+    return {
+      title: "Model output sample",
+      summary: `${5} columns · ${rowCount.toLocaleString()} rows · ${partitionCount} partitions`,
+      updatedLabel,
+      columns: ["timestamp", "grid_id", "lat", "lon", "prediction"],
+      rows: [
+        [
+          `t-${dataset.collectionDate}`,
+          `cell-${dataset.id}-${previewSeeds(seed, 2)}`,
+          formatCoord(dataset.latitude),
+          formatCoord(dataset.longitude),
+          (previewSeeds(seed, 3) / 10).toFixed(2),
+        ],
+        [
+          `t-${dataset.collectionDate + 1200}`,
+          `cell-${dataset.id}-${previewSeeds(seed, 4)}`,
+          formatCoord(dataset.latitude + 1500),
+          formatCoord(dataset.longitude - 1200),
+          (previewSeeds(seed, 5) / 10).toFixed(2),
+        ],
+      ],
+      spark,
+    };
+  }
+
+  if (baseType === "sensor") {
+    return {
+      title: "Sensor stream sample",
+      summary: `${5} columns · ${rowCount.toLocaleString()} rows · ${partitionCount} partitions`,
+      updatedLabel,
+      columns: ["timestamp", "lat", "lon", "alt_m", "value"],
+      rows: [
+        [
+          `t-${dataset.collectionDate}`,
+          formatCoord(dataset.latitude),
+          formatCoord(dataset.longitude),
+          `${dataset.altitudeMax}m`,
+          `${(previewSeeds(seed, 3) + 10) / 10}`,
+        ],
+        [
+          `t-${dataset.collectionDate + 1200}`,
+          formatCoord(dataset.latitude + 1000),
+          formatCoord(dataset.longitude - 1200),
+          `${dataset.altitudeMin}m`,
+          `${(previewSeeds(seed, 4) + 10) / 10}`,
+        ],
+      ],
+      spark,
+    };
+  }
+
+  return {
+    title: "Geo sample",
+    summary: `${5} columns · ${rowCount.toLocaleString()} rows · ${partitionCount} partitions`,
+    updatedLabel,
+    columns: ["timestamp", "lat", "lon", "field_a", "field_b"],
+    rows: [
+      [
+        `t-${dataset.collectionDate}`,
+        formatCoord(dataset.latitude),
+        formatCoord(dataset.longitude),
+        `${previewSeeds(seed, 2)}`,
+        `${previewSeeds(seed, 3)}`,
+      ],
+      [
+        `t-${dataset.collectionDate + 1200}`,
+        formatCoord(dataset.latitude + 800),
+        formatCoord(dataset.longitude - 700),
+        `${previewSeeds(seed, 4)}`,
+        `${previewSeeds(seed, 5)}`,
+      ],
+    ],
+    spark,
+  };
+};
 
 export function DatasetCard({
   dataset,
@@ -18,8 +145,17 @@ export function DatasetCard({
   onToggleCompare,
   onToggleWatch,
 }: DatasetCardProps) {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const preview = useMemo(
+    () => buildDatasetPreview(dataset, formatCoord),
+    [dataset, formatCoord],
+  );
+  const previewId = `dataset-preview-${dataset.id}`;
+
   return (
-    <article className="dataset-card">
+    <article
+      className={`dataset-card ${previewOpen ? "preview-open" : ""}`}
+    >
       <div className="dataset-header">
         <div>
           <div className="dataset-title">{dataset.name}</div>
@@ -74,6 +210,60 @@ export function DatasetCard({
           </div>
         )}
       </div>
+      <div className="dataset-preview" id={previewId}>
+        <div className="dataset-preview__head">
+          <div>
+            <span className="dataset-preview__label">Quick preview</span>
+            <strong className="dataset-preview__title">{preview.title}</strong>
+          </div>
+          <div className="dataset-preview__meta">{preview.summary}</div>
+        </div>
+        <div className="dataset-preview__content">
+          <div className="dataset-preview__schema">
+            <span>Schema</span>
+            <div className="dataset-preview__chips">
+              {preview.columns.map((column) => (
+                <span className="dataset-preview__chip" key={column}>
+                  {column}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="dataset-preview__spark">
+            <div className="dataset-preview__spark-head">
+              <span>Last updated signal</span>
+              <strong>{preview.updatedLabel}</strong>
+            </div>
+            <div className="dataset-preview__sparkline">
+              {preview.spark.map((value, index) => (
+                <span
+                  key={`spark-${dataset.id}-${index}`}
+                  style={{ height: `${value}%` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="dataset-preview__table">
+          <div className="dataset-preview__row dataset-preview__row--head">
+            {preview.columns.map((column) => (
+              <span key={`head-${column}`}>{column}</span>
+            ))}
+          </div>
+          {preview.rows.map((row, rowIndex) => (
+            <div
+              className="dataset-preview__row"
+              key={`row-${dataset.id}-${rowIndex}`}
+            >
+              {row.map((value, index) => (
+                <span key={`cell-${dataset.id}-${rowIndex}-${index}`}>
+                  {value}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="dataset-foot">
         <span>Collection date: {dataset.collectionDate}</span>
         <span>Record height: {dataset.createdAt}</span>
@@ -112,6 +302,17 @@ export function DatasetCard({
           onClick={onAudit}
         >
           Audit this
+        </button>
+        <button
+          className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
+            previewOpen ? "active" : ""
+          }`}
+          type="button"
+          onClick={() => setPreviewOpen((prev) => !prev)}
+          aria-expanded={previewOpen}
+          aria-controls={previewId}
+        >
+          {previewOpen ? "Hide preview" : "Quick preview"}
         </button>
         <button
           className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
