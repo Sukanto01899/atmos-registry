@@ -1,0 +1,10 @@
+{
+  "name": "Atmos Registry",
+  "description": "Atmospheric data registry on Stacks.",
+  "icons": [
+    {
+      "src": "/atmos-icon.svg",
+      "type": "image/svg+xml"
+    }
+  ]
+}

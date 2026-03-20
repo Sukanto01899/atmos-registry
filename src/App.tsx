@@ -46,6 +46,7 @@ import {
 import { AppNotices } from "./components/AppNotices";
 import { CommandPalette } from "./components/CommandPalette";
 import { DatasetCard } from "./components/DatasetCard";
+import { GeospatialExplorer } from "./components/GeospatialExplorer";
 import { NavBar } from "./components/NavBar";
 import {
   AlertItem,
@@ -3459,115 +3460,24 @@ function App() {
                 </button>
               </div>
             </div>
-            <div className="geo-card">
-              <div className="geo-header">
-                <div>
-                  <h3>Geospatial explorer</h3>
-                  <p>
-                    Plot datasets by coordinates and scrub collection time to
-                    inspect spatial coverage changes.
-                  </p>
-                </div>
-                <div className="geo-summary">
-                  <span>
-                    Visible points: {geoDatasets.length}/
-                    {filteredDatasets.length}
-                  </span>
-                  {geoTimeCutoff && (
-                    <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>
-                  )}
-                </div>
-              </div>
-              <div className="geo-timeline">
-                <label htmlFor="geo-time-slider">Time window</label>
-                <input
-                  id="geo-time-slider"
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={geoTimePercent}
-                  onChange={(event) =>
-                    setGeoTimePercent(
-                      Number.parseInt(readValue(event), 10) || 0,
-                    )
-                  }
-                  disabled={!geoTimeBounds}
-                />
-                <span>{geoTimePercent}%</span>
-              </div>
-              <div className="geo-layout">
-                <div className="geo-map">
-                  <div className="geo-map__grid" />
-                  {geoDatasets.map((dataset) => {
-                    const left =
-                      ((dataset.longitude / 1_000_000 + 180) / 360) * 100;
-                    const top =
-                      (1 - (dataset.latitude / 1_000_000 + 90) / 180) * 100;
-                    return (
-                      <button
-                        key={`geo-${dataset.id}`}
-                        className={`geo-point ${
-                          selectedGeoDataset?.id === dataset.id ? "active" : ""
-                        }`}
-                        title={`#${dataset.id} ${dataset.name}`}
-                        type="button"
-                        style={{ left: `${left}%`, top: `${top}%` }}
-                        onClick={() => setGeoTarget(dataset.id)}
-                      />
-                    );
-                  })}
-                  {geoDatasets.length === 0 && (
-                    <div className="geo-empty">
-                      No points in the current time window.
-                    </div>
-                  )}
-                </div>
-                <aside className="geo-detail">
-                  {!selectedGeoDataset ? (
-                    <p className="dataset-description">
-                      Select a point to inspect details.
-                    </p>
-                  ) : (
-                    <>
-                      <div className="geo-detail__title">
-                        #{selectedGeoDataset.id} {selectedGeoDataset.name}
-                      </div>
-                      <p className="dataset-description">
-                        {selectedGeoDataset.description}
-                      </p>
-                      <div className="geo-detail__meta">
-                        <span>
-                          Lat/Lng: {formatCoord(selectedGeoDataset.latitude)},{" "}
-                          {formatCoord(selectedGeoDataset.longitude)}
-                        </span>
-                        <span>
-                          Altitude: {selectedGeoDataset.altitudeMin}-
-                          {selectedGeoDataset.altitudeMax} m
-                        </span>
-                        <span>
-                          Collected:{" "}
-                          {formatChainValue(selectedGeoDataset.collectionDate)}
-                        </span>
-                      </div>
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={() => setLineageTarget(selectedGeoDataset.id)}
-                      >
-                        Open in audit trail
-                      </button>
-                      <button
-                        className="ghost-btn"
-                        type="button"
-                        onClick={() => openDatasetDetail(selectedGeoDataset.id)}
-                      >
-                        Open detail
-                      </button>
-                    </>
-                  )}
-                </aside>
-              </div>
-            </div>
+            <GeospatialExplorer
+              datasets={geoDatasets}
+              filteredCount={filteredDatasets.length}
+              geoTimeBounds={geoTimeBounds}
+              geoTimeCutoff={geoTimeCutoff}
+              geoTimePercent={geoTimePercent}
+              selectedDataset={selectedGeoDataset}
+              compareSelectionIds={compareSelectionIds}
+              watchlistIds={watchlistIds}
+              formatCoord={formatCoord}
+              formatChainValue={formatChainValue}
+              onTimeChange={setGeoTimePercent}
+              onSelectDataset={setGeoTarget}
+              onOpenAudit={setLineageTarget}
+              onOpenDetail={openDatasetDetail}
+              onToggleCompare={toggleCompareDataset}
+              onToggleWatch={toggleWatchlistDataset}
+            />
             <div className="compare-card">
               <div className="compare-header">
                 <div>

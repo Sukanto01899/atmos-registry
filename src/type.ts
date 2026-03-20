@@ -181,3 +181,22 @@ export type DatasetCardProps = {
   onToggleCompare: () => void;
   onToggleWatch: () => void;
 };
+
+export type GeospatialExplorerProps = {
+  datasets: Dataset[];
+  filteredCount: number;
+  geoTimeBounds: { min: number; max: number } | null;
+  geoTimeCutoff: number | null;
+  geoTimePercent: number;
+  selectedDataset: Dataset | null;
+  compareSelectionIds: string[];
+  watchlistIds: string[];
+  formatCoord: (value: number) => string;
+  formatChainValue: (value: number) => string;
+  onTimeChange: (value: number) => void;
+  onSelectDataset: (datasetId: number) => void;
+  onOpenAudit: (datasetId: number) => void;
+  onOpenDetail: (datasetId: number) => void;
+  onToggleCompare: (datasetId: number) => void;
+  onToggleWatch: (datasetId: number) => void;
+};
