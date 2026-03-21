@@ -1822,6 +1822,19 @@ textarea:focus {
   overflow-y: auto;
 }
 
+.command-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.command-group__title {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0.2rem 0 0.1rem;
+}
+
 .command-item {
   border: 1px solid var(--border);
   border-radius: 12px;

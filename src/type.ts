@@ -99,6 +99,7 @@ export type CommandAction = {
   id: string;
   label: string;
   detail: string;
+  group?: "Navigation" | "Data" | "Alerts" | "Other";
   run: () => void;
 };
 
@@ -159,6 +160,7 @@ export type CommandPaletteProps = {
   query: string;
   onQueryChange: (value: string) => void;
   actions: CommandAction[];
+  recentActions: CommandAction[];
   onClose: () => void;
   onSelect: (action: CommandAction) => void;
 };

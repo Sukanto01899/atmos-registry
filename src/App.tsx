@@ -83,6 +83,7 @@ const APP_DETAILS = {
 };
 
 const REGISTER_DRAFT_KEY = "atmos-register-draft";
+const RECENT_COMMANDS_KEY = "atmos-command-recent";
 
 const cloneDatasetToRegister = (dataset: Dataset): RegisterFormState => ({
   name: `${dataset.name} (copy)`,
@@ -133,6 +134,7 @@ function App() {
   const [showDatasetDetail, setShowDatasetDetail] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
+  const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
   const [storyStepIndex, setStoryStepIndex] = useState(0);
   const [storyPlaying, setStoryPlaying] = useState(false);
@@ -374,6 +376,26 @@ function App() {
     if (typeof window === "undefined") {
       return;
     }
+    const rawRecent = window.localStorage.getItem(RECENT_COMMANDS_KEY);
+    if (!rawRecent) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawRecent) as string[];
+      if (Array.isArray(parsed)) {
+        setRecentCommandIds(
+          parsed.filter((item) => typeof item === "string"),
+        );
+      }
+    } catch {
+      window.localStorage.removeItem(RECENT_COMMANDS_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
     if (!hasHydratedRegisterDraft.current) {
       return;
     }
@@ -382,6 +404,16 @@ function App() {
       JSON.stringify(registerForm),
     );
   }, [registerForm]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(
+      RECENT_COMMANDS_KEY,
+      JSON.stringify(recentCommandIds.slice(0, 6)),
+    );
+  }, [recentCommandIds]);
   const hasActiveFilters = useMemo(
     () =>
       Boolean(
@@ -1437,6 +1469,10 @@ function App() {
     action.run();
     setShowCommandPalette(false);
     setCommandQuery("");
+    setRecentCommandIds((prev) => {
+      const next = [action.id, ...prev.filter((id) => id !== action.id)];
+      return next.slice(0, 6);
+    });
   };
   const handleCreateVersionDraft = () => {
     if (!lineageDataset) return;
@@ -1974,6 +2010,7 @@ function App() {
       id: "sync-mainnet",
       label: "Sync Mainnet",
       detail: "Reload latest on-chain datasets",
+      group: "Data",
       run: () => {
         loadLatest();
       },
@@ -1982,6 +2019,7 @@ function App() {
       id: "tab-explore",
       label: "Switch to Explore",
       detail: "Show latest submissions tab",
+      group: "Navigation",
       run: () => {
         setFeatureTab("datasets");
         setActiveTab("explore");
@@ -1991,6 +2029,7 @@ function App() {
       id: "tab-mine",
       label: "Switch to My Datasets",
       detail: "Show owner dataset tab",
+      group: "Navigation",
       run: () => {
         setFeatureTab("datasets");
         setActiveTab("mine");
@@ -2000,6 +2039,7 @@ function App() {
       id: "tab-datasets",
       label: "Open Datasets",
       detail: "Jump to dataset workflows",
+      group: "Navigation",
       run: () => {
         setFeatureTab("datasets");
       },
@@ -2008,6 +2048,7 @@ function App() {
       id: "tab-staking",
       label: "Open Staking",
       detail: "Jump to staking dashboard",
+      group: "Navigation",
       run: () => {
         setFeatureTab("staking");
       },
@@ -2016,6 +2057,7 @@ function App() {
       id: "tab-alerts",
       label: "Open Alerts",
       detail: "Jump to smart alert center",
+      group: "Alerts",
       run: () => {
         setFeatureTab("alerts");
       },
@@ -2024,6 +2066,7 @@ function App() {
       id: "tab-audit",
       label: "Open Audit",
       detail: "Jump to lineage and audit trail",
+      group: "Navigation",
       run: () => {
         setFeatureTab("audit");
       },
@@ -2032,6 +2075,7 @@ function App() {
       id: "tab-versions",
       label: "Open Versions",
       detail: "Jump to version workflow",
+      group: "Navigation",
       run: () => {
         setFeatureTab("versions");
       },
@@ -2040,6 +2084,7 @@ function App() {
       id: "reset-filters",
       label: "Reset Filters",
       detail: "Clear all dataset filters",
+      group: "Data",
       run: () => {
         setFilters(defaultFilters);
       },
@@ -2048,6 +2093,7 @@ function App() {
       id: "toggle-alerts",
       label: "Toggle Alert Center",
       detail: "Open or close Smart Alerts panel",
+      group: "Alerts",
       run: () => {
         setFeatureTab("alerts");
       },
@@ -2056,6 +2102,7 @@ function App() {
       id: "quick-save-view",
       label: "Quick Save Current View",
       detail: "Store current workspace settings",
+      group: "Data",
       run: () => {
         quickSaveCurrentView();
       },
@@ -2064,6 +2111,7 @@ function App() {
       id: "refresh-staking",
       label: "Refresh Staking",
       detail: "Reload ATMOS token and staking metrics",
+      group: "Data",
       run: () => {
         loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS);
       },
@@ -2072,6 +2120,7 @@ function App() {
       id: "open-first-audit",
       label: "Open First Dataset in Audit",
       detail: "Jump to audit trail for the first filtered dataset",
+      group: "Navigation",
       run: () => {
         if (filteredDatasets[0]) {
           setLineageTarget(filteredDatasets[0].id);
@@ -2082,6 +2131,7 @@ function App() {
       id: "open-first-detail",
       label: "Open First Detail",
       detail: "Open the detail panel for the first filtered dataset",
+      group: "Navigation",
       run: () => {
         if (filteredDatasets[0]) {
           openDatasetDetail(filteredDatasets[0].id);
@@ -2089,6 +2139,15 @@ function App() {
       },
     },
   ];
+  const recentCommandActions = useMemo(() => {
+    if (!recentCommandIds.length) {
+      return [];
+    }
+    const byId = new Map(commandActions.map((action) => [action.id, action]));
+    return recentCommandIds
+      .map((id) => byId.get(id))
+      .filter((action): action is CommandAction => Boolean(action));
+  }, [commandActions, recentCommandIds]);
   const filteredCommandActions = commandActions.filter((action) => {
     const query = commandQuery.trim().toLowerCase();
     if (!query) return true;
@@ -2164,6 +2223,7 @@ function App() {
         query={commandQuery}
         onQueryChange={setCommandQuery}
         actions={filteredCommandActions}
+        recentActions={recentCommandActions}
         onClose={() => setShowCommandPalette(false)}
         onSelect={executeCommand}
       />
