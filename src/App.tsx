@@ -311,6 +311,62 @@ function App() {
     ],
     [activeDatasets.length, activeTab, filteredDatasets.length, watchlistIds],
   );
+  const insightItems = useMemo(() => {
+    if (filteredDatasets.length === 0) {
+      return [];
+    }
+
+    let topQuality = filteredDatasets[0];
+    let topQualityScore = getQualityScore(topQuality);
+    let mostRecent = filteredDatasets[0];
+    let highestAltitude = filteredDatasets[0];
+    const ownerCounts = new Map<string, number>();
+
+    filteredDatasets.forEach((dataset) => {
+      const score = getQualityScore(dataset);
+      if (score > topQualityScore) {
+        topQuality = dataset;
+        topQualityScore = score;
+      }
+      if (dataset.collectionDate > mostRecent.collectionDate) {
+        mostRecent = dataset;
+      }
+      if (dataset.altitudeMax > highestAltitude.altitudeMax) {
+        highestAltitude = dataset;
+      }
+      ownerCounts.set(dataset.owner, (ownerCounts.get(dataset.owner) ?? 0) + 1);
+    });
+
+    let topOwner = Array.from(ownerCounts.entries())[0];
+    ownerCounts.forEach((count, owner) => {
+      if (!topOwner || count > topOwner[1]) {
+        topOwner = [owner, count];
+      }
+    });
+
+    return [
+      {
+        label: "Top quality",
+        value: `#${topQuality.id} ${topQuality.name}`,
+        meta: `Score ${topQualityScore}/100`,
+      },
+      {
+        label: "Most recent",
+        value: `#${mostRecent.id} ${mostRecent.name}`,
+        meta: formatChainValue(mostRecent.collectionDate),
+      },
+      {
+        label: "Highest altitude",
+        value: `#${highestAltitude.id} ${highestAltitude.name}`,
+        meta: `${highestAltitude.altitudeMax} m max`,
+      },
+      {
+        label: "Top owner",
+        value: topOwner ? topOwner[0] : "n/a",
+        meta: topOwner ? `${topOwner[1]} datasets` : "n/a",
+      },
+    ];
+  }, [filteredDatasets]);
   const stakeAmountValue = useMemo(
     () => parseMicroTokenInput(stakeAmount),
     [stakeAmount],
@@ -3297,6 +3353,25 @@ function App() {
                 </button>
               </div>
             </div>
+            {insightItems.length > 0 && (
+              <div className="insight-strip">
+                <div className="insight-strip__head">
+                  <div>
+                    <h3>Insight strip</h3>
+                    <p>Snapshot of the current filtered view.</p>
+                  </div>
+                </div>
+                <div className="insight-strip__grid">
+                  {insightItems.map((item) => (
+                    <div className="insight-card" key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                      <small>{item.meta}</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="saved-view-card">
               <div className="saved-view-head">
                 <h3>Saved views</h3>
