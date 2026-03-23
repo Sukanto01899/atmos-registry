@@ -91,6 +91,8 @@ const APP_DETAILS = {
 
 const REGISTER_DRAFT_KEY = "atmos-register-draft";
 const RECENT_COMMANDS_KEY = "atmos-command-recent";
+const DATASET_DENSITY_KEY = "atmos-dataset-density";
+const FEATURE_TAB_KEY = "atmos-feature-tab";
 
 const cloneDatasetToRegister = (dataset: Dataset): RegisterFormState => ({
   name: `${dataset.name} (copy)`,
@@ -124,7 +126,21 @@ function App() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [featureTab, setFeatureTab] = useState<
     "datasets" | "add-dataset" | "staking" | "alerts" | "audit" | "versions"
-  >("datasets");
+  >(() => {
+    if (typeof window === "undefined") return "datasets";
+    const stored = window.localStorage.getItem(FEATURE_TAB_KEY);
+    if (
+      stored === "datasets" ||
+      stored === "add-dataset" ||
+      stored === "staking" ||
+      stored === "alerts" ||
+      stored === "audit" ||
+      stored === "versions"
+    ) {
+      return stored;
+    }
+    return "datasets";
+  });
   const [activeTab, setActiveTab] = useState<"explore" | "mine">("explore");
   const [latestDatasets, setLatestDatasets] = useState<Dataset[]>([]);
   const [myDatasets, setMyDatasets] = useState<Dataset[]>([]);
@@ -161,7 +177,14 @@ function App() {
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
   const [datasetDensity, setDatasetDensity] = useState<
     "comfortable" | "compact"
-  >("comfortable");
+  >(() => {
+    if (typeof window === "undefined") return "comfortable";
+    const stored = window.localStorage.getItem(DATASET_DENSITY_KEY);
+    if (stored === "comfortable" || stored === "compact") {
+      return stored;
+    }
+    return "comfortable";
+  });
   const [versionStore, setVersionStore] = useState<
     Record<number, VersionRecord[]>
   >({});
@@ -490,6 +513,14 @@ function App() {
       JSON.stringify(recentCommandIds.slice(0, 6)),
     );
   }, [recentCommandIds]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(DATASET_DENSITY_KEY, datasetDensity);
+  }, [datasetDensity]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(FEATURE_TAB_KEY, featureTab);
+  }, [featureTab]);
   const hasActiveFilters = useMemo(
     () =>
       Boolean(
