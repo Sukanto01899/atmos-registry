@@ -3548,12 +3548,24 @@ function App() {
             </div>
             <div className="filter-card">
               <div className="filter-grid">
-                <input
-                  ref={searchInputRef}
-                  value={filters.search}
-                  onChange={updateFilterField("search")}
-                  placeholder="Search id, name, description, hash"
-                />
+                <div className="input-clear">
+                  <input
+                    ref={searchInputRef}
+                    value={filters.search}
+                    onChange={updateFilterField("search")}
+                    placeholder="Search id, name, description, hash"
+                  />
+                  {filters.search && (
+                    <button
+                      className="input-clear__btn"
+                      type="button"
+                      onClick={() => clearFilter("search")}
+                      aria-label="Clear search"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
                 <select
                   value={filters.status}
                   onChange={updateFilterField("status")}
@@ -3584,22 +3596,58 @@ function App() {
                     </option>
                   ))}
                 </select>
-                <input
-                  value={filters.owner}
-                  onChange={updateFilterField("owner")}
-                  placeholder="Owner contains..."
-                />
+                <div className="input-clear">
+                  <input
+                    value={filters.owner}
+                    onChange={updateFilterField("owner")}
+                    placeholder="Owner contains..."
+                  />
+                  {filters.owner && (
+                    <button
+                      className="input-clear__btn"
+                      type="button"
+                      onClick={() => clearFilter("owner")}
+                      aria-label="Clear owner"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
                 <div className="filter-range">
-                  <input
-                    value={filters.altitudeMin}
-                    onChange={updateFilterField("altitudeMin")}
-                    placeholder="Altitude min"
-                  />
-                  <input
-                    value={filters.altitudeMax}
-                    onChange={updateFilterField("altitudeMax")}
-                    placeholder="Altitude max"
-                  />
+                  <div className="input-clear">
+                    <input
+                      value={filters.altitudeMin}
+                      onChange={updateFilterField("altitudeMin")}
+                      placeholder="Altitude min"
+                    />
+                    {filters.altitudeMin && (
+                      <button
+                        className="input-clear__btn"
+                        type="button"
+                        onClick={() => clearFilter("altitudeMin")}
+                        aria-label="Clear altitude minimum"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <div className="input-clear">
+                    <input
+                      value={filters.altitudeMax}
+                      onChange={updateFilterField("altitudeMax")}
+                      placeholder="Altitude max"
+                    />
+                    {filters.altitudeMax && (
+                      <button
+                        className="input-clear__btn"
+                        type="button"
+                        onClick={() => clearFilter("altitudeMax")}
+                        aria-label="Clear altitude maximum"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               {filterChips.length > 0 && (
@@ -3971,21 +4019,69 @@ function App() {
                 </>
               )}
               {!loading && activeDatasets.length === 0 && (
-                <div className="dataset-card">
+                <div className="dataset-card dataset-card--empty">
+                  <div className="empty-orbit" aria-hidden="true" />
                   <div className="dataset-title">No datasets loaded yet</div>
                   <p className="dataset-description">
                     {activeTab === "explore"
                       ? "Refresh to pull the latest records from mainnet."
                       : "Paste a Stacks address to load datasets tied to that owner."}
                   </p>
+                  <div className="empty-actions">
+                    {activeTab === "explore" ? (
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={loadLatest}
+                      >
+                        Refresh data
+                      </button>
+                    ) : (
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() => setActiveTab("explore")}
+                      >
+                        Browse mainnet
+                      </button>
+                    )}
+                    {hasActiveFilters && (
+                      <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() => setFilters(defaultFilters)}
+                      >
+                        Reset filters
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
               {activeDatasets.length > 0 && sortedDatasets.length === 0 && (
-                <div className="dataset-card">
+                <div className="dataset-card dataset-card--empty">
+                  <div className="empty-orbit" aria-hidden="true" />
                   <div className="dataset-title">No datasets match filters</div>
                   <p className="dataset-description">
                     Try broadening your filter criteria or reset all filters.
                   </p>
+                  <div className="empty-actions">
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => setFilters(defaultFilters)}
+                      disabled={!hasActiveFilters}
+                    >
+                      Reset filters
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={openRandomFilteredDataset}
+                      disabled={filteredDatasets.length === 0}
+                    >
+                      Surprise me
+                    </button>
+                  </div>
                 </div>
               )}
               {sortedDatasets.map((dataset) => (

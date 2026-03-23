@@ -1175,6 +1175,36 @@ textarea:focus {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.input-clear {
+  position: relative;
+}
+
+.input-clear > input {
+  padding-right: 2.1rem;
+}
+
+.input-clear__btn {
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.input-clear__btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+}
+
 .filter-chips {
   margin-top: 0.7rem;
   display: flex;
@@ -2290,12 +2320,53 @@ textarea:focus {
   margin-bottom: 0.8rem;
 }
 
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .dataset-card {
   padding: 1.6rem;
   border-radius: 20px;
   background: rgba(17, 25, 34, 0.8);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+}
+
+.dataset-card:not(.dataset-card--skeleton) {
+  animation: riseIn 0.35s ease both;
+}
+
+.dataset-card--empty {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.empty-orbit {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(90, 160, 255, 0.4), transparent 55%),
+    radial-gradient(circle at 70% 70%, rgba(245, 138, 61, 0.35), transparent 60%);
+  box-shadow:
+    0 10px 24px rgba(9, 18, 30, 0.45),
+    inset 0 0 18px rgba(255, 255, 255, 0.08);
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
 }
 
 .dataset-card--skeleton {
