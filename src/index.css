@@ -604,6 +604,15 @@ textarea:focus {
   border-color: rgba(245, 138, 61, 0.6);
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(245, 138, 61, 0.75);
+  outline-offset: 2px;
+}
+
 .mini-card {
   margin-top: 1.2rem;
   padding: 1rem;
@@ -2372,6 +2381,17 @@ textarea:focus {
 .dataset-card--skeleton {
   position: relative;
   overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dataset-card:not(.dataset-card--skeleton) {
+    animation: none;
+  }
+
+  .filter-chip,
+  .input-clear__btn {
+    transition: none;
+  }
 }
 
 .skeleton-line {
