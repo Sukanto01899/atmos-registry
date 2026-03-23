@@ -604,8 +604,13 @@ textarea:focus {
   border-color: rgba(245, 138, 61, 0.6);
 }
 
-button:focus-visible,
-a:focus-visible,
+.primary-btn:focus-visible,
+.ghost-btn:focus-visible,
+.tab-btn:focus-visible,
+.dataset-view-btn:focus-visible,
+.filter-chip:focus-visible,
+.input-clear__btn:focus-visible,
+.back-to-top:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
