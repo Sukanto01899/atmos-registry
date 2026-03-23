@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import {
   showConnect,
   showContractCall,
@@ -483,6 +489,69 @@ function App() {
       ),
     [filters],
   );
+  const filterChips = useMemo(() => {
+    const chips: Array<{
+      id: string;
+      label: string;
+      key: keyof DatasetFilters;
+    }> = [];
+    if (filters.search) {
+      chips.push({
+        id: "search",
+        label: `Search: ${filters.search}`,
+        key: "search",
+      });
+    }
+    if (filters.status !== "all") {
+      chips.push({
+        id: "status",
+        label: `Status: ${filters.status}`,
+        key: "status",
+      });
+    }
+    if (filters.visibility !== "all") {
+      chips.push({
+        id: "visibility",
+        label: `Visibility: ${filters.visibility}`,
+        key: "visibility",
+      });
+    }
+    if (filters.dataType !== "all") {
+      chips.push({
+        id: "dataType",
+        label: `Type: ${filters.dataType}`,
+        key: "dataType",
+      });
+    }
+    if (filters.owner) {
+      chips.push({
+        id: "owner",
+        label: `Owner: ${filters.owner}`,
+        key: "owner",
+      });
+    }
+    if (filters.altitudeMin) {
+      chips.push({
+        id: "altitudeMin",
+        label: `Altitude min: ${filters.altitudeMin}`,
+        key: "altitudeMin",
+      });
+    }
+    if (filters.altitudeMax) {
+      chips.push({
+        id: "altitudeMax",
+        label: `Altitude max: ${filters.altitudeMax}`,
+        key: "altitudeMax",
+      });
+    }
+    return chips;
+  }, [filters]);
+  const clearFilter = (key: keyof DatasetFilters) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: defaultFilters[key],
+    }));
+  };
   const geoTimeBounds = useMemo(() => {
     const timestamps = filteredDatasets
       .map((dataset) => dataset.collectionDate)
@@ -3482,6 +3551,32 @@ function App() {
                   />
                 </div>
               </div>
+              {filterChips.length > 0 && (
+                <div className="filter-chips">
+                  {filterChips.map((chip) => (
+                    <button
+                      key={chip.id}
+                      className="filter-chip"
+                      type="button"
+                      onClick={() => clearFilter(chip.key)}
+                      title={`Clear ${chip.label}`}
+                    >
+                      <span className="filter-chip__label">{chip.label}</span>
+                      <span className="filter-chip__x" aria-hidden="true">
+                        ×
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    className="filter-chip filter-chip--clear"
+                    type="button"
+                    onClick={() => setFilters(defaultFilters)}
+                    disabled={!hasActiveFilters}
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
               <div className="filter-actions">
                 <span>
                   Showing {filteredDatasets.length} of {activeDatasets.length}
