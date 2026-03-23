@@ -1229,6 +1229,43 @@ textarea:focus {
   color: var(--muted);
 }
 
+.filter-chip.status--active,
+.filter-chip.status--verified {
+  border-color: rgba(32, 201, 151, 0.4);
+  color: var(--accent-2);
+  background: rgba(32, 201, 151, 0.12);
+}
+
+.filter-chip.status--pending {
+  border-color: rgba(90, 160, 255, 0.45);
+  color: var(--accent-3);
+  background: rgba(90, 160, 255, 0.12);
+}
+
+.filter-chip.status--rejected {
+  border-color: rgba(255, 120, 120, 0.45);
+  color: #ff8d8d;
+  background: rgba(255, 120, 120, 0.12);
+}
+
+.filter-chip.status--deprecated {
+  border-color: rgba(245, 138, 61, 0.4);
+  color: var(--accent);
+  background: rgba(245, 138, 61, 0.12);
+}
+
+.filter-chip.visibility--public {
+  border-color: rgba(32, 201, 151, 0.4);
+  color: var(--accent-2);
+  background: rgba(32, 201, 151, 0.12);
+}
+
+.filter-chip.visibility--private {
+  border-color: rgba(90, 160, 255, 0.4);
+  color: var(--accent-3);
+  background: rgba(90, 160, 255, 0.12);
+}
+
 .filter-range {
   display: grid;
   grid-template-columns: 1fr 1fr;

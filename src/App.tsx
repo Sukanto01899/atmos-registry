@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type ChangeEvent,
 } from "react";
 import {
@@ -103,6 +104,19 @@ const cloneDatasetToRegister = (dataset: Dataset): RegisterFormState => ({
   ipfsHash: dataset.ipfsHash || "",
   isPublic: dataset.isPublic,
 });
+
+const getTypeChipStyle = (value: string): CSSProperties => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = value.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return {
+    borderColor: `hsla(${hue}, 70%, 60%, 0.55)`,
+    color: `hsl(${hue}, 70%, 70%)`,
+    background: `hsla(${hue}, 70%, 30%, 0.18)`,
+  };
+};
 
 function App() {
   const hasHydratedUrlRef = useRef(false);
@@ -494,6 +508,8 @@ function App() {
       id: string;
       label: string;
       key: keyof DatasetFilters;
+      className?: string;
+      style?: CSSProperties;
     }> = [];
     if (filters.search) {
       chips.push({
@@ -507,6 +523,7 @@ function App() {
         id: "status",
         label: `Status: ${filters.status}`,
         key: "status",
+        className: `status--${filters.status}`,
       });
     }
     if (filters.visibility !== "all") {
@@ -514,6 +531,7 @@ function App() {
         id: "visibility",
         label: `Visibility: ${filters.visibility}`,
         key: "visibility",
+        className: `visibility--${filters.visibility}`,
       });
     }
     if (filters.dataType !== "all") {
@@ -521,6 +539,8 @@ function App() {
         id: "dataType",
         label: `Type: ${filters.dataType}`,
         key: "dataType",
+        className: "filter-chip--type",
+        style: getTypeChipStyle(filters.dataType),
       });
     }
     if (filters.owner) {
@@ -3556,10 +3576,11 @@ function App() {
                   {filterChips.map((chip) => (
                     <button
                       key={chip.id}
-                      className="filter-chip"
+                      className={`filter-chip${chip.className ? ` ${chip.className}` : ""}`}
                       type="button"
                       onClick={() => clearFilter(chip.key)}
                       title={`Clear ${chip.label}`}
+                      style={chip.style}
                     >
                       <span className="filter-chip__label">{chip.label}</span>
                       <span className="filter-chip__x" aria-hidden="true">
