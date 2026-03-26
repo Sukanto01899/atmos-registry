@@ -61,6 +61,22 @@ const datasets = [
   },
 ];
 
+const clamp = (value, { min, max }) => Math.min(max, Math.max(min, value));
+
+const parseOptionalIntParam = (searchParams, name) => {
+  const raw = searchParams.get(name);
+  if (raw === null || raw.trim() === "") return undefined;
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isNaN(parsed)) return null;
+  return parsed;
+};
+
+const normalizeSort = (raw) => {
+  const sort = (raw ?? "").trim().toLowerCase();
+  if (!sort) return "created_at_desc";
+  return sort;
+};
+
 const sendJson = (response, statusCode, payload) => {
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -73,7 +89,7 @@ const sendJson = (response, statusCode, payload) => {
 };
 
 const matchDatasetId = (pathname) => {
-  const matched = pathname.match(/^\/api\/datasets\/(\d+)$/);
+  const matched = pathname.match(/^\/(?:api\/)?datasets\/(\d+)$/);
   if (!matched) {
     return null;
   }
@@ -85,8 +101,31 @@ const filterDatasets = (searchParams) => {
   const status = searchParams.get("status")?.trim().toLowerCase() ?? "";
   const owner = searchParams.get("owner")?.trim().toLowerCase() ?? "";
   const visibility = searchParams.get("visibility")?.trim().toLowerCase() ?? "";
+  const dataType = searchParams.get("dataType")?.trim().toLowerCase() ?? "";
 
-  return datasets.filter((dataset) => {
+  const isPublicRaw = searchParams.get("isPublic")?.trim().toLowerCase() ?? "";
+  const isPublic =
+    isPublicRaw === ""
+      ? undefined
+      : isPublicRaw === "true" || isPublicRaw === "1"
+        ? true
+        : isPublicRaw === "false" || isPublicRaw === "0"
+          ? false
+          : null;
+
+  const from = parseOptionalIntParam(searchParams, "from");
+  const to = parseOptionalIntParam(searchParams, "to");
+
+  if (isPublic === null) {
+    return { error: "Invalid isPublic. Expected true/false (or 1/0)." };
+  }
+
+  if (from === null || to === null) {
+    return { error: "Invalid from/to. Expected unix epoch seconds as integers." };
+  }
+
+  return {
+    items: datasets.filter((dataset) => {
     if (search) {
       const haystack = [
         dataset.id,
@@ -110,6 +149,14 @@ const filterDatasets = (searchParams) => {
       return false;
     }
 
+    if (dataType && dataset.dataType.toLowerCase() !== dataType) {
+      return false;
+    }
+
+    if (isPublic !== undefined && dataset.isPublic !== isPublic) {
+      return false;
+    }
+
     if (visibility === "public" && !dataset.isPublic) {
       return false;
     }
@@ -118,8 +165,62 @@ const filterDatasets = (searchParams) => {
       return false;
     }
 
+    if (typeof from === "number" && dataset.collectionDate < from) {
+      return false;
+    }
+
+    if (typeof to === "number" && dataset.collectionDate > to) {
+      return false;
+    }
+
     return true;
-  });
+    }),
+  };
+};
+
+const sortDatasets = (items, sort) => {
+  const normalized = normalizeSort(sort);
+  const sorted = items.slice();
+
+  const sorters = {
+    id_asc: (a, b) => a.id - b.id,
+    id_desc: (a, b) => b.id - a.id,
+    created_at_asc: (a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0),
+    created_at_desc: (a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0),
+    collection_date_asc: (a, b) => (a.collectionDate ?? 0) - (b.collectionDate ?? 0),
+    collection_date_desc: (a, b) => (b.collectionDate ?? 0) - (a.collectionDate ?? 0),
+    name_asc: (a, b) => String(a.name ?? "").localeCompare(String(b.name ?? "")),
+    name_desc: (a, b) => String(b.name ?? "").localeCompare(String(a.name ?? "")),
+  };
+
+  const sorter = sorters[normalized];
+  if (!sorter) {
+    return { items: sorted, sort: "created_at_desc", sortValid: false };
+  }
+
+  sorted.sort(sorter);
+  return { items: sorted, sort: normalized, sortValid: true };
+};
+
+const paginateDatasets = (items, searchParams) => {
+  const cursor = parseOptionalIntParam(searchParams, "cursor");
+  if (cursor === null) {
+    return { error: "Invalid cursor. Expected an integer offset." };
+  }
+
+  const limitRaw = parseOptionalIntParam(searchParams, "limit");
+  if (limitRaw === null) {
+    return { error: "Invalid limit. Expected an integer." };
+  }
+
+  const limit = clamp(limitRaw ?? 50, { min: 1, max: 200 });
+  const offset = clamp(cursor ?? 0, { min: 0, max: Number.MAX_SAFE_INTEGER });
+
+  const paged = items.slice(offset, offset + limit);
+  const nextOffset = offset + paged.length;
+  const nextCursor = nextOffset < items.length ? String(nextOffset) : undefined;
+
+  return { items: paged, nextCursor, limit, cursor: String(offset) };
 };
 
 const buildSummary = (items) => ({
@@ -156,6 +257,10 @@ const handleRequest = (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
   const { pathname, searchParams } = url;
   const filtered = filterDatasets(searchParams);
+  if ("error" in filtered) {
+    sendJson(response, 400, { error: filtered.error });
+    return;
+  }
 
   if (pathname === "/health") {
     sendJson(response, 200, {
@@ -166,16 +271,42 @@ const handleRequest = (request, response) => {
     return;
   }
 
-  if (pathname === "/api/datasets") {
+  if (pathname === "/api/datasets" || pathname === "/datasets") {
+    const { items: sortedItems, sort, sortValid } = sortDatasets(
+      filtered.items,
+      searchParams.get("sort"),
+    );
+
+    const paged = paginateDatasets(sortedItems, searchParams);
+    if ("error" in paged) {
+      sendJson(response, 400, { error: paged.error });
+      return;
+    }
+
     sendJson(response, 200, {
-      total: filtered.length,
-      items: filtered,
+      total: sortedItems.length,
+      items: paged.items,
+      nextCursor: paged.nextCursor,
+      cursor: paged.cursor,
+      limit: paged.limit,
+      sort,
+      sortValid,
+      allowedSort: [
+        "created_at_desc",
+        "created_at_asc",
+        "collection_date_desc",
+        "collection_date_asc",
+        "id_desc",
+        "id_asc",
+        "name_asc",
+        "name_desc",
+      ],
     });
     return;
   }
 
-  if (pathname === "/api/summary") {
-    sendJson(response, 200, buildSummary(filtered));
+  if (pathname === "/api/summary" || pathname === "/summary") {
+    sendJson(response, 200, buildSummary(filtered.items));
     return;
   }
 
@@ -192,7 +323,15 @@ const handleRequest = (request, response) => {
 
   sendJson(response, 404, {
     error: "Not found.",
-    routes: ["/health", "/api/datasets", "/api/datasets/:id", "/api/summary"],
+    routes: [
+      "/health",
+      "/datasets",
+      "/datasets/:id",
+      "/summary",
+      "/api/datasets (legacy alias)",
+      "/api/datasets/:id (legacy alias)",
+      "/api/summary (legacy alias)",
+    ],
   });
 };
 
