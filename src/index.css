@@ -355,6 +355,11 @@ textarea {
   box-shadow: 0 12px 28px rgba(55, 209, 161, 0.18);
 }
 
+.ghost-btn.compact {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.82rem;
+}
+
 .wallet-chip {
   display: flex;
   align-items: center;

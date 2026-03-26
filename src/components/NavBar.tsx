@@ -34,7 +34,7 @@
   onDisconnectWallet: () => void;
 };
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function NavBar({
@@ -51,6 +51,8 @@ export function NavBar({
   onDisconnectWallet,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const copyTimeoutRef = useRef<number | null>(null);
+  const [copied, setCopied] = useState(false);
   const featureTabs = [
     { id: "datasets", label: "Home" },
     { id: "add-dataset", label: "Add dataset" },
@@ -59,6 +61,36 @@ export function NavBar({
     { id: "audit", label: "Audit" },
     { id: "versions", label: "Versions" },
   ] as const;
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) window.clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
+
+  const copyWalletAddress = async () => {
+    if (!walletAddress) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(walletAddress);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = walletAddress;
+        el.setAttribute("readonly", "true");
+        el.style.position = "fixed";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+      setCopied(true);
+      if (copyTimeoutRef.current) window.clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
     <nav className="nav">
@@ -101,7 +133,20 @@ export function NavBar({
           {walletAddress ? (
             <div className="wallet-chip">
               <span className="wallet-address">{walletAddress}</span>
-              <button className="ghost-btn" onClick={onDisconnectWallet}>
+              <button
+                className="ghost-btn compact"
+                type="button"
+                onClick={copyWalletAddress}
+                aria-label="Copy wallet address"
+                title={copied ? "Copied!" : "Copy"}
+              >
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <button
+                className="ghost-btn compact"
+                type="button"
+                onClick={onDisconnectWallet}
+              >
                 Disconnect
               </button>
             </div>
