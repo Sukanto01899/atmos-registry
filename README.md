@@ -74,7 +74,9 @@ The API starts on `http://127.0.0.1:4000` by default.
 - `GET /datasets?tags=wind,hourly`
 - `GET /datasets?limit=25&cursor=0&sort=created_at_desc`
 - `GET /datasets/:id`
+- `GET /datasets/tags`
 - `GET /summary`
+- `GET /tags`
 
 Legacy aliases (kept for compatibility):
 

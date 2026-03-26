@@ -259,6 +259,28 @@ const buildSummary = (items) => ({
   }, {}),
 });
 
+const buildTagSummary = (items) => {
+  const counts = new Map();
+  for (const dataset of items) {
+    const tags = Array.isArray(dataset.tags) ? dataset.tags : [];
+    for (const tag of tags) {
+      const normalized = String(tag).trim().toLowerCase();
+      if (!normalized) continue;
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+    }
+  }
+
+  const tagCounts = Array.from(counts.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+
+  return {
+    totalDatasets: items.length,
+    totalTags: tagCounts.length,
+    items: tagCounts,
+  };
+};
+
 const handleRequest = (request, response) => {
   if (!request.url) {
     sendJson(response, 400, { error: "Request URL is missing." });
@@ -336,6 +358,16 @@ const handleRequest = (request, response) => {
     return;
   }
 
+  if (
+    pathname === "/api/tags" ||
+    pathname === "/tags" ||
+    pathname === "/datasets/tags" ||
+    pathname === "/api/datasets/tags"
+  ) {
+    sendJson(response, 200, buildTagSummary(filtered.items));
+    return;
+  }
+
   const datasetId = matchDatasetId(pathname);
   if (datasetId !== null) {
     const dataset = datasets.find((item) => item.id === datasetId);
@@ -353,10 +385,14 @@ const handleRequest = (request, response) => {
       "/health",
       "/datasets",
       "/datasets/:id",
+      "/datasets/tags",
       "/summary",
+      "/tags",
       "/api/datasets (legacy alias)",
       "/api/datasets/:id (legacy alias)",
+      "/api/datasets/tags (legacy alias)",
       "/api/summary (legacy alias)",
+      "/api/tags (legacy alias)",
     ],
   });
 };
