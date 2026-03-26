@@ -17,6 +17,75 @@
   --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.2);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f8fb;
+  --bg-soft: #eef2f7;
+  --card: #ffffff;
+  --card-strong: #f3f6fb;
+  --text: #0b1015;
+  --muted: rgba(11, 16, 21, 0.64);
+  --border: rgba(11, 16, 21, 0.12);
+  --shadow: 0 22px 50px rgba(11, 16, 21, 0.14);
+  --shadow-soft: 0 10px 24px rgba(11, 16, 21, 0.1);
+}
+
+:root[data-theme="light"] .nav {
+  background: rgba(246, 248, 251, 0.82);
+}
+
+:root[data-theme="light"] .nav__bar {
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-soft);
+}
+
+:root[data-theme="light"] .nav__dropdown {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+:root[data-theme="light"] .nav__dropdown button {
+  background: rgba(238, 242, 247, 0.9);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .ghost-btn {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .wallet-chip {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme="light"] .hero-signal,
+:root[data-theme="light"] .activity-strip,
+:root[data-theme="light"] .activity-card,
+:root[data-theme="light"] .insight-card,
+:root[data-theme="light"] .contract-pill,
+:root[data-theme="light"] .mini-card,
+:root[data-theme="light"] .stake-card,
+:root[data-theme="light"] .stat-card,
+:root[data-theme="light"] .version-card,
+:root[data-theme="light"] .filter-card,
+:root[data-theme="light"] .saved-view-card,
+:root[data-theme="light"] .geo-card,
+:root[data-theme="light"] .compare-card,
+:root[data-theme="light"] .detail-card,
+:root[data-theme="light"] .story-card,
+:root[data-theme="light"] .dataset-card,
+:root[data-theme="light"] .form-card,
+:root[data-theme="light"] .dataset-view-btn {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+:root[data-theme="light"] .insight-strip {
+  background:
+    linear-gradient(135deg, rgba(245, 159, 75, 0.12), transparent 60%),
+    rgba(255, 255, 255, 0.86);
+}
+
 * {
   box-sizing: border-box;
 }

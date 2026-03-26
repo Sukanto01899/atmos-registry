@@ -1,4 +1,4 @@
-type Props = {
+﻿type Props = {
   featureTab:
     | "datasets"
     | "add-dataset"
@@ -35,6 +35,7 @@ type Props = {
 };
 
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function NavBar({
   featureTab,
@@ -70,6 +71,7 @@ export function NavBar({
           </div>
         </div>
         <div className="nav__actions">
+          <ThemeToggle />
           <button
             className="ghost-btn"
             onClick={onSyncMainnet}
@@ -195,3 +197,6 @@ export function NavBar({
     </nav>
   );
 }
+
+
+
