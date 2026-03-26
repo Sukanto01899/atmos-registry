@@ -10,6 +10,7 @@ const datasets = [
     name: "Delta Wind Profile",
     description: "Hourly lower-atmosphere wind measurements over the delta.",
     dataType: "wind",
+    tags: ["wind", "hourly", "delta"],
     status: "verified",
     owner: "SP1WINDPROFILE000000000000000000000001",
     isPublic: true,
@@ -28,6 +29,7 @@ const datasets = [
     name: "Monsoon Moisture Grid",
     description: "Regional humidity mesh for monsoon corridor forecasting.",
     dataType: "humidity",
+    tags: ["humidity", "forecast", "monsoon"],
     status: "pending",
     owner: "SP1MONSOONGRID000000000000000000000002",
     isPublic: true,
@@ -46,6 +48,7 @@ const datasets = [
     name: "Stratosphere Trace Scan",
     description: "Private trace-gas scan prepared for downstream review.",
     dataType: "trace-gas",
+    tags: ["trace-gas", "private", "review"],
     status: "active",
     owner: "SP1TRACEGAS000000000000000000000000003",
     isPublic: false,
@@ -102,6 +105,8 @@ const filterDatasets = (searchParams) => {
   const owner = searchParams.get("owner")?.trim().toLowerCase() ?? "";
   const visibility = searchParams.get("visibility")?.trim().toLowerCase() ?? "";
   const dataType = searchParams.get("dataType")?.trim().toLowerCase() ?? "";
+  const tagsParam = searchParams.get("tags")?.trim() ?? "";
+  const tagParam = searchParams.get("tag")?.trim() ?? "";
 
   const isPublicRaw = searchParams.get("isPublic")?.trim().toLowerCase() ?? "";
   const isPublic =
@@ -124,6 +129,14 @@ const filterDatasets = (searchParams) => {
     return { error: "Invalid from/to. Expected unix epoch seconds as integers." };
   }
 
+  const rawTags = tagsParam || tagParam;
+  const requiredTags = rawTags
+    ? rawTags
+        .split(",")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter(Boolean)
+    : [];
+
   return {
     items: datasets.filter((dataset) => {
     if (search) {
@@ -133,6 +146,7 @@ const filterDatasets = (searchParams) => {
         dataset.description,
         dataset.dataType,
         dataset.ipfsHash,
+        ...(Array.isArray(dataset.tags) ? dataset.tags : []),
       ]
         .join(" ")
         .toLowerCase();
@@ -171,6 +185,18 @@ const filterDatasets = (searchParams) => {
 
     if (typeof to === "number" && dataset.collectionDate > to) {
       return false;
+    }
+
+    if (requiredTags.length > 0) {
+      const datasetTags = (Array.isArray(dataset.tags) ? dataset.tags : [])
+        .map((tag) => String(tag).toLowerCase())
+        .filter(Boolean);
+      const tagSet = new Set(datasetTags);
+      for (const requiredTag of requiredTags) {
+        if (!tagSet.has(requiredTag)) {
+          return false;
+        }
+      }
     }
 
     return true;
