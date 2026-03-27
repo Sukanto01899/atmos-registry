@@ -1558,6 +1558,50 @@ function App() {
       "Visible dataset statuses",
     );
   };
+  const copyVisibleMarkdownTable = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible datasets to copy.");
+      return;
+    }
+
+    const escapeCell = (value: unknown) =>
+      String(value ?? "")
+        .replace(/\r?\n/g, "<br/>")
+        .replace(/\|/g, "\\|")
+        .trim();
+
+    const maxRows = 200;
+    const rows = sortedDatasets.slice(0, maxRows);
+
+    const header = [
+      "id",
+      "name",
+      "type",
+      "status",
+      "public",
+      "owner",
+      "ipfs",
+    ];
+
+    const lines = [
+      `| ${header.join(" | ")} |`,
+      `| ${header.map(() => "---").join(" | ")} |`,
+      ...rows.map((dataset) => {
+        const ipfs = dataset.ipfsHash?.trim() ? dataset.ipfsHash.trim() : "";
+        return `| ${[
+          dataset.id,
+          escapeCell(dataset.name),
+          escapeCell(dataset.dataType),
+          escapeCell(dataset.status),
+          dataset.isPublic ? "yes" : "no",
+          escapeCell(dataset.owner),
+          escapeCell(ipfs),
+        ].join(" | ")} |`;
+      }),
+    ];
+
+    await copyText(lines.join("\n"), `Markdown table (${rows.length} rows)`);
+  };
   const useVisibleAsWatchlist = () => {
     const nextIds = Array.from(
       new Set(sortedDatasets.map((dataset) => String(dataset.id))),
@@ -3938,6 +3982,14 @@ function App() {
                   disabled={filteredDatasets.length === 0}
                 >
                   Copy statuses
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleMarkdownTable}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy markdown
                 </button>
                 <button
                   className="ghost-btn"
