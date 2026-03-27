@@ -177,6 +177,7 @@ export type DatasetCardProps = {
   formatCoord: (value: number) => string;
   onCopyId: () => void;
   onCopyOwner: () => void;
+  onCopyCoords?: () => void;
   onCopyIpfs: () => void;
   onCopyLink?: () => void;
   onOpenIpfs?: () => void;

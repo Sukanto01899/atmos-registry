@@ -139,6 +139,7 @@ export function DatasetCard({
   formatCoord,
   onCopyId,
   onCopyOwner,
+  onCopyCoords,
   onCopyIpfs,
   onCopyLink,
   onOpenIpfs,
@@ -284,6 +285,15 @@ export function DatasetCard({
         >
           Copy owner
         </button>
+        {onCopyCoords && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onCopyCoords}
+          >
+            Copy coords
+          </button>
+        )}
         <button
           className="ghost-btn dataset-foot__action dataset-foot__action--compare"
           type="button"

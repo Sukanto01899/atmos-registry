@@ -2723,6 +2723,18 @@ function App() {
                     className="ghost-btn"
                     type="button"
                     onClick={() =>
+                      copyText(
+                        `${formatCoord(lineageDataset.latitude)}, ${formatCoord(lineageDataset.longitude)}`,
+                        "Coordinates",
+                      )
+                    }
+                  >
+                    Copy coords
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
                       copyText(lineageDataset.ipfsHash || "", "IPFS hash")
                     }
                   >
@@ -4329,6 +4341,12 @@ function App() {
                   formatCoord={formatCoord}
                   onCopyId={() => copyText(String(dataset.id), "Dataset ID")}
                   onCopyOwner={() => copyText(dataset.owner, "Owner")}
+                  onCopyCoords={() =>
+                    copyText(
+                      `${formatCoord(dataset.latitude)}, ${formatCoord(dataset.longitude)}`,
+                      "Coordinates",
+                    )
+                  }
                   onCopyIpfs={() =>
                     copyText(dataset.ipfsHash || "", "IPFS hash")
                   }
