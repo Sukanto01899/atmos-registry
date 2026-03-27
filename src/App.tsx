@@ -1641,6 +1641,33 @@ function App() {
     }
     await copyText(window.location.href, "Share link");
   };
+  const buildDatasetDetailLink = (datasetId: number) => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    const nextSearch = buildUrlViewSearch({
+      activeTab,
+      filters,
+      geoTimePercent,
+      compareSelectionIds,
+      watchlistOnly,
+      watchlistIds,
+      mutedAlertKinds,
+      sortMode,
+      lineageSelectionId: String(datasetId),
+      selectedGeoDatasetId,
+      showDatasetDetail: true,
+    });
+    return `${window.location.origin}${window.location.pathname}${nextSearch}${window.location.hash}`;
+  };
+  const copyDatasetDetailLink = async (datasetId: number) => {
+    const link = buildDatasetDetailLink(datasetId);
+    if (!link) {
+      setStatusMessage("Share link unavailable.");
+      return;
+    }
+    await copyText(link, "Dataset link");
+  };
   const executeCommand = (action: CommandAction) => {
     action.run();
     setShowCommandPalette(false);
@@ -2493,6 +2520,24 @@ function App() {
                     }
                   >
                     Copy ID
+                  </button>                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyDatasetDetailLink(lineageDataset.id)}
+                  >
+                    Copy link
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      copyText(
+                        `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+                        "Contract principal",
+                      )
+                    }
+                  >
+                    Copy contract
                   </button>
                   <button
                     className="ghost-btn"
