@@ -1686,6 +1686,42 @@ function App() {
       setStatusMessage(`Unable to copy ${label.toLowerCase()}.`);
     }
   };
+  const openIpfsGateway = (pointer: string) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("IPFS gateway unavailable.");
+      return;
+    }
+    const trimmed = (pointer ?? "").trim();
+    if (!trimmed) {
+      setStatusMessage("IPFS hash is empty.");
+      return;
+    }
+
+    let cid = trimmed;
+    if (cid.startsWith("ipfs://")) {
+      cid = cid.slice("ipfs://".length);
+    }
+
+    const urlMatch = cid.match(/\/ipfs\/([^/?#]+)/);
+    if (urlMatch) {
+      cid = urlMatch[1];
+    }
+
+    cid = cid.replace(/^\/?ipfs\//, "").split(/[?#]/)[0].trim();
+
+    if (!cid) {
+      setStatusMessage("IPFS hash is invalid.");
+      return;
+    }
+
+    const gatewayUrl = `https://ipfs.io/ipfs/${encodeURIComponent(cid)}`;
+    const opened = window.open(gatewayUrl, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      setStatusMessage("Popup blocked. Allow popups to open IPFS.");
+      return;
+    }
+    setStatusMessage("Opened IPFS gateway.");
+  };
   const scrollToTop = () => {
     if (typeof window === "undefined") {
       return;
@@ -2648,6 +2684,15 @@ function App() {
                   >
                     Copy IPFS
                   </button>
+                  {lineageDataset.ipfsHash?.trim() && (
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => openIpfsGateway(lineageDataset.ipfsHash!)}
+                    >
+                      Open IPFS
+                    </button>
+                  )}
                 </div>
               </article>
               <article className="detail-card">
@@ -4235,6 +4280,7 @@ function App() {
                   onCopyIpfs={() =>
                     copyText(dataset.ipfsHash || "", "IPFS hash")
                   }
+                  onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}
                   onOpenDetail={() => openDatasetDetail(dataset.id)}
                   onAudit={() => setLineageTarget(dataset.id)}
                   onToggleCompare={() => toggleCompareDataset(dataset.id)}
