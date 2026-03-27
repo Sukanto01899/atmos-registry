@@ -1403,6 +1403,83 @@ function App() {
     URL.revokeObjectURL(url);
     setStatusMessage(`Exported ${filteredDatasets.length} filtered datasets.`);
   };
+  const exportFilteredDatasetsCsv = () => {
+    if (!filteredDatasets.length || typeof window === "undefined") {
+      setStatusMessage("No filtered datasets to export.");
+      return;
+    }
+
+    const escapeCsv = (value: unknown) => {
+      const raw = value === null || value === undefined ? "" : String(value);
+      const needsQuotes = /[",\n\r]/.test(raw);
+      const escaped = raw.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const columns = [
+      "id",
+      "name",
+      "description",
+      "dataType",
+      "status",
+      "owner",
+      "isPublic",
+      "metadataFrozen",
+      "verified",
+      "verifiedBy",
+      "verifiedAt",
+      "collectionDate",
+      "createdAt",
+      "altitudeMin",
+      "altitudeMax",
+      "latitude",
+      "longitude",
+      "ipfsHash",
+    ] as const;
+
+    const lines = [
+      columns.join(","),
+      ...sortedDatasets.map((dataset) =>
+        [
+          dataset.id,
+          dataset.name,
+          dataset.description,
+          dataset.dataType,
+          dataset.status,
+          dataset.owner,
+          dataset.isPublic,
+          dataset.metadataFrozen,
+          dataset.verified,
+          dataset.verifiedBy ?? "",
+          dataset.verifiedAt ?? "",
+          dataset.collectionDate,
+          dataset.createdAt,
+          dataset.altitudeMin,
+          dataset.altitudeMax,
+          dataset.latitude,
+          dataset.longitude,
+          dataset.ipfsHash ?? "",
+        ]
+          .map(escapeCsv)
+          .join(","),
+      ),
+    ];
+
+    const blob = new Blob([`\uFEFF${lines.join("\n")}`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-filtered-${activeTab}-${Date.now()}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(
+      `Exported ${filteredDatasets.length} filtered datasets (CSV).`,
+    );
+  };
   const openRandomFilteredDataset = () => {
     if (!sortedDatasets.length) {
       setStatusMessage("No filtered datasets available.");
@@ -3515,6 +3592,14 @@ function App() {
                   disabled={sortedDatasets.length === 0}
                 >
                   Export visible JSON
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={exportFilteredDatasetsCsv}
+                  disabled={sortedDatasets.length === 0}
+                >
+                  Export visible CSV
                 </button>
               </div>
             </div>
