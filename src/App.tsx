@@ -4280,6 +4280,7 @@ function App() {
                   onCopyIpfs={() =>
                     copyText(dataset.ipfsHash || "", "IPFS hash")
                   }
+                  onCopyLink={() => copyDatasetDetailLink(dataset.id)}
                   onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}
                   onOpenDetail={() => openDatasetDetail(dataset.id)}
                   onAudit={() => setLineageTarget(dataset.id)}
