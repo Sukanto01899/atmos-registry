@@ -1535,6 +1535,29 @@ function App() {
       `Exported ${filteredDatasets.length} filtered datasets (GeoJSON).`,
     );
   };
+  const exportSingleDatasetJson = (dataset: Dataset) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Export unavailable.");
+      return;
+    }
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      contract: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,
+      dataset,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-dataset-${dataset.id}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported dataset #${dataset.id} (JSON).`);
+  };
   const openRandomFilteredDataset = () => {
     if (!sortedDatasets.length) {
       setStatusMessage("No filtered datasets available.");
@@ -2788,12 +2811,20 @@ function App() {
                     }
                   >
                     Copy ID
-                  </button>                  <button
+                  </button>
+                  <button
                     className="ghost-btn"
                     type="button"
                     onClick={() => copyDatasetDetailLink(lineageDataset.id)}
                   >
                     Copy link
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => exportSingleDatasetJson(lineageDataset)}
+                  >
+                    Export JSON
                   </button>
                   <button
                     className="ghost-btn"
