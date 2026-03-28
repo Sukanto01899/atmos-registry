@@ -1358,6 +1358,69 @@ function App() {
     anchor.remove();
     URL.revokeObjectURL(url);
   };
+  const exportComparisonCsv = () => {
+    if (!compareDatasets.length || typeof window === "undefined") {
+      setStatusMessage("No comparison datasets to export.");
+      return;
+    }
+
+    const escapeCsv = (value: unknown) => {
+      const raw = value === null || value === undefined ? "" : String(value);
+      const needsQuotes = /[",\n\r]/.test(raw);
+      const escaped = raw.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const columns = [
+      "id",
+      "name",
+      "status",
+      "visibility",
+      "collectionDate",
+      "createdAt",
+      "altitudeMin",
+      "altitudeMax",
+      "latitude",
+      "longitude",
+      "owner",
+      "ipfsHash",
+    ];
+
+    const lines = [
+      columns.join(","),
+      ...compareDatasets.map((dataset) =>
+        [
+          dataset.id,
+          dataset.name,
+          dataset.status,
+          dataset.isPublic ? "Public" : "Private",
+          dataset.collectionDate,
+          dataset.createdAt,
+          dataset.altitudeMin,
+          dataset.altitudeMax,
+          dataset.latitude,
+          dataset.longitude,
+          dataset.owner,
+          dataset.ipfsHash ?? "",
+        ]
+          .map(escapeCsv)
+          .join(","),
+      ),
+    ];
+
+    const blob = new Blob([`\uFEFF${lines.join("\n")}`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-dataset-comparison-${Date.now()}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported ${compareDatasets.length} datasets (CSV).`);
+  };
   const exportFilteredDatasets = () => {
     if (!filteredDatasets.length || typeof window === "undefined") {
       setStatusMessage("No filtered datasets to export.");
@@ -4308,6 +4371,14 @@ function App() {
                     disabled={compareDatasets.length === 0}
                   >
                     Export JSON
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportComparisonCsv}
+                    disabled={compareDatasets.length === 0}
+                  >
+                    Export CSV
                   </button>
                 </div>
               </div>
