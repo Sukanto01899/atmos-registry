@@ -1602,6 +1602,22 @@ function App() {
       "Visible dataset IDs",
     );
   };
+  const copyVisibleCoordsCsv = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible coordinates to copy.");
+      return;
+    }
+
+    const lines = [
+      "id,latitude,longitude",
+      ...sortedDatasets.map(
+        (dataset) =>
+          `${dataset.id},${formatCoord(dataset.latitude)},${formatCoord(dataset.longitude)}`,
+      ),
+    ];
+
+    await copyText(lines.join("\n"), `Coordinates CSV (${sortedDatasets.length})`);
+  };
   const copyVisibleDatasetLinks = async () => {
     if (!sortedDatasets.length) {
       setStatusMessage("No visible dataset links to copy.");
@@ -4166,6 +4182,14 @@ function App() {
                   disabled={filteredDatasets.length === 0}
                 >
                   Copy visible IDs
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleCoordsCsv}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy coords CSV
                 </button>
                 <button
                   className="ghost-btn"
