@@ -1524,6 +1524,29 @@ function App() {
       "Visible dataset IDs",
     );
   };
+  const copyVisibleDatasetLinks = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible dataset links to copy.");
+      return;
+    }
+    if (typeof window === "undefined") {
+      setStatusMessage("Dataset links unavailable.");
+      return;
+    }
+    const links = sortedDatasets
+      .map((dataset) => buildDatasetDetailLink(dataset.id))
+      .filter((link) => Boolean(link));
+
+    if (!links.length) {
+      setStatusMessage("No visible dataset links to copy.");
+      return;
+    }
+
+    await copyText(
+      Array.from(new Set(links)).join("\n"),
+      `Dataset links (${links.length})`,
+    );
+  };
   const copyVisibleOwners = async () => {
     if (!sortedDatasets.length) {
       setStatusMessage("No visible dataset owners to copy.");
@@ -3970,6 +3993,14 @@ function App() {
                   disabled={filteredDatasets.length === 0}
                 >
                   Copy visible IDs
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleDatasetLinks}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy links
                 </button>
                 <button
                   className="ghost-btn"
