@@ -1900,6 +1900,29 @@ function App() {
       "Contract explorer",
     );
   };
+  const openMapAt = (latitudeMicro: number, longitudeMicro: number) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Map unavailable.");
+      return;
+    }
+    const lat = latitudeMicro / 1_000_000;
+    const lon = longitudeMicro / 1_000_000;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      setStatusMessage("Coordinates are invalid.");
+      return;
+    }
+    const url = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(
+      lat,
+    )}&mlon=${encodeURIComponent(lon)}#map=11/${encodeURIComponent(
+      lat,
+    )}/${encodeURIComponent(lon)}`;
+    const opened = window.open(url, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      setStatusMessage("Popup blocked. Allow popups to open the map.");
+      return;
+    }
+    setStatusMessage("Opened map.");
+  };
   const scrollToTop = () => {
     if (typeof window === "undefined") {
       return;
@@ -2886,6 +2909,15 @@ function App() {
                     }
                   >
                     Copy coords
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      openMapAt(lineageDataset.latitude, lineageDataset.longitude)
+                    }
+                  >
+                    Open map
                   </button>
                   <button
                     className="ghost-btn"
@@ -4519,6 +4551,7 @@ function App() {
                       "Coordinates",
                     )
                   }
+                  onOpenMap={() => openMapAt(dataset.latitude, dataset.longitude)}
                   onCopyIpfs={() =>
                     copyText(dataset.ipfsHash || "", "IPFS hash")
                   }

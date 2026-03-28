@@ -144,6 +144,7 @@ export function DatasetCard({
   onCopyLink,
   onOpenIpfs,
   onOpenOwnerExplorer,
+  onOpenMap,
   onOpenDetail,
   onAudit,
   onToggleCompare,
@@ -302,6 +303,15 @@ export function DatasetCard({
             onClick={onCopyCoords}
           >
             Copy coords
+          </button>
+        )}
+        {onOpenMap && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onOpenMap}
+          >
+            Open map
           </button>
         )}
         <button
