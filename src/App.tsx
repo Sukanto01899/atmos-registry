@@ -1844,6 +1844,39 @@ function App() {
     }
     setStatusMessage("Opened IPFS gateway.");
   };
+  const openStacksExplorer = (path: string, label: string) => {
+    if (typeof window === "undefined") {
+      setStatusMessage(`${label} unavailable.`);
+      return;
+    }
+    const trimmed = (path ?? "").trim().replace(/^\/+/, "");
+    if (!trimmed) {
+      setStatusMessage(`${label} path is empty.`);
+      return;
+    }
+
+    const explorerUrl = `https://explorer.hiro.so/${trimmed}?chain=mainnet`;
+    const opened = window.open(explorerUrl, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      setStatusMessage(`Popup blocked. Allow popups to open ${label}.`);
+      return;
+    }
+    setStatusMessage(`Opened ${label}.`);
+  };
+  const openOwnerInExplorer = (owner: string) => {
+    const value = (owner ?? "").trim();
+    if (!value) {
+      setStatusMessage("Owner is empty.");
+      return;
+    }
+    openStacksExplorer(`address/${encodeURIComponent(value)}`, "Owner explorer");
+  };
+  const openContractInExplorer = () => {
+    openStacksExplorer(
+      `address/${encodeURIComponent(`${CONTRACT_ADDRESS}.${CONTRACT_NAME}`)}`,
+      "Contract explorer",
+    );
+  };
   const scrollToTop = () => {
     if (typeof window === "undefined") {
       return;
@@ -2777,6 +2810,13 @@ function App() {
                   <button
                     className="ghost-btn"
                     type="button"
+                    onClick={openContractInExplorer}
+                  >
+                    Open contract
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
                     onClick={() => {
                       setRegisterForm(cloneDatasetToRegister(lineageDataset));
                       setRegisterTouched({});
@@ -2796,6 +2836,13 @@ function App() {
                     onClick={() => copyText(lineageDataset.owner, "Owner")}
                   >
                     Copy owner
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => openOwnerInExplorer(lineageDataset.owner)}
+                  >
+                    Open owner
                   </button>
                   <button
                     className="ghost-btn"
@@ -4446,6 +4493,7 @@ function App() {
                   }
                   onCopyLink={() => copyDatasetDetailLink(dataset.id)}
                   onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}
+                  onOpenOwnerExplorer={() => openOwnerInExplorer(dataset.owner)}
                   onOpenDetail={() => openDatasetDetail(dataset.id)}
                   onAudit={() => setLineageTarget(dataset.id)}
                   onToggleCompare={() => toggleCompareDataset(dataset.id)}

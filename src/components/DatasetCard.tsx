@@ -143,6 +143,7 @@ export function DatasetCard({
   onCopyIpfs,
   onCopyLink,
   onOpenIpfs,
+  onOpenOwnerExplorer,
   onOpenDetail,
   onAudit,
   onToggleCompare,
@@ -285,6 +286,15 @@ export function DatasetCard({
         >
           Copy owner
         </button>
+        {onOpenOwnerExplorer && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onOpenOwnerExplorer}
+          >
+            Open owner
+          </button>
+        )}
         {onCopyCoords && (
           <button
             className="ghost-btn dataset-foot__action dataset-foot__action--compare"

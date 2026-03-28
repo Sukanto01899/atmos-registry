@@ -181,6 +181,7 @@ export type DatasetCardProps = {
   onCopyIpfs: () => void;
   onCopyLink?: () => void;
   onOpenIpfs?: () => void;
+  onOpenOwnerExplorer?: () => void;
   onOpenDetail: () => void;
   onAudit: () => void;
   onToggleCompare: () => void;
