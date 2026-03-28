@@ -1480,6 +1480,61 @@ function App() {
       `Exported ${filteredDatasets.length} filtered datasets (CSV).`,
     );
   };
+  const exportFilteredDatasetsGeoJson = () => {
+    if (!filteredDatasets.length || typeof window === "undefined") {
+      setStatusMessage("No filtered datasets to export.");
+      return;
+    }
+
+    const featureCollection = {
+      type: "FeatureCollection",
+      generatedAt: new Date().toISOString(),
+      activeTab,
+      totalVisible: filteredDatasets.length,
+      sortMode,
+      filters,
+      features: sortedDatasets.map((dataset) => ({
+        type: "Feature",
+        id: dataset.id,
+        geometry: {
+          type: "Point",
+          coordinates: [dataset.longitude / 1_000_000, dataset.latitude / 1_000_000],
+        },
+        properties: {
+          name: dataset.name,
+          description: dataset.description,
+          dataType: dataset.dataType,
+          status: dataset.status,
+          owner: dataset.owner,
+          isPublic: dataset.isPublic,
+          metadataFrozen: dataset.metadataFrozen,
+          verified: dataset.verified,
+          verifiedBy: dataset.verifiedBy,
+          verifiedAt: dataset.verifiedAt,
+          collectionDate: dataset.collectionDate,
+          createdAt: dataset.createdAt,
+          altitudeMin: dataset.altitudeMin,
+          altitudeMax: dataset.altitudeMax,
+          ipfsHash: dataset.ipfsHash,
+        },
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(featureCollection, null, 2)], {
+      type: "application/geo+json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-filtered-${activeTab}-${Date.now()}.geojson`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(
+      `Exported ${filteredDatasets.length} filtered datasets (GeoJSON).`,
+    );
+  };
   const openRandomFilteredDataset = () => {
     if (!sortedDatasets.length) {
       setStatusMessage("No filtered datasets available.");
@@ -3724,6 +3779,14 @@ function App() {
                   disabled={sortedDatasets.length === 0}
                 >
                   Export visible CSV
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={exportFilteredDatasetsGeoJson}
+                  disabled={sortedDatasets.length === 0}
+                >
+                  Export GeoJSON
                 </button>
               </div>
             </div>
