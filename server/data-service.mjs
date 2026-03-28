@@ -91,6 +91,104 @@ const sendJson = (response, statusCode, payload) => {
   response.end(JSON.stringify(payload, null, 2));
 };
 
+const sendText = (response, statusCode, payload, contentType, extraHeaders) => {
+  response.writeHead(statusCode, {
+    "Content-Type": contentType,
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Cache-Control": "no-store",
+    ...(extraHeaders ?? {}),
+  });
+  response.end(payload);
+};
+
+const escapeCsv = (value) => {
+  const raw = value === null || value === undefined ? "" : String(value);
+  const needsQuotes = /[",\n\r]/.test(raw);
+  const escaped = raw.replace(/"/g, '""');
+  return needsQuotes ? `"${escaped}"` : escaped;
+};
+
+const datasetsToCsv = (items) => {
+  const columns = [
+    "id",
+    "name",
+    "description",
+    "dataType",
+    "tags",
+    "status",
+    "owner",
+    "isPublic",
+    "verified",
+    "metadataFrozen",
+    "collectionDate",
+    "createdAt",
+    "altitudeMin",
+    "altitudeMax",
+    "latitude",
+    "longitude",
+    "ipfsHash",
+  ];
+
+  const lines = [
+    columns.join(","),
+    ...items.map((dataset) =>
+      [
+        dataset.id,
+        dataset.name,
+        dataset.description,
+        dataset.dataType,
+        Array.isArray(dataset.tags) ? dataset.tags.join("|") : "",
+        dataset.status,
+        dataset.owner,
+        dataset.isPublic,
+        dataset.verified,
+        dataset.metadataFrozen,
+        dataset.collectionDate,
+        dataset.createdAt,
+        dataset.altitudeMin,
+        dataset.altitudeMax,
+        dataset.latitude,
+        dataset.longitude,
+        dataset.ipfsHash ?? "",
+      ]
+        .map(escapeCsv)
+        .join(","),
+    ),
+  ];
+
+  return `\uFEFF${lines.join("\n")}`;
+};
+
+const datasetsToGeoJson = (items) => ({
+  type: "FeatureCollection",
+  features: items.map((dataset) => ({
+    type: "Feature",
+    id: dataset.id,
+    geometry: {
+      type: "Point",
+      coordinates: [dataset.longitude / 1_000_000, dataset.latitude / 1_000_000],
+    },
+    properties: {
+      name: dataset.name,
+      description: dataset.description,
+      dataType: dataset.dataType,
+      tags: dataset.tags,
+      status: dataset.status,
+      owner: dataset.owner,
+      isPublic: dataset.isPublic,
+      verified: dataset.verified,
+      metadataFrozen: dataset.metadataFrozen,
+      collectionDate: dataset.collectionDate,
+      createdAt: dataset.createdAt,
+      altitudeMin: dataset.altitudeMin,
+      altitudeMax: dataset.altitudeMax,
+      ipfsHash: dataset.ipfsHash ?? "",
+    },
+  })),
+});
+
 const matchDatasetId = (pathname) => {
   const matched = pathname.match(/^\/(?:api\/)?datasets\/(\d+)$/);
   if (!matched) {
@@ -353,6 +451,49 @@ const handleRequest = (request, response) => {
     return;
   }
 
+  if (pathname === "/api/datasets.csv" || pathname === "/datasets.csv") {
+    const { items: sortedItems } = sortDatasets(
+      filtered.items,
+      searchParams.get("sort"),
+    );
+
+    const paged = paginateDatasets(sortedItems, searchParams);
+    if ("error" in paged) {
+      sendJson(response, 400, { error: paged.error });
+      return;
+    }
+
+    sendText(
+      response,
+      200,
+      datasetsToCsv(paged.items),
+      "text/csv; charset=utf-8",
+      { "Content-Disposition": "attachment; filename=\"atmos-datasets.csv\"" },
+    );
+    return;
+  }
+
+  if (
+    pathname === "/api/datasets.geojson" ||
+    pathname === "/datasets.geojson" ||
+    pathname === "/api/datasets.geojson.json" ||
+    pathname === "/datasets.geojson.json"
+  ) {
+    const { items: sortedItems } = sortDatasets(
+      filtered.items,
+      searchParams.get("sort"),
+    );
+
+    const paged = paginateDatasets(sortedItems, searchParams);
+    if ("error" in paged) {
+      sendJson(response, 400, { error: paged.error });
+      return;
+    }
+
+    sendJson(response, 200, datasetsToGeoJson(paged.items));
+    return;
+  }
+
   if (pathname === "/api/summary" || pathname === "/summary") {
     sendJson(response, 200, buildSummary(filtered.items));
     return;
@@ -386,11 +527,15 @@ const handleRequest = (request, response) => {
       "/datasets",
       "/datasets/:id",
       "/datasets/tags",
+      "/datasets.csv",
+      "/datasets.geojson",
       "/summary",
       "/tags",
       "/api/datasets (legacy alias)",
       "/api/datasets/:id (legacy alias)",
       "/api/datasets/tags (legacy alias)",
+      "/api/datasets.csv (legacy alias)",
+      "/api/datasets.geojson (legacy alias)",
       "/api/summary (legacy alias)",
       "/api/tags (legacy alias)",
     ],
