@@ -1665,6 +1665,61 @@ function App() {
       "Visible dataset IDs",
     );
   };
+  const copyVisibleDatasetsCsv = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible datasets to copy.");
+      return;
+    }
+
+    const escapeCsv = (value: unknown) => {
+      const raw = value === null || value === undefined ? "" : String(value);
+      const needsQuotes = /[",\n\r]/.test(raw);
+      const escaped = raw.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const maxRows = 200;
+    const rows = sortedDatasets.slice(0, maxRows);
+
+    const columns = [
+      "id",
+      "name",
+      "dataType",
+      "status",
+      "isPublic",
+      "owner",
+      "latitude",
+      "longitude",
+      "ipfsHash",
+    ];
+
+    const lines = [
+      columns.join(","),
+      ...rows.map((dataset) =>
+        [
+          dataset.id,
+          dataset.name,
+          dataset.dataType,
+          dataset.status,
+          dataset.isPublic,
+          dataset.owner,
+          formatCoord(dataset.latitude),
+          formatCoord(dataset.longitude),
+          dataset.ipfsHash ?? "",
+        ]
+          .map(escapeCsv)
+          .join(","),
+      ),
+    ];
+
+    await copyText(
+      `\uFEFF${lines.join("\n")}`,
+      `Visible datasets CSV (${rows.length}${sortedDatasets.length > maxRows ? "+" : ""})`,
+    );
+    if (sortedDatasets.length > maxRows) {
+      setStatusMessage(`Copied first ${maxRows} visible datasets (CSV).`);
+    }
+  };
   const copyVisibleCoordsCsv = async () => {
     if (!sortedDatasets.length) {
       setStatusMessage("No visible coordinates to copy.");
@@ -4245,6 +4300,14 @@ function App() {
                   disabled={filteredDatasets.length === 0}
                 >
                   Copy visible IDs
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyVisibleDatasetsCsv}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy visible CSV
                 </button>
                 <button
                   className="ghost-btn"
