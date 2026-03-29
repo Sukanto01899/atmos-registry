@@ -1837,6 +1837,47 @@ function App() {
 
     await copyText(lines.join("\n"), `Markdown table (${rows.length} rows)`);
   };
+  const copyVisibleGeoJson = async () => {
+    if (!sortedDatasets.length) {
+      setStatusMessage("No visible datasets to copy.");
+      return;
+    }
+
+    const maxRows = 200;
+    const rows = sortedDatasets.slice(0, maxRows);
+    const featureCollection = {
+      type: "FeatureCollection",
+      generatedAt: new Date().toISOString(),
+      features: rows.map((dataset) => ({
+        type: "Feature",
+        id: dataset.id,
+        geometry: {
+          type: "Point",
+          coordinates: [dataset.longitude / 1_000_000, dataset.latitude / 1_000_000],
+        },
+        properties: {
+          name: dataset.name,
+          dataType: dataset.dataType,
+          status: dataset.status,
+          owner: dataset.owner,
+          isPublic: dataset.isPublic,
+          altitudeMin: dataset.altitudeMin,
+          altitudeMax: dataset.altitudeMax,
+          collectionDate: dataset.collectionDate,
+          createdAt: dataset.createdAt,
+          ipfsHash: dataset.ipfsHash ?? "",
+        },
+      })),
+    };
+
+    await copyText(
+      JSON.stringify(featureCollection, null, 2),
+      `GeoJSON (${rows.length}${sortedDatasets.length > maxRows ? "+" : ""})`,
+    );
+    if (sortedDatasets.length > maxRows) {
+      setStatusMessage(`Copied first ${maxRows} visible datasets (GeoJSON).`);
+    }
+  };
   const useVisibleAsWatchlist = () => {
     const nextIds = Array.from(
       new Set(sortedDatasets.map((dataset) => String(dataset.id))),
@@ -2550,6 +2591,14 @@ function App() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    if (!statusMessage) return undefined;
+    const timeout = window.setTimeout(() => {
+      setStatusMessage("");
+    }, 6500);
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
   useEffect(() => {
     if (typeof window === "undefined") {
       return undefined;
@@ -3937,7 +3986,14 @@ function App() {
         {featureTab === "datasets" && (
           <section className="section" id="dataset-list">
             {statusMessage && (
-              <div className="status-banner">{statusMessage}</div>
+              <div
+                className="status-banner"
+                role="status"
+                onClick={() => setStatusMessage("")}
+                title="Click to dismiss"
+              >
+                {statusMessage}
+              </div>
             )}
             <div className="section-header">
               <div>
@@ -4360,6 +4416,14 @@ function App() {
                 <button
                   className="ghost-btn"
                   type="button"
+                  onClick={copyVisibleGeoJson}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Copy GeoJSON
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
                   onClick={useVisibleAsWatchlist}
                   disabled={filteredDatasets.length === 0}
                 >
@@ -4729,7 +4793,14 @@ function App() {
         {featureTab === "add-dataset" && (
           <section className="section" id="register-dataset">
             {statusMessage && (
-              <div className="status-banner">{statusMessage}</div>
+              <div
+                className="status-banner"
+                role="status"
+                onClick={() => setStatusMessage("")}
+                title="Click to dismiss"
+              >
+                {statusMessage}
+              </div>
             )}
             <div className="section-header">
               <div>
