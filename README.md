@@ -44,6 +44,12 @@ The UI reads directly from mainnet and lets connected wallets register new datas
 
 The app uses Stacks Connect. Click "Connect Wallet" to authenticate, then submit datasets from the form.
 
+### Transaction center
+
+Submitted contract-call transaction IDs are tracked in-app (with polling for confirmation) and persisted in
+localStorage. You can override the Stacks API base URL via `VITE_STACKS_API_BASE_URL` (defaults to
+`https://api.mainnet.hiro.so`).
+
 ## Getting Started
 
 ### Install

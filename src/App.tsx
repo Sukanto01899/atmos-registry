@@ -55,6 +55,8 @@ import { CommandPalette } from "./components/CommandPalette";
 import { DatasetCard } from "./components/DatasetCard";
 import { GeospatialExplorer } from "./components/GeospatialExplorer";
 import { NavBar } from "./components/NavBar";
+import { TxCenter } from "./components/TxCenter";
+import { useTxCenter } from "./useTxCenter";
 import {
   AlertItem,
   CommandAction,
@@ -74,6 +76,7 @@ import {
   CONTRACT_NAME,
   network,
   SAVED_VIEWS_KEY,
+  STACKS_API_BASE_URL,
   STAKING_CONTRACT_NAME,
   TOKEN_CONTRACT_NAME,
   userSession,
@@ -167,6 +170,7 @@ function App() {
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showTxCenter, setShowTxCenter] = useState(false);
   const [showDatasetDetail, setShowDatasetDetail] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
@@ -205,6 +209,7 @@ function App() {
     Partial<Record<keyof RegisterFormState, boolean>>
   >({});
   const [registerSubmitAttempted, setRegisterSubmitAttempted] = useState(false);
+  const txCenter = useTxCenter({ apiBaseUrl: STACKS_API_BASE_URL });
 
   const registerValidation = useMemo(() => {
     const issues: Partial<Record<keyof RegisterFormState, string>> = {};
@@ -2398,6 +2403,7 @@ function App() {
         stxAddress: walletAddress,
         onFinish: (data: { txId: string }) => {
           setTxStatus(`Transaction submitted: ${data.txId}`);
+          txCenter.addTx(data.txId, "Register dataset");
           loadLatest();
           setRegisterForm(defaultRegisterForm);
           setRegisterTouched({});
@@ -2447,13 +2453,17 @@ function App() {
         postConditionMode: shouldGuardSpend
           ? PostConditionMode.Deny
           : PostConditionMode.Allow,
-        onFinish: (data) => {
-          setStakeStatus(`Transaction submitted: ${data.txId}`);
-          loadTokenSnapshot(walletAddress);
-        },
-        onCancel: () => {
-          setStakeStatus("Transaction canceled.");
-        },
+         onFinish: (data) => {
+           setStakeStatus(`Transaction submitted: ${data.txId}`);
+           txCenter.addTx(
+             data.txId,
+             functionName === "stake" ? "Stake ATMOS" : "Unstake ATMOS",
+           );
+           loadTokenSnapshot(walletAddress);
+         },
+         onCancel: () => {
+           setStakeStatus("Transaction canceled.");
+         },
       });
     } catch {
       setStakeStatus("Unable to open the wallet transaction popup.");
@@ -2471,13 +2481,14 @@ function App() {
         functionName: "claim-rewards",
         functionArgs: [],
         postConditionMode: PostConditionMode.Allow,
-        onFinish: (data) => {
-          setStakeStatus(`Claim submitted: ${data.txId}`);
-          loadTokenSnapshot(walletAddress);
-        },
-        onCancel: () => {
-          setStakeStatus("Claim canceled.");
-        },
+         onFinish: (data) => {
+           setStakeStatus(`Claim submitted: ${data.txId}`);
+           txCenter.addTx(data.txId, "Claim rewards");
+           loadTokenSnapshot(walletAddress);
+         },
+         onCancel: () => {
+           setStakeStatus("Claim canceled.");
+         },
       });
     } catch {
       setStakeStatus("Unable to open the wallet transaction popup.");
@@ -2912,6 +2923,8 @@ function App() {
         onSyncMainnet={loadLatest}
         unreadAlertCount={unreadAlertCount}
         onToggleAlerts={() => setFeatureTab("alerts")}
+        pendingTxCount={txCenter.pendingCount}
+        onToggleTxCenter={() => setShowTxCenter((prev) => !prev)}
         onOpenCommandPalette={() => setShowCommandPalette(true)}
         walletAddress={walletAddress}
         onConnectWallet={connectWallet}
@@ -2926,6 +2939,15 @@ function App() {
         recentActions={recentCommandActions}
         onClose={() => setShowCommandPalette(false)}
         onSelect={executeCommand}
+      />
+      <TxCenter
+        open={showTxCenter}
+        chain="mainnet"
+        txs={txCenter.txs}
+        onClose={() => setShowTxCenter(false)}
+        onClear={txCenter.clearAll}
+        onRemove={txCenter.removeTx}
+        onRefresh={txCenter.refreshNow}
       />
 
       {showDatasetDetail && lineageDataset && (

@@ -28,6 +28,8 @@
   onSyncMainnet: () => void;
   unreadAlertCount: number;
   onToggleAlerts: () => void;
+  pendingTxCount: number;
+  onToggleTxCenter: () => void;
   onOpenCommandPalette: () => void;
   walletAddress: string;
   onConnectWallet: () => void;
@@ -45,6 +47,8 @@ export function NavBar({
   onSyncMainnet,
   unreadAlertCount,
   onToggleAlerts,
+  pendingTxCount,
+  onToggleTxCenter,
   onOpenCommandPalette,
   walletAddress,
   onConnectWallet,
@@ -121,6 +125,16 @@ export function NavBar({
               className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}
             >
               {unreadAlertCount}
+            </span>
+          </button>
+          <button
+            className="ghost-btn alert-bell"
+            type="button"
+            onClick={onToggleTxCenter}
+          >
+            Tx
+            <span className={`alert-count ${pendingTxCount > 0 ? "active" : ""}`}>
+              {pendingTxCount}
             </span>
           </button>
           <button

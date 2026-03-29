@@ -1951,6 +1951,133 @@ textarea:focus {
   background: rgba(245, 138, 61, 0.15);
 }
 
+.tx-center-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 10, 18, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 88px 18px 18px;
+  z-index: 80;
+}
+
+.tx-center-panel {
+  width: min(720px, calc(100vw - 36px));
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.tx-center-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 12px;
+}
+
+.tx-center-title {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.tx-center-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tx-center-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.tx-center-empty {
+  padding: 18px 16px;
+  color: var(--muted);
+}
+
+.tx-center-list {
+  padding: 10px;
+  overflow: auto;
+  max-height: calc(100vh - 190px);
+}
+
+.tx-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 10px;
+}
+
+.tx-item--success {
+  border-color: rgba(46, 204, 113, 0.3);
+  background: rgba(46, 204, 113, 0.07);
+}
+
+.tx-item--failed {
+  border-color: rgba(231, 76, 60, 0.35);
+  background: rgba(231, 76, 60, 0.08);
+}
+
+.tx-item-title {
+  font-weight: 650;
+  margin-bottom: 4px;
+}
+
+.tx-item-meta {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tx-item-sep {
+  opacity: 0.6;
+}
+
+.tx-item-link {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
+}
+
+.tx-item-link:hover {
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.tx-item-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(231, 76, 60, 0.95);
+}
+
+.tx-item-chain {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tx-item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
 .alert-controls {
   display: flex;
   gap: 0.6rem;
