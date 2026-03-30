@@ -62,6 +62,7 @@ import {
   CommandAction,
   Dataset,
   DatasetFilters,
+  Notice,
   RegisterFormState,
   SavedView,
   SortMode,
@@ -126,6 +127,8 @@ const getTypeChipStyle = (value: string): CSSProperties => {
 function App() {
   const hasHydratedUrlRef = useRef(false);
   const hasHydratedRegisterDraft = useRef(false);
+  const hasHydratedTxStatusesRef = useRef(false);
+  const txStatusByIdRef = useRef<Map<string, string>>(new Map());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [featureTab, setFeatureTab] = useState<
     "datasets" | "add-dataset" | "staking" | "alerts" | "audit" | "versions"
@@ -209,6 +212,7 @@ function App() {
     Partial<Record<keyof RegisterFormState, boolean>>
   >({});
   const [registerSubmitAttempted, setRegisterSubmitAttempted] = useState(false);
+  const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
   const txCenter = useTxCenter({ apiBaseUrl: STACKS_API_BASE_URL });
 
   const registerValidation = useMemo(() => {
@@ -705,6 +709,56 @@ function App() {
     queryResult,
     walletAddress,
   ]);
+
+  useEffect(() => {
+    if (!txCenter.txs.length) return;
+    if (!hasHydratedTxStatusesRef.current) {
+      hasHydratedTxStatusesRef.current = true;
+      txStatusByIdRef.current = new Map(
+        txCenter.txs.map((tx) => [tx.txId, tx.status]),
+      );
+      return;
+    }
+
+    const next = new Map(txStatusByIdRef.current);
+    const notices: Notice[] = [];
+
+    for (const tx of txCenter.txs) {
+      const prevStatus = next.get(tx.txId);
+      if (prevStatus !== tx.status) {
+        const wasPending = prevStatus === "submitted" || prevStatus === "pending";
+        const isFinal = tx.status === "success" || tx.status === "failed";
+        if (wasPending && isFinal) {
+          const shortTxId = tx.txId.length > 12
+            ? `${tx.txId.slice(0, 6)}…${tx.txId.slice(-6)}`
+            : tx.txId;
+          notices.push({
+            id: `tx-${tx.txId}-${tx.status}-${Date.now()}`,
+            tone: tx.status === "success" ? "info" : "warning",
+            message:
+              tx.status === "success"
+                ? `Transaction confirmed: ${tx.title} (${shortTxId})`
+                : `Transaction failed: ${tx.title} (${shortTxId})`,
+          });
+        }
+        next.set(tx.txId, tx.status);
+      }
+    }
+
+    txStatusByIdRef.current = next;
+    if (!notices.length) return;
+
+    setTransientNotices((prev) => {
+      const merged = [...prev, ...notices];
+      return merged.slice(-4);
+    });
+
+    for (const notice of notices) {
+      window.setTimeout(() => {
+        setTransientNotices((prev) => prev.filter((item) => item.id !== notice.id));
+      }, 6500);
+    }
+  }, [txCenter.txs]);
   const storyChapters = useMemo<StoryChapter[]>(() => {
     if (!sortedDatasets.length) {
       return [];
@@ -2867,23 +2921,13 @@ function App() {
       action.detail.toLowerCase().includes(query)
     );
   });
-  const appNotices = [
-    walletMessage
-      ? {
-          id: "wallet",
-          tone: "info" as const,
-          message: walletMessage,
-        }
-      : null,
-  ].filter(
-    (
-      item,
-    ): item is {
-      id: string;
-      tone: "info";
-      message: string;
-    } => Boolean(item),
-  );
+  const appNotices = useMemo(() => {
+    const notices: Notice[] = [];
+    if (walletMessage) {
+      notices.push({ id: "wallet", tone: "info", message: walletMessage });
+    }
+    return [...notices, ...transientNotices];
+  }, [transientNotices, walletMessage]);
 
   return (
     <div className="app">
