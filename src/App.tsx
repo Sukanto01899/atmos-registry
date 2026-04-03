@@ -96,6 +96,7 @@ const APP_DETAILS = {
 
 const REGISTER_DRAFT_KEY = "atmos-register-draft";
 const RECENT_COMMANDS_KEY = "atmos-command-recent";
+const RECENT_DATASETS_KEY = "atmos-dataset-recent";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
 
@@ -180,6 +181,7 @@ function App() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
+  const [recentDatasetIds, setRecentDatasetIds] = useState<string[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
   const [storyStepIndex, setStoryStepIndex] = useState(0);
   const [storyPlaying, setStoryPlaying] = useState(false);
@@ -507,6 +509,25 @@ function App() {
       window.localStorage.removeItem(RECENT_COMMANDS_KEY);
     }
   }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const rawRecentDatasets = window.localStorage.getItem(RECENT_DATASETS_KEY);
+    if (!rawRecentDatasets) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawRecentDatasets) as string[];
+      if (Array.isArray(parsed)) {
+        setRecentDatasetIds(
+          parsed.filter((item) => typeof item === "string" && /^\d+$/.test(item)),
+        );
+      }
+    } catch {
+      window.localStorage.removeItem(RECENT_DATASETS_KEY);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -530,6 +551,15 @@ function App() {
       JSON.stringify(recentCommandIds.slice(0, 6)),
     );
   }, [recentCommandIds]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(
+      RECENT_DATASETS_KEY,
+      JSON.stringify(recentDatasetIds.slice(0, 6)),
+    );
+  }, [recentDatasetIds]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(DATASET_DENSITY_KEY, datasetDensity);
@@ -1128,6 +1158,15 @@ function App() {
       })
       .slice(0, 4);
   }, [lineageDataset, lineageOptions]);
+  const recentDatasets = useMemo(() => {
+    if (!recentDatasetIds.length) {
+      return [];
+    }
+    const byId = new Map(lineageOptions.map((dataset) => [String(dataset.id), dataset]));
+    return recentDatasetIds
+      .map((id) => byId.get(id))
+      .filter((dataset): dataset is Dataset => Boolean(dataset));
+  }, [lineageOptions, recentDatasetIds]);
 
   const updateRegisterField =
     (field: keyof RegisterFormState) =>
@@ -1376,6 +1415,10 @@ function App() {
     }
   };
   const openDatasetDetail = (datasetId: number) => {
+    setRecentDatasetIds((prev) => {
+      const nextId = String(datasetId);
+      return [nextId, ...prev.filter((id) => id !== nextId)].slice(0, 6);
+    });
     setLineageSelectionId(String(datasetId));
     setShowDatasetDetail(true);
   };
@@ -4213,6 +4256,51 @@ function App() {
                 </div>
               </div>
             )}
+            <div className="saved-view-card">
+              <div className="saved-view-head">
+                <h3>Recently viewed</h3>
+                <p>Quickly reopen datasets you inspected in this browser.</p>
+              </div>
+              <div className="saved-view-list">
+                {recentDatasets.length === 0 && (
+                  <span className="saved-view-empty">
+                    No dataset details opened yet.
+                  </span>
+                )}
+                {recentDatasets.map((dataset) => (
+                  <div className="saved-view-item" key={`recent-dataset-${dataset.id}`}>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => openDatasetDetail(dataset.id)}
+                    >
+                      #{dataset.id} {dataset.name}
+                    </button>
+                    <span>{dataset.dataType}</span>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() =>
+                        setRecentDatasetIds((prev) =>
+                          prev.filter((id) => id !== String(dataset.id)),
+                        )
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {recentDatasets.length > 1 && (
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => setRecentDatasetIds([])}
+                  >
+                    Clear recent
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="saved-view-card">
               <div className="saved-view-head">
                 <h3>Saved views</h3>
