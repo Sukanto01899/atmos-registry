@@ -31,6 +31,7 @@
   pendingTxCount: number;
   onToggleTxCenter: () => void;
   onOpenCommandPalette: () => void;
+  onOpenShortcuts: () => void;
   walletAddress: string;
   onConnectWallet: () => void;
   onDisconnectWallet: () => void;
@@ -50,6 +51,7 @@ export function NavBar({
   pendingTxCount,
   onToggleTxCenter,
   onOpenCommandPalette,
+  onOpenShortcuts,
   walletAddress,
   onConnectWallet,
   onDisconnectWallet,
@@ -143,6 +145,9 @@ export function NavBar({
             onClick={onOpenCommandPalette}
           >
             Command
+          </button>
+          <button className="ghost-btn" type="button" onClick={onOpenShortcuts}>
+            Shortcuts
           </button>
           {walletAddress ? (
             <div className="wallet-chip">

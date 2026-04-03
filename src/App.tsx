@@ -54,6 +54,7 @@ import { AppNotices } from "./components/AppNotices";
 import { CommandPalette } from "./components/CommandPalette";
 import { DatasetCard } from "./components/DatasetCard";
 import { GeospatialExplorer } from "./components/GeospatialExplorer";
+import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 import { NavBar } from "./components/NavBar";
 import { TxCenter } from "./components/TxCenter";
 import { useTxCenter } from "./useTxCenter";
@@ -174,6 +175,7 @@ function App() {
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showTxCenter, setShowTxCenter] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showDatasetDetail, setShowDatasetDetail] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [commandQuery, setCommandQuery] = useState("");
@@ -444,6 +446,12 @@ function App() {
       if (event.key === "/" && featureTab === "datasets") {
         event.preventDefault();
         searchInputRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setShowKeyboardShortcuts(true);
         return;
       }
 
@@ -2650,12 +2658,26 @@ function App() {
       }
       if (event.key === "Escape") {
         setShowCommandPalette(false);
+        setShowKeyboardShortcuts(false);
         setShowDatasetDetail(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  const keyboardShortcuts = useMemo(
+    () => [
+      { keys: "?", description: "Open this keyboard shortcuts panel" },
+      { keys: "Ctrl/Cmd + K", description: "Open the command palette" },
+      {
+        keys: "/",
+        description: "Focus dataset search when you are in the datasets view",
+      },
+      { keys: "Esc", description: "Close open panels and overlays" },
+    ],
+    [],
+  );
 
   useEffect(() => {
     if (!statusMessage) return undefined;
@@ -2903,6 +2925,15 @@ function App() {
         }
       },
     },
+    {
+      id: "open-shortcuts",
+      label: "Open Keyboard Shortcuts",
+      detail: "Show available keyboard controls",
+      group: "Navigation",
+      run: () => {
+        setShowKeyboardShortcuts(true);
+      },
+    },
   ];
   const recentCommandActions = useMemo(() => {
     if (!recentCommandIds.length) {
@@ -2970,6 +3001,7 @@ function App() {
         pendingTxCount={txCenter.pendingCount}
         onToggleTxCenter={() => setShowTxCenter((prev) => !prev)}
         onOpenCommandPalette={() => setShowCommandPalette(true)}
+        onOpenShortcuts={() => setShowKeyboardShortcuts(true)}
         walletAddress={walletAddress}
         onConnectWallet={connectWallet}
         onDisconnectWallet={disconnectWallet}
@@ -2983,6 +3015,12 @@ function App() {
         recentActions={recentCommandActions}
         onClose={() => setShowCommandPalette(false)}
         onSelect={executeCommand}
+      />
+      <KeyboardShortcutsModal
+        open={showKeyboardShortcuts}
+        shortcuts={keyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
+        onOpenCommandPalette={() => setShowCommandPalette(true)}
       />
       <TxCenter
         open={showTxCenter}

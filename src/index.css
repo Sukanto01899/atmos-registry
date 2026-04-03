@@ -2250,6 +2250,86 @@ textarea:focus {
   padding: 0.45rem 0.2rem;
 }
 
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgba(4, 7, 12, 0.62);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.shortcuts-modal {
+  width: min(640px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(55, 209, 161, 0.1),
+      transparent 34%
+    ),
+    rgba(17, 25, 34, 0.97);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  padding: 1.1rem;
+}
+
+.shortcuts-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.shortcuts-head p {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.shortcuts-list {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.shortcut-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 170px) 1fr;
+  gap: 0.9rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(24, 33, 44, 0.6);
+}
+
+.shortcut-row__keys {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 159, 75, 0.32);
+  background: rgba(245, 159, 75, 0.1);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.shortcut-row__description {
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.shortcuts-foot {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .detail-overlay {
   position: fixed;
   inset: 0;
@@ -3220,6 +3300,14 @@ textarea:focus {
   .detail-modal {
     width: 100%;
     border-radius: 0;
+  }
+
+  .shortcuts-head {
+    flex-direction: column;
+  }
+
+  .shortcut-row {
+    grid-template-columns: 1fr;
   }
 
   .detail-head {
