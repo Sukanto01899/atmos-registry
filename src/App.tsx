@@ -95,10 +95,24 @@ const APP_DETAILS = {
 };
 
 const REGISTER_DRAFT_KEY = "atmos-register-draft";
+const REGISTER_DRAFT_BACKUP_KEY = "atmos-register-draft-backup";
 const RECENT_COMMANDS_KEY = "atmos-command-recent";
 const RECENT_DATASETS_KEY = "atmos-dataset-recent";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
+
+const emptyRegisterForm: RegisterFormState = {
+  name: "",
+  description: "",
+  dataType: "",
+  collectionDate: "",
+  altitudeMin: "",
+  altitudeMax: "",
+  latitude: "",
+  longitude: "",
+  ipfsHash: "",
+  isPublic: true,
+};
 
 const cloneDatasetToRegister = (dataset: Dataset): RegisterFormState => ({
   name: `${dataset.name} (copy)`,
@@ -216,6 +230,8 @@ function App() {
     Partial<Record<keyof RegisterFormState, boolean>>
   >({});
   const [registerSubmitAttempted, setRegisterSubmitAttempted] = useState(false);
+  const [registerDraftBackup, setRegisterDraftBackup] =
+    useState<RegisterFormState | null>(null);
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
   const txCenter = useTxCenter({ apiBaseUrl: STACKS_API_BASE_URL });
 
@@ -513,6 +529,23 @@ function App() {
     if (typeof window === "undefined") {
       return;
     }
+    const rawDraftBackup = window.localStorage.getItem(REGISTER_DRAFT_BACKUP_KEY);
+    if (!rawDraftBackup) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawDraftBackup) as RegisterFormState;
+      if (parsed && typeof parsed === "object") {
+        setRegisterDraftBackup(parsed);
+      }
+    } catch {
+      window.localStorage.removeItem(REGISTER_DRAFT_BACKUP_KEY);
+    }
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
     const rawRecentDatasets = window.localStorage.getItem(RECENT_DATASETS_KEY);
     if (!rawRecentDatasets) {
       return;
@@ -560,6 +593,19 @@ function App() {
       JSON.stringify(recentDatasetIds.slice(0, 6)),
     );
   }, [recentDatasetIds]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!registerDraftBackup) {
+      window.localStorage.removeItem(REGISTER_DRAFT_BACKUP_KEY);
+      return;
+    }
+    window.localStorage.setItem(
+      REGISTER_DRAFT_BACKUP_KEY,
+      JSON.stringify(registerDraftBackup),
+    );
+  }, [registerDraftBackup]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(DATASET_DENSITY_KEY, datasetDensity);
@@ -2276,6 +2322,23 @@ function App() {
       return next.slice(0, 6);
     });
   };
+  const clearRegisterForm = () => {
+    setRegisterDraftBackup(registerForm);
+    setRegisterForm(emptyRegisterForm);
+    setRegisterTouched({});
+    setRegisterSubmitAttempted(false);
+    setTxStatus("Form cleared. Restore draft to bring back your last inputs.");
+  };
+  const restoreRegisterDraft = () => {
+    if (!registerDraftBackup) {
+      setTxStatus("No cleared draft available to restore.");
+      return;
+    }
+    setRegisterForm(registerDraftBackup);
+    setRegisterTouched({});
+    setRegisterSubmitAttempted(false);
+    setTxStatus("Restored the last cleared draft.");
+  };
   const handleCreateVersionDraft = () => {
     if (!lineageDataset) return;
     const existing = versionStore[lineageDataset.id] ?? [];
@@ -2511,10 +2574,12 @@ function App() {
           txCenter.addTx(data.txId, "Register dataset");
           loadLatest();
           setRegisterForm(defaultRegisterForm);
+          setRegisterDraftBackup(null);
           setRegisterTouched({});
           setRegisterSubmitAttempted(false);
           if (typeof window !== "undefined") {
             window.localStorage.removeItem(REGISTER_DRAFT_KEY);
+            window.localStorage.removeItem(REGISTER_DRAFT_BACKUP_KEY);
           }
         },
         onCancel: () => {
@@ -5258,6 +5323,21 @@ function App() {
                   <div className="form-actions-row">
                     <button className="primary-btn" type="submit">
                       Submit dataset
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={clearRegisterForm}
+                    >
+                      Clear form
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={restoreRegisterDraft}
+                      disabled={!registerDraftBackup}
+                    >
+                      Restore draft
                     </button>
                     <button
                       className="ghost-btn"
