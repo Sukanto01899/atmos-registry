@@ -100,6 +100,7 @@ const RECENT_COMMANDS_KEY = "atmos-command-recent";
 const RECENT_DATASETS_KEY = "atmos-dataset-recent";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
+const DATASET_NOTES_KEY = "atmos-dataset-notes";
 
 const emptyRegisterForm: RegisterFormState = {
   name: "",
@@ -144,6 +145,7 @@ function App() {
   const hasHydratedUrlRef = useRef(false);
   const hasHydratedRegisterDraft = useRef(false);
   const hasHydratedTxStatusesRef = useRef(false);
+  const hasHydratedDatasetNotesRef = useRef(false);
   const txStatusByIdRef = useRef<Map<string, string>>(new Map());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [featureTab, setFeatureTab] = useState<
@@ -186,6 +188,7 @@ function App() {
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [watchlistInput, setWatchlistInput] = useState("");
   const [watchlistIds, setWatchlistIds] = useState<string[]>([]);
+  const [datasetNotes, setDatasetNotes] = useState<Record<string, string>>({});
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [savedViewName, setSavedViewName] = useState("");
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -309,6 +312,18 @@ function App() {
 
   const senderAddress = walletAddress || ownerAddress || CONTRACT_ADDRESS;
   const activeDatasets = activeTab === "explore" ? latestDatasets : myDatasets;
+  const updateDatasetNote = (datasetId: number, note: string) => {
+    const key = String(datasetId);
+    setDatasetNotes((prev) => {
+      const next = { ...prev };
+      if (!note.trim()) {
+        delete next[key];
+      } else {
+        next[key] = note;
+      }
+      return next;
+    });
+  };
 
   // In a real application, you would likely want to fetch available data types from the contract or a backend rather than deriving them from the currently loaded datasets. This approach is simpler for this example but may not capture all possible data types if your dataset collection is large or if some types are not represented in the latest/my datasets.
   const dataTypeOptions = useMemo(
@@ -329,12 +344,14 @@ function App() {
     const max = Number.parseInt(filters.altitudeMax, 10);
     return activeDatasets.filter((dataset) => {
       if (search) {
+        const note = datasetNotes[String(dataset.id)] ?? "";
         const haystack = [
           dataset.id,
           dataset.name,
           dataset.description,
           dataset.ipfsHash,
           dataset.dataType,
+          note,
         ]
           .join(" ")
           .toLowerCase();
@@ -365,7 +382,7 @@ function App() {
       }
       return true;
     });
-  }, [activeDatasets, filters]);
+  }, [activeDatasets, datasetNotes, filters]);
   const interfaceSignals = useMemo(
     () => [
       {
@@ -566,6 +583,37 @@ function App() {
     if (typeof window === "undefined") {
       return;
     }
+    const rawNotes = window.localStorage.getItem(DATASET_NOTES_KEY);
+    if (!rawNotes) {
+      hasHydratedDatasetNotesRef.current = true;
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawNotes) as Record<string, unknown>;
+      if (!parsed || typeof parsed !== "object") {
+        hasHydratedDatasetNotesRef.current = true;
+        return;
+      }
+
+      const next: Record<string, string> = {};
+      Object.entries(parsed).forEach(([key, value]) => {
+        if (!/^\d+$/.test(key)) return;
+        if (typeof value !== "string") return;
+        if (!value.trim()) return;
+        next[key] = value;
+      });
+      setDatasetNotes(next);
+    } catch {
+      window.localStorage.removeItem(DATASET_NOTES_KEY);
+    } finally {
+      hasHydratedDatasetNotesRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
     if (!hasHydratedRegisterDraft.current) {
       return;
     }
@@ -593,6 +641,19 @@ function App() {
       JSON.stringify(recentDatasetIds.slice(0, 6)),
     );
   }, [recentDatasetIds]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!hasHydratedDatasetNotesRef.current) {
+      return;
+    }
+    if (Object.keys(datasetNotes).length === 0) {
+      window.localStorage.removeItem(DATASET_NOTES_KEY);
+      return;
+    }
+    window.localStorage.setItem(DATASET_NOTES_KEY, JSON.stringify(datasetNotes));
+  }, [datasetNotes]);
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -3332,6 +3393,46 @@ function App() {
                       Open IPFS
                     </button>
                   )}
+                </div>
+              </article>
+              <article className="detail-card">
+                <div className="detail-card__title">Private note</div>
+                <div className="detail-timeline__meta">
+                  Stored only in this browser. Dataset search includes notes.
+                </div>
+                <textarea
+                  value={datasetNotes[String(lineageDataset.id)] ?? ""}
+                  onChange={(event) =>
+                    updateDatasetNote(
+                      lineageDataset.id,
+                      event.currentTarget.value,
+                    )
+                  }
+                  placeholder="Add a private note for this dataset..."
+                  rows={5}
+                />
+                <div className="detail-actions">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      copyText(
+                        datasetNotes[String(lineageDataset.id)] ?? "",
+                        "Dataset note",
+                      )
+                    }
+                    disabled={!datasetNotes[String(lineageDataset.id)]?.trim()}
+                  >
+                    Copy note
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => updateDatasetNote(lineageDataset.id, "")}
+                    disabled={!datasetNotes[String(lineageDataset.id)]?.trim()}
+                  >
+                    Clear note
+                  </button>
                 </div>
               </article>
               <article className="detail-card">
