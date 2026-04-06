@@ -74,6 +74,16 @@ const parseOptionalIntParam = (searchParams, name) => {
   return parsed;
 };
 
+const parseOptionalBoolParam = (searchParams, name) => {
+  const raw = searchParams.get(name);
+  if (raw === null) return undefined;
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === "") return undefined;
+  if (normalized === "true" || normalized === "1") return true;
+  if (normalized === "false" || normalized === "0") return false;
+  return null;
+};
+
 const parseOptionalFloatParam = (searchParams, name) => {
   const raw = searchParams.get(name);
   if (raw === null || raw.trim() === "") return undefined;
@@ -249,6 +259,8 @@ const filterDatasets = (searchParams) => {
   const tagsParam = searchParams.get("tags")?.trim() ?? "";
   const tagParam = searchParams.get("tag")?.trim() ?? "";
   const bbox = parseOptionalBboxParam(searchParams);
+  const verified = parseOptionalBoolParam(searchParams, "verified");
+  const metadataFrozen = parseOptionalBoolParam(searchParams, "metadataFrozen");
 
   const isPublicRaw = searchParams.get("isPublic")?.trim().toLowerCase() ?? "";
   const isPublic =
@@ -272,6 +284,14 @@ const filterDatasets = (searchParams) => {
 
   if (from === null || to === null) {
     return { error: "Invalid from/to. Expected unix epoch seconds as integers." };
+  }
+
+  if (verified === null) {
+    return { error: "Invalid verified. Expected true/false (or 1/0)." };
+  }
+
+  if (metadataFrozen === null) {
+    return { error: "Invalid metadataFrozen. Expected true/false (or 1/0)." };
   }
 
   if (bbox === null) {
@@ -339,6 +359,14 @@ const filterDatasets = (searchParams) => {
     }
 
     if (dataType && dataset.dataType.toLowerCase() !== dataType) {
+      return false;
+    }
+
+    if (verified !== undefined && dataset.verified !== verified) {
+      return false;
+    }
+
+    if (metadataFrozen !== undefined && dataset.metadataFrozen !== metadataFrozen) {
       return false;
     }
 
