@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { URL } from "node:url";
+import { URL, pathToFileURL } from "node:url";
 
 const HOST = process.env.API_HOST ?? "127.0.0.1";
 const PORT = Number.parseInt(process.env.API_PORT ?? "4000", 10);
@@ -72,6 +72,49 @@ const parseOptionalIntParam = (searchParams, name) => {
   const parsed = Number.parseInt(raw, 10);
   if (Number.isNaN(parsed)) return null;
   return parsed;
+};
+
+const parseOptionalFloatParam = (searchParams, name) => {
+  const raw = searchParams.get(name);
+  if (raw === null || raw.trim() === "") return undefined;
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
+};
+
+const parseOptionalBboxParam = (searchParams) => {
+  const raw = searchParams.get("bbox");
+  if (raw === null || raw.trim() === "") return undefined;
+
+  const parts = raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (parts.length !== 4) {
+    return null;
+  }
+
+  const numbers = parts.map((value) => Number.parseFloat(value));
+  if (numbers.some((value) => !Number.isFinite(value))) {
+    return null;
+  }
+
+  const [minLon, minLat, maxLon, maxLat] = numbers;
+
+  if (minLat < -90 || minLat > 90 || maxLat < -90 || maxLat > 90) {
+    return null;
+  }
+
+  if (minLon < -180 || minLon > 180 || maxLon < -180 || maxLon > 180) {
+    return null;
+  }
+
+  if (minLat > maxLat || minLon > maxLon) {
+    return null;
+  }
+
+  return { minLon, minLat, maxLon, maxLat };
 };
 
 const normalizeSort = (raw) => {
@@ -205,6 +248,7 @@ const filterDatasets = (searchParams) => {
   const dataType = searchParams.get("dataType")?.trim().toLowerCase() ?? "";
   const tagsParam = searchParams.get("tags")?.trim() ?? "";
   const tagParam = searchParams.get("tag")?.trim() ?? "";
+  const bbox = parseOptionalBboxParam(searchParams);
 
   const isPublicRaw = searchParams.get("isPublic")?.trim().toLowerCase() ?? "";
   const isPublic =
@@ -219,12 +263,30 @@ const filterDatasets = (searchParams) => {
   const from = parseOptionalIntParam(searchParams, "from");
   const to = parseOptionalIntParam(searchParams, "to");
 
+  const altitudeMin = parseOptionalFloatParam(searchParams, "altitudeMin");
+  const altitudeMax = parseOptionalFloatParam(searchParams, "altitudeMax");
+
   if (isPublic === null) {
     return { error: "Invalid isPublic. Expected true/false (or 1/0)." };
   }
 
   if (from === null || to === null) {
     return { error: "Invalid from/to. Expected unix epoch seconds as integers." };
+  }
+
+  if (bbox === null) {
+    return {
+      error:
+        "Invalid bbox. Expected 'minLon,minLat,maxLon,maxLat' in degrees (e.g. bbox=90.35,23.65,90.55,23.85).",
+    };
+  }
+
+  if (altitudeMin === null || altitudeMax === null) {
+    return { error: "Invalid altitudeMin/altitudeMax. Expected numbers in meters." };
+  }
+
+  if (typeof altitudeMin === "number" && typeof altitudeMax === "number" && altitudeMin > altitudeMax) {
+    return { error: "Invalid altitudeMin/altitudeMax. Expected altitudeMin <= altitudeMax." };
   }
 
   const rawTags = tagsParam || tagParam;
@@ -237,6 +299,21 @@ const filterDatasets = (searchParams) => {
 
   return {
     items: datasets.filter((dataset) => {
+    if (bbox) {
+      const minLat = Math.round(bbox.minLat * 1_000_000);
+      const maxLat = Math.round(bbox.maxLat * 1_000_000);
+      const minLon = Math.round(bbox.minLon * 1_000_000);
+      const maxLon = Math.round(bbox.maxLon * 1_000_000);
+
+      if (dataset.latitude < minLat || dataset.latitude > maxLat) {
+        return false;
+      }
+
+      if (dataset.longitude < minLon || dataset.longitude > maxLon) {
+        return false;
+      }
+    }
+
     if (search) {
       const haystack = [
         dataset.id,
@@ -282,6 +359,14 @@ const filterDatasets = (searchParams) => {
     }
 
     if (typeof to === "number" && dataset.collectionDate > to) {
+      return false;
+    }
+
+    if (typeof altitudeMin === "number" && dataset.altitudeMin < altitudeMin) {
+      return false;
+    }
+
+    if (typeof altitudeMax === "number" && dataset.altitudeMax > altitudeMax) {
       return false;
     }
 
@@ -546,7 +631,7 @@ export const createDataServiceServer = () => createServer(handleRequest);
 
 const isDirectRun =
   typeof process.argv[1] === "string" &&
-  import.meta.url === new URL(process.argv[1], "file:").href;
+  import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isDirectRun) {
   createDataServiceServer().listen(PORT, HOST, () => {

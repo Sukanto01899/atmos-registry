@@ -78,6 +78,8 @@ The API starts on `http://127.0.0.1:4000` by default.
 - `GET /datasets` (preferred)
 - `GET /datasets?search=wind&status=verified&visibility=public`
 - `GET /datasets?tags=wind,hourly`
+- `GET /datasets?bbox=90.35,23.65,90.55,23.85` (minLon,minLat,maxLon,maxLat in degrees)
+- `GET /datasets?altitudeMin=100&altitudeMax=5000` (meters)
 - `GET /datasets?limit=25&cursor=0&sort=created_at_desc`
 - `GET /datasets/:id`
 - `GET /datasets/tags`
