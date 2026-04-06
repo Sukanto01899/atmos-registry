@@ -275,6 +275,9 @@ const filterDatasets = (searchParams) => {
   const from = parseOptionalIntParam(searchParams, "from");
   const to = parseOptionalIntParam(searchParams, "to");
 
+  const createdAtFrom = parseOptionalIntParam(searchParams, "createdAtFrom");
+  const createdAtTo = parseOptionalIntParam(searchParams, "createdAtTo");
+
   const altitudeMin = parseOptionalFloatParam(searchParams, "altitudeMin");
   const altitudeMax = parseOptionalFloatParam(searchParams, "altitudeMax");
 
@@ -284,6 +287,18 @@ const filterDatasets = (searchParams) => {
 
   if (from === null || to === null) {
     return { error: "Invalid from/to. Expected unix epoch seconds as integers." };
+  }
+
+  if (createdAtFrom === null || createdAtTo === null) {
+    return { error: "Invalid createdAtFrom/createdAtTo. Expected block heights as integers." };
+  }
+
+  if (
+    typeof createdAtFrom === "number" &&
+    typeof createdAtTo === "number" &&
+    createdAtFrom > createdAtTo
+  ) {
+    return { error: "Invalid createdAtFrom/createdAtTo. Expected createdAtFrom <= createdAtTo." };
   }
 
   if (verified === null) {
@@ -387,6 +402,14 @@ const filterDatasets = (searchParams) => {
     }
 
     if (typeof to === "number" && dataset.collectionDate > to) {
+      return false;
+    }
+
+    if (typeof createdAtFrom === "number" && dataset.createdAt < createdAtFrom) {
+      return false;
+    }
+
+    if (typeof createdAtTo === "number" && dataset.createdAt > createdAtTo) {
       return false;
     }
 
