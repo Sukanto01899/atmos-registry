@@ -2202,6 +2202,41 @@ function App() {
   const deleteSavedView = (viewId: string) => {
     setSavedViews((prev) => prev.filter((view) => view.id !== viewId));
   };
+  const renameSavedView = (viewId: string) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Rename unavailable.");
+      return;
+    }
+
+    const target = savedViews.find((view) => view.id === viewId);
+    if (!target) {
+      setStatusMessage("Saved view not found.");
+      return;
+    }
+
+    const nextName = window.prompt("Rename saved view", target.name);
+    if (nextName === null) {
+      return;
+    }
+
+    const trimmed = nextName.trim();
+    if (!trimmed) {
+      setStatusMessage("Saved view name cannot be empty.");
+      return;
+    }
+
+    setSavedViews((prev) =>
+      prev.map((view) =>
+        view.id === viewId
+          ? {
+              ...view,
+              name: trimmed,
+            }
+          : view,
+      ),
+    );
+    setStatusMessage(`Renamed view: ${trimmed}`);
+  };
   const copyText = async (value: string, label: string) => {
     if (!value) {
       setStatusMessage(`${label} is empty.`);
@@ -4513,6 +4548,13 @@ function App() {
                     <button
                       className="ghost-btn"
                       type="button"
+                      onClick={() => renameSavedView(view.id)}
+                    >
+                      Rename
+                    </button>
+                    <button
+                      className="ghost-btn"
+                      type="button"
                       onClick={() => deleteSavedView(view.id)}
                     >
                       Delete
@@ -5479,3 +5521,4 @@ function App() {
 }
 
 export default App;
+
