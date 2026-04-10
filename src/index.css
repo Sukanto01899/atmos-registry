@@ -864,6 +864,10 @@ textarea:focus {
   font-size: 0.82rem;
 }
 
+.stake-inline-note__warning {
+  color: rgba(255, 138, 138, 0.92);
+}
+
 .stat-card {
   padding: 1.25rem;
   border-radius: 18px;

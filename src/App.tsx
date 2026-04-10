@@ -141,6 +141,15 @@ const getTypeChipStyle = (value: string): CSSProperties => {
   };
 };
 
+const microTokenToInputValue = (value: number) => {
+  const whole = Math.floor(value / 1_000_000);
+  const fraction = Math.abs(value % 1_000_000);
+  if (fraction === 0) {
+    return String(whole);
+  }
+  return `${whole}.${fraction.toString().padStart(6, "0").replace(/0+$/, "")}`;
+};
+
 function App() {
   const hasHydratedUrlRef = useRef(false);
   const hasHydratedRegisterDraft = useRef(false);
@@ -464,6 +473,12 @@ function App() {
     () => parseMicroTokenInput(unstakeAmount),
     [unstakeAmount],
   );
+  const hasInsufficientStakeBalance = useMemo(() => {
+    if (!walletAddress || !tokenSnapshot || !stakeAmountValue) {
+      return false;
+    }
+    return stakeAmountValue > tokenSnapshot.balance;
+  }, [walletAddress, stakeAmountValue, tokenSnapshot]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -2700,6 +2715,12 @@ function App() {
       setStakeStatus("Enter a valid ATMOS amount.");
       return;
     }
+    if (functionName === "stake" && tokenSnapshot && amount > tokenSnapshot.balance) {
+      setStakeStatus(
+        `Insufficient balance. Available: ${formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}.`,
+      );
+      return;
+    }
     setStakeStatus("Opening wallet for staking approval...");
     try {
       const assetContractId =
@@ -3814,11 +3835,31 @@ function App() {
                         placeholder="10"
                       />
                       <button
+                        className="ghost-btn"
+                        type="button"
+                        onClick={() =>
+                          setStakeAmount(
+                            microTokenToInputValue(tokenSnapshot?.balance ?? 0),
+                          )
+                        }
+                        disabled={
+                          !walletAddress ||
+                          tokenLoading ||
+                          !tokenSnapshot ||
+                          tokenSnapshot.balance <= 0
+                        }
+                      >
+                        Max
+                      </button>
+                      <button
                         className="primary-btn compact"
                         type="button"
                         onClick={() => handleStakeAction("stake", stakeAmount)}
                         disabled={
-                          !walletAddress || tokenLoading || !stakeAmountValue
+                          !walletAddress ||
+                          tokenLoading ||
+                          !stakeAmountValue ||
+                          hasInsufficientStakeBalance
                         }
                       >
                         Stake
@@ -3854,6 +3895,13 @@ function App() {
                       ? "Stake amount looks valid."
                       : "Enter a positive ATMOS amount to enable staking."}
                   </span>
+                  {hasInsufficientStakeBalance && tokenSnapshot && (
+                    <span className="stake-inline-note__warning">
+                      Entered amount exceeds wallet balance (
+                      {formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)}{" "}
+                      {tokenSnapshot.symbol}).
+                    </span>
+                  )}
                   <span>
                     {unstakeAmountValue
                       ? "Unstake amount looks valid."
