@@ -473,6 +473,20 @@ function App() {
     () => parseMicroTokenInput(unstakeAmount),
     [unstakeAmount],
   );
+  const networkLabel = useMemo(() => {
+    const apiBase = STACKS_API_BASE_URL.toLowerCase();
+    if (
+      apiBase.includes("localhost") ||
+      apiBase.includes("127.0.0.1") ||
+      apiBase.includes("devnet")
+    ) {
+      return "Devnet";
+    }
+    if (apiBase.includes("testnet")) {
+      return "Testnet";
+    }
+    return "Mainnet";
+  }, []);
   const hasInsufficientStakeBalance = useMemo(() => {
     if (!walletAddress || !tokenSnapshot || !stakeAmountValue) {
       return false;
@@ -3189,6 +3203,7 @@ function App() {
     <div className="app">
       <div className="glow-layer" />
       <NavBar
+        networkLabel={networkLabel}
         featureTab={featureTab}
         onFeatureTabChange={setFeatureTab}
         onMenuAction={(action) => {

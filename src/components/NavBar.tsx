@@ -32,6 +32,7 @@
   onToggleTxCenter: () => void;
   onOpenCommandPalette: () => void;
   onOpenShortcuts: () => void;
+  networkLabel: string;
   walletAddress: string;
   onConnectWallet: () => void;
   onDisconnectWallet: () => void;
@@ -52,6 +53,7 @@ export function NavBar({
   onToggleTxCenter,
   onOpenCommandPalette,
   onOpenShortcuts,
+  networkLabel,
   walletAddress,
   onConnectWallet,
   onDisconnectWallet,
@@ -107,6 +109,9 @@ export function NavBar({
             <div className="brand-title">Atmos Registry</div>
             <div className="brand-subtitle">Mainnet data mesh</div>
           </div>
+          <span className="network-badge" title="Connected network">
+            {networkLabel}
+          </span>
         </div>
         <div className="nav__actions">
           <ThemeToggle />

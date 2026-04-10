@@ -218,6 +218,21 @@ textarea {
   gap: 0.9rem;
 }
 
+.network-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 160, 255, 0.4);
+  background: rgba(90, 160, 255, 0.14);
+  color: var(--accent-3);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .logo-orb {
   width: 44px;
   height: 44px;
