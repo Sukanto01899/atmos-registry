@@ -352,8 +352,8 @@ function App() {
     const min = Number.parseInt(filters.altitudeMin, 10);
     const max = Number.parseInt(filters.altitudeMax, 10);
     return activeDatasets.filter((dataset) => {
+      const note = datasetNotes[String(dataset.id)] ?? "";
       if (search) {
-        const note = datasetNotes[String(dataset.id)] ?? "";
         const haystack = [
           dataset.id,
           dataset.name,
@@ -387,6 +387,9 @@ function App() {
         return false;
       }
       if (!Number.isNaN(max) && dataset.altitudeMax > max) {
+        return false;
+      }
+      if (filters.notedOnly && !note.trim()) {
         return false;
       }
       return true;
@@ -713,7 +716,8 @@ function App() {
         (filters.dataType !== "all" && filters.dataType) ||
         filters.owner ||
         filters.altitudeMin ||
-        filters.altitudeMax,
+        filters.altitudeMax ||
+        filters.notedOnly,
       ),
     [filters],
   );
@@ -776,6 +780,13 @@ function App() {
         id: "altitudeMax",
         label: `Altitude max: ${filters.altitudeMax}`,
         key: "altitudeMax",
+      });
+    }
+    if (filters.notedOnly) {
+      chips.push({
+        id: "notedOnly",
+        label: "Private notes only",
+        key: "notedOnly",
       });
     }
     return chips;
@@ -4729,6 +4740,20 @@ function App() {
                     )}
                   </div>
                 </div>
+                <label className="filter-toggle" htmlFor="filter-noted-only">
+                  <input
+                    id="filter-noted-only"
+                    type="checkbox"
+                    checked={filters.notedOnly}
+                    onChange={(event) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        notedOnly: readChecked(event),
+                      }))
+                    }
+                  />
+                  <span>Private notes only</span>
+                </label>
               </div>
               {filterChips.length > 0 && (
                 <div className="filter-chips">
@@ -5219,6 +5244,9 @@ function App() {
                   statusClass={getStatusClass(dataset.status)}
                   rank={datasetRankById.get(dataset.id) ?? "-"}
                   qualityScore={getQualityScore(dataset)}
+                  notePreview={(datasetNotes[String(dataset.id)] ?? "")
+                    .trim()
+                    .slice(0, 120)}
                   stewardshipSignal={stewardshipSignalByDatasetId.get(
                     dataset.id,
                   )}

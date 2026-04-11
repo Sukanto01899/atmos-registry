@@ -132,6 +132,7 @@ export function DatasetCard({
   statusClass,
   rank,
   qualityScore,
+  notePreview,
   stewardshipSignal,
   isStewardStaked,
   compareActive,
@@ -177,6 +178,7 @@ export function DatasetCard({
             {isStewardStaked && (
               <span className="tag tag--staked">Steward staked</span>
             )}
+            {notePreview && <span className="tag tag--note">Private note</span>}
           </div>
         </div>
         <span className={`status-pill ${statusClass}`}>{dataset.status}</span>
@@ -190,6 +192,12 @@ export function DatasetCard({
         </div>
       )}
       <p className="dataset-description">{dataset.description}</p>
+      {notePreview && (
+        <div className="dataset-note-preview" title={notePreview}>
+          <span>Private note</span>
+          <strong>{notePreview}</strong>
+        </div>
+      )}
       <div className="dataset-meta">
         <div>
           <span>Owner</span>

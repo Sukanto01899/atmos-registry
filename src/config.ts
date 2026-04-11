@@ -21,6 +21,7 @@ export const defaultFilters: DatasetFilters = {
   owner: "",
   altitudeMin: "",
   altitudeMax: "",
+  notedOnly: false,
 };
 
 export const defaultVersionDraft: VersionDraft = {

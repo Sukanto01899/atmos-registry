@@ -71,6 +71,7 @@ export const parseUrlViewState = (search: string): UrlViewState => {
       owner: params.get("owner") ?? "",
       altitudeMin: params.get("amin") ?? "",
       altitudeMax: params.get("amax") ?? "",
+      notedOnly: params.get("noted") === "1",
     },
     geoTimePercent: Number.isNaN(geo) ? 100 : clampPercent(geo),
     compareSelectionIds: parseUrlIdList(params.get("compare")),
@@ -100,6 +101,7 @@ export const buildUrlViewSearch = (state: UrlViewState) => {
   if (state.filters.owner) params.set("owner", state.filters.owner);
   if (state.filters.altitudeMin) params.set("amin", state.filters.altitudeMin);
   if (state.filters.altitudeMax) params.set("amax", state.filters.altitudeMax);
+  if (state.filters.notedOnly) params.set("noted", "1");
   if (state.geoTimePercent !== 100) {
     params.set("geo", String(clampPercent(state.geoTimePercent)));
   }

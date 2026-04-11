@@ -42,6 +42,7 @@ export type DatasetFilters = {
   owner: string;
   altitudeMin: string;
   altitudeMax: string;
+  notedOnly: boolean;
 };
 
 // Sort modes determine the ordering of datasets in the explore and mine tabs. In a real application, you might want to support more complex sorting options and allow users to customize their default sort mode.
@@ -170,6 +171,7 @@ export type DatasetCardProps = {
   statusClass: string;
   rank: number | string;
   qualityScore: number;
+  notePreview?: string;
   stewardshipSignal?: string;
   isStewardStaked: boolean;
   compareActive: boolean;
