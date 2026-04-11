@@ -101,6 +101,7 @@ const RECENT_DATASETS_KEY = "atmos-dataset-recent";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
 const DATASET_NOTES_KEY = "atmos-dataset-notes";
+const NOTE_PRESETS = ["review", "trusted", "needs-update", "follow-up"] as const;
 
 const emptyRegisterForm: RegisterFormState = {
   name: "",
@@ -332,6 +333,18 @@ function App() {
       }
       return next;
     });
+  };
+  const applyDatasetNotePreset = (datasetId: number, preset: string) => {
+    const key = String(datasetId);
+    const marker = `[${preset}]`;
+    const current = (datasetNotes[key] ?? "").trim();
+    if (current.includes(marker)) {
+      setStatusMessage(`Preset ${marker} already added.`);
+      return;
+    }
+    const nextNote = current ? `${current} ${marker}` : marker;
+    updateDatasetNote(datasetId, nextNote);
+    setStatusMessage(`Added preset ${marker}.`);
   };
 
   // In a real application, you would likely want to fetch available data types from the contract or a backend rather than deriving them from the currently loaded datasets. This approach is simpler for this example but may not capture all possible data types if your dataset collection is large or if some types are not represented in the latest/my datasets.
@@ -3481,6 +3494,20 @@ function App() {
                 <div className="detail-card__title">Private note</div>
                 <div className="detail-timeline__meta">
                   Stored only in this browser. Dataset search includes notes.
+                </div>
+                <div className="note-presets" role="group" aria-label="Note presets">
+                  {NOTE_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      className="note-preset"
+                      type="button"
+                      onClick={() =>
+                        applyDatasetNotePreset(lineageDataset.id, preset)
+                      }
+                    >
+                      [{preset}]
+                    </button>
+                  ))}
                 </div>
                 <textarea
                   value={datasetNotes[String(lineageDataset.id)] ?? ""}

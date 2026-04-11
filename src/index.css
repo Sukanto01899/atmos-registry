@@ -2499,6 +2499,33 @@ textarea:focus {
   gap: 0.55rem;
 }
 
+.note-presets {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.note-preset {
+  border: 1px solid rgba(255, 214, 102, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 214, 102, 0.08);
+  color: #ffd666;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.note-preset:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 214, 102, 0.45);
+  background: rgba(255, 214, 102, 0.14);
+}
+
 .detail-timeline {
   margin-top: 0.8rem;
   display: grid;
