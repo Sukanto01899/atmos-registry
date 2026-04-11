@@ -138,6 +138,7 @@ export function DatasetCard({
   compareActive,
   watchActive,
   formatCoord,
+  onCopySummary,
   onCopyId,
   onCopyOwner,
   onCopyCoords,
@@ -281,6 +282,15 @@ export function DatasetCard({
         <span>Collection date: {dataset.collectionDate}</span>
         <span>Record height: {dataset.createdAt}</span>
         <span className="hash">IPFS: {dataset.ipfsHash || "n/a"}</span>
+        {onCopySummary && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onCopySummary}
+          >
+            Copy summary
+          </button>
+        )}
         <button
           className="ghost-btn dataset-foot__action dataset-foot__action--compare"
           type="button"

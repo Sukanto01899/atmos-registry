@@ -1338,6 +1338,20 @@ function App() {
       .map((id) => byId.get(id))
       .filter((dataset): dataset is Dataset => Boolean(dataset));
   }, [lineageOptions, recentDatasetIds]);
+  const recentlyNotedDatasets = useMemo(() => {
+    const notedIds = Object.entries(datasetNotes)
+      .filter(([, note]) => Boolean(note.trim()))
+      .map(([id]) => id);
+    if (!notedIds.length) {
+      return [];
+    }
+    const byId = new Map(lineageOptions.map((dataset) => [String(dataset.id), dataset]));
+    return notedIds
+      .map((id) => byId.get(id))
+      .filter((dataset): dataset is Dataset => Boolean(dataset))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 6);
+  }, [datasetNotes, lineageOptions]);
 
   const updateRegisterField =
     (field: keyof RegisterFormState) =>
@@ -2218,6 +2232,24 @@ function App() {
     setStatusMessage(
       `Cleared ${count} private ${count === 1 ? "note" : "notes"}.`,
     );
+  };
+  const copyDatasetSummary = async (dataset: Dataset) => {
+    const note = datasetNotes[String(dataset.id)]?.trim();
+    const lines = [
+      `Dataset #${dataset.id}: ${dataset.name}`,
+      `Type: ${dataset.dataType}`,
+      `Status: ${dataset.status}`,
+      `Visibility: ${dataset.isPublic ? "Public" : "Private"}`,
+      `Owner: ${dataset.owner}`,
+      `Coordinates: ${formatCoord(dataset.latitude)}, ${formatCoord(dataset.longitude)}`,
+      `Altitude: ${dataset.altitudeMin}-${dataset.altitudeMax} m`,
+      `Collection date: ${formatChainValue(dataset.collectionDate)}`,
+      `Created at: ${formatChainValue(dataset.createdAt)}`,
+      `IPFS: ${dataset.ipfsHash || "n/a"}`,
+      `Description: ${dataset.description}`,
+      note ? `Private note: ${note}` : "",
+    ].filter(Boolean);
+    await copyText(lines.join("\n"), `Dataset #${dataset.id} summary`);
   };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
@@ -4637,6 +4669,40 @@ function App() {
             </div>
             <div className="saved-view-card">
               <div className="saved-view-head">
+                <div>
+                  <h3>Noted recently</h3>
+                  <p>Datasets with private notes stored in this browser.</p>
+                </div>
+              </div>
+              <div className="saved-view-list">
+                {recentlyNotedDatasets.length === 0 && (
+                  <span className="saved-view-empty">
+                    No datasets with private notes yet.
+                  </span>
+                )}
+                {recentlyNotedDatasets.map((dataset) => (
+                  <div className="saved-view-item" key={`noted-dataset-${dataset.id}`}>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => openDatasetDetail(dataset.id)}
+                    >
+                      #{dataset.id} {dataset.name}
+                    </button>
+                    <span>{(datasetNotes[String(dataset.id)] ?? "").trim().slice(0, 40) || dataset.dataType}</span>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => updateDatasetNote(dataset.id, "")}
+                    >
+                      Remove note
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="saved-view-card">
+              <div className="saved-view-head">
                 <h3>Saved views</h3>
                 <p>
                   Save and restore your current filters, explorer state, compare
@@ -5306,6 +5372,7 @@ function App() {
                   notePreview={(datasetNotes[String(dataset.id)] ?? "")
                     .trim()
                     .slice(0, 120)}
+                  onCopySummary={() => copyDatasetSummary(dataset)}
                   stewardshipSignal={stewardshipSignalByDatasetId.get(
                     dataset.id,
                   )}
