@@ -1243,6 +1243,13 @@ textarea:focus {
   color: var(--muted);
 }
 
+.saved-view-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
 .saved-view-create {
   margin-top: 0.75rem;
   display: grid;

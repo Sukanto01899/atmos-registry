@@ -435,6 +435,9 @@ function App() {
     let mostRecent = filteredDatasets[0];
     let highestAltitude = filteredDatasets[0];
     const ownerCounts = new Map<string, number>();
+    const notedCount = filteredDatasets.filter((dataset) =>
+      Boolean(datasetNotes[String(dataset.id)]?.trim()),
+    ).length;
 
     filteredDatasets.forEach((dataset) => {
       const score = getQualityScore(dataset);
@@ -479,8 +482,16 @@ function App() {
         value: topOwner ? topOwner[0] : "n/a",
         meta: topOwner ? `${topOwner[1]} datasets` : "n/a",
       },
+      {
+        label: "Private notes",
+        value: notedCount.toLocaleString(),
+        meta:
+          notedCount === 1
+            ? "1 dataset has a note"
+            : `${notedCount} datasets have notes`,
+      },
     ];
-  }, [filteredDatasets]);
+  }, [datasetNotes, filteredDatasets]);
   const stakeAmountValue = useMemo(
     () => parseMicroTokenInput(stakeAmount),
     [stakeAmount],
@@ -2196,6 +2207,17 @@ function App() {
     setWatchlistInput("");
     setWatchlistOnly(false);
     setStatusMessage("Cleared watchlist.");
+  };
+  const clearAllDatasetNotes = () => {
+    const count = Object.keys(datasetNotes).length;
+    if (!count) {
+      setStatusMessage("No private notes to clear.");
+      return;
+    }
+    setDatasetNotes({});
+    setStatusMessage(
+      `Cleared ${count} private ${count === 1 ? "note" : "notes"}.`,
+    );
   };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
@@ -4560,8 +4582,18 @@ function App() {
             )}
             <div className="saved-view-card">
               <div className="saved-view-head">
-                <h3>Recently viewed</h3>
-                <p>Quickly reopen datasets you inspected in this browser.</p>
+                <div>
+                  <h3>Recently viewed</h3>
+                  <p>Quickly reopen datasets you inspected in this browser.</p>
+                </div>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={clearAllDatasetNotes}
+                  disabled={Object.keys(datasetNotes).length === 0}
+                >
+                  Clear all notes
+                </button>
               </div>
               <div className="saved-view-list">
                 {recentDatasets.length === 0 && (
