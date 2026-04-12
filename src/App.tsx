@@ -3142,6 +3142,54 @@ function App() {
     return () => window.clearInterval(timer);
   }, [storyPlaying, storyChapters.length]);
   const commandActions: CommandAction[] = [
+    walletAddress
+      ? {
+          id: "wallet-disconnect",
+          label: "Disconnect Wallet",
+          detail: "Sign out and clear the connected address",
+          group: "Other",
+          run: () => {
+            disconnectWallet();
+          },
+        }
+      : {
+          id: "wallet-connect",
+          label: "Connect Wallet",
+          detail: "Open the wallet connector",
+          group: "Other",
+          run: () => {
+            connectWallet();
+          },
+        },
+    {
+      id: "toggle-tx-center",
+      label: showTxCenter ? "Close Transactions" : "Open Transactions",
+      detail: "Open or close the transaction center panel",
+      group: "Navigation",
+      run: () => {
+        setShowTxCenter((prev) => !prev);
+      },
+    },
+    {
+      id: "refresh-txs",
+      label: "Refresh Transactions",
+      detail: "Poll pending transactions now",
+      group: "Data",
+      run: () => {
+        txCenter.refreshNow();
+        setShowTxCenter(true);
+      },
+    },
+    {
+      id: "clear-txs",
+      label: "Clear Transactions",
+      detail: "Remove all tracked transactions",
+      group: "Data",
+      run: () => {
+        txCenter.clearAll();
+        setShowTxCenter(true);
+      },
+    },
     {
       id: "sync-mainnet",
       label: "Sync Mainnet",
