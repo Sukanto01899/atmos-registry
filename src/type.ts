@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export type Dataset = {
   id: number;
   name: string;
@@ -149,7 +151,7 @@ export type AlertItem = {
 export type Notice = {
   id: string;
   tone: "info" | "warning" | "critical";
-  message: string;
+  message: ReactNode;
 };
 
 export type Props = {

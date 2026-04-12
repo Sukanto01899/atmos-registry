@@ -931,9 +931,33 @@ function App() {
 
     const next = new Map(txStatusByIdRef.current);
     const notices: Notice[] = [];
+    const explorerHrefFor = (txId: string) =>
+      `https://explorer.hiro.so/txid/${encodeURIComponent(txId)}?chain=mainnet`;
 
     for (const tx of txCenter.txs) {
       const prevStatus = next.get(tx.txId);
+      if (prevStatus === undefined) {
+        const shortTxId =
+          tx.txId.length > 12
+            ? `${tx.txId.slice(0, 6)}…${tx.txId.slice(-6)}`
+            : tx.txId;
+        const href = explorerHrefFor(tx.txId);
+        notices.push({
+          id: `tx-${tx.txId}-submitted-${Date.now()}`,
+          tone: "info",
+          message: (
+            <span>
+              Transaction submitted: {tx.title}{" "}
+              <a href={href} target="_blank" rel="noreferrer noopener">
+                ({shortTxId})
+              </a>
+            </span>
+          ),
+        });
+        next.set(tx.txId, tx.status);
+        continue;
+      }
+
       if (prevStatus !== tx.status) {
         const wasPending = prevStatus === "submitted" || prevStatus === "pending";
         const isFinal = tx.status === "success" || tx.status === "failed";
@@ -941,13 +965,21 @@ function App() {
           const shortTxId = tx.txId.length > 12
             ? `${tx.txId.slice(0, 6)}…${tx.txId.slice(-6)}`
             : tx.txId;
+          const href = explorerHrefFor(tx.txId);
           notices.push({
             id: `tx-${tx.txId}-${tx.status}-${Date.now()}`,
             tone: tx.status === "success" ? "info" : "warning",
-            message:
-              tx.status === "success"
-                ? `Transaction confirmed: ${tx.title} (${shortTxId})`
-                : `Transaction failed: ${tx.title} (${shortTxId})`,
+            message: (
+              <span>
+                {tx.status === "success"
+                  ? "Transaction confirmed: "
+                  : "Transaction failed: "}
+                {tx.title}{" "}
+                <a href={href} target="_blank" rel="noreferrer noopener">
+                  ({shortTxId})
+                </a>
+              </span>
+            ),
           });
         }
         next.set(tx.txId, tx.status);

@@ -916,6 +916,16 @@ textarea:focus {
   margin-bottom: 1.2rem;
 }
 
+.status-banner a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.status-banner a:hover {
+  opacity: 0.9;
+}
+
 .status-banner--info {
   margin-bottom: 0;
   background: rgba(90, 160, 255, 0.12);
