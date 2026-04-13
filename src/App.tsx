@@ -3431,7 +3431,18 @@ function App() {
         onConnectWallet={connectWallet}
         onDisconnectWallet={disconnectWallet}
       />
-      <AppNotices notices={appNotices} />
+      <AppNotices
+        notices={appNotices}
+        onDismissNotice={(noticeId) => {
+          if (noticeId === "wallet") {
+            setWalletMessage("");
+            return;
+          }
+          setTransientNotices((prev) =>
+            prev.filter((notice) => notice.id !== noticeId),
+          );
+        }}
+      />
       <CommandPalette
         open={showCommandPalette}
         query={commandQuery}

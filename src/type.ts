@@ -156,6 +156,7 @@ export type Notice = {
 
 export type Props = {
   notices: Notice[];
+  onDismissNotice?: (noticeId: string) => void;
 };
 
 export type CommandPaletteProps = {

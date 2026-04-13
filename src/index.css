@@ -908,12 +908,38 @@ textarea:focus {
 }
 
 .status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
   padding: 0.9rem 1.1rem;
   border-radius: 12px;
   background: rgba(245, 138, 61, 0.12);
   border: 1px solid rgba(245, 138, 61, 0.35);
   color: var(--text);
   margin-bottom: 1.2rem;
+}
+
+.status-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-banner__close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.1rem 0.35rem;
+  border-radius: 8px;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.status-banner__close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .status-banner a {
