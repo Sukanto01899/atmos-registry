@@ -3191,6 +3191,33 @@ function App() {
       },
     },
     {
+      id: "copy-share-link",
+      label: "Copy Share Link",
+      detail: "Copy the current page URL",
+      group: "Data",
+      run: () => {
+        copyShareLink();
+      },
+    },
+    {
+      id: "copy-filter-summary",
+      label: "Copy Filter Summary",
+      detail: "Copy active tab, filters, and counts",
+      group: "Data",
+      run: () => {
+        copyFilterSummary();
+      },
+    },
+    {
+      id: "copy-visible-dataset-links",
+      label: "Copy Visible Dataset Links",
+      detail: "Copy share links for all visible datasets",
+      group: "Data",
+      run: () => {
+        copyVisibleDatasetLinks();
+      },
+    },
+    {
       id: "sync-mainnet",
       label: "Sync Mainnet",
       detail: "Reload latest on-chain datasets",
