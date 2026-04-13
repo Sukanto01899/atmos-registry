@@ -3001,19 +3001,53 @@ function App() {
   }, [savedViews]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTypingTarget =
+        Boolean(target) &&
+        (target?.isContentEditable ||
+          target?.tagName === "INPUT" ||
+          target?.tagName === "TEXTAREA" ||
+          target?.tagName === "SELECT");
+      if (isTypingTarget) {
+        return;
+      }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setShowCommandPalette((prev) => !prev);
+      }
+      if (event.key === "?" || (event.shiftKey && event.key === "/")) {
+        event.preventDefault();
+        setShowKeyboardShortcuts(true);
+      }
+      if (
+        event.key === "/" &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        if (featureTab === "datasets") {
+          event.preventDefault();
+          searchInputRef.current?.focus();
+        }
+      }
+      if (event.key.toLowerCase() === "t") {
+        event.preventDefault();
+        setShowTxCenter((prev) => !prev);
+      }
+      if (event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        setFeatureTab((prev) => (prev === "alerts" ? "datasets" : "alerts"));
       }
       if (event.key === "Escape") {
         setShowCommandPalette(false);
         setShowKeyboardShortcuts(false);
         setShowDatasetDetail(false);
+        setShowTxCenter(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [featureTab]);
 
   const keyboardShortcuts = useMemo(
     () => [
@@ -3023,6 +3057,8 @@ function App() {
         keys: "/",
         description: "Focus dataset search when you are in the datasets view",
       },
+      { keys: "A", description: "Toggle the alerts view" },
+      { keys: "T", description: "Toggle the transaction center" },
       { keys: "Esc", description: "Close open panels and overlays" },
     ],
     [],
