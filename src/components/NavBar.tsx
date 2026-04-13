@@ -41,6 +41,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 
+const shortenAddress = (value: string) => {
+  const trimmed = value.trim();
+  if (trimmed.length <= 12) return trimmed;
+  return `${trimmed.slice(0, 6)}…${trimmed.slice(-6)}`;
+};
+
 export function NavBar({
   featureTab,
   onFeatureTabChange,
@@ -100,6 +106,12 @@ export function NavBar({
     }
   };
 
+  const openWalletExplorer = () => {
+    if (!walletAddress || typeof window === "undefined") return;
+    const href = `https://explorer.hiro.so/address/${encodeURIComponent(walletAddress)}?chain=mainnet`;
+    window.open(href, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <nav className="nav">
       <div className="nav__row">
@@ -156,7 +168,9 @@ export function NavBar({
           </button>
           {walletAddress ? (
             <div className="wallet-chip">
-              <span className="wallet-address">{walletAddress}</span>
+              <span className="wallet-address" title={walletAddress}>
+                {shortenAddress(walletAddress)}
+              </span>
               <button
                 className="ghost-btn compact"
                 type="button"
@@ -165,6 +179,13 @@ export function NavBar({
                 title={copied ? "Copied!" : "Copy"}
               >
                 {copied ? "Copied" : "Copy"}
+              </button>
+              <button
+                className="ghost-btn compact"
+                type="button"
+                onClick={openWalletExplorer}
+              >
+                Open
               </button>
               <button
                 className="ghost-btn compact"
