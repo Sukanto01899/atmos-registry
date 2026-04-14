@@ -3229,6 +3229,33 @@ function App() {
       },
     },
     {
+      id: "copy-visible-coords-csv",
+      label: "Copy Visible Coords CSV",
+      detail: "Copy id/lat/lon CSV for visible datasets",
+      group: "Data",
+      run: () => {
+        copyVisibleCoordsCsv();
+      },
+    },
+    {
+      id: "copy-visible-datasets-csv",
+      label: "Copy Visible Datasets CSV",
+      detail: "Copy a CSV snapshot of visible datasets",
+      group: "Data",
+      run: () => {
+        copyVisibleDatasetsCsv();
+      },
+    },
+    {
+      id: "copy-visible-owners",
+      label: "Copy Visible Owners",
+      detail: "Copy unique owner addresses from visible datasets",
+      group: "Data",
+      run: () => {
+        copyVisibleOwners();
+      },
+    },
+    {
       id: "export-filtered-geojson",
       label: "Export Filtered GeoJSON",
       detail: "Download visible datasets as GeoJSON",
