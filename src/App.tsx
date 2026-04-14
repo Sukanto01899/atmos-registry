@@ -3004,6 +3004,14 @@ function App() {
         event.preventDefault();
         setFeatureTab((prev) => (prev === "alerts" ? "datasets" : "alerts"));
       }
+      if (event.key.toLowerCase() === "d") {
+        if (featureTab !== "datasets") return;
+        event.preventDefault();
+        setDatasetDensity((prev) =>
+          prev === "comfortable" ? "compact" : "comfortable",
+        );
+        setStatusMessage("Toggled dataset density.");
+      }
       if (event.key === "Escape") {
         setShowCommandPalette(false);
         setShowKeyboardShortcuts(false);
@@ -3025,6 +3033,7 @@ function App() {
       },
       { keys: "A", description: "Toggle the alerts view" },
       { keys: "T", description: "Toggle the transaction center" },
+      { keys: "D", description: "Toggle dataset density (Comfort/Compact)" },
       { keys: "Esc", description: "Close open panels and overlays" },
     ],
     [],
@@ -3253,6 +3262,18 @@ function App() {
       group: "Data",
       run: () => {
         copyVisibleOwners();
+      },
+    },
+    {
+      id: "toggle-dataset-density",
+      label: "Toggle Dataset Density",
+      detail: "Switch between Comfort and Compact views",
+      group: "Data",
+      run: () => {
+        setDatasetDensity((prev) =>
+          prev === "comfortable" ? "compact" : "comfortable",
+        );
+        setStatusMessage("Toggled dataset density.");
       },
     },
     {
