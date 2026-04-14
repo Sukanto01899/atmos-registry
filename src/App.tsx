@@ -522,43 +522,9 @@ function App() {
   }, [walletAddress, stakeAmountValue, tokenSnapshot]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-
-      if (event.key === "/" && featureTab === "datasets") {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-        return;
-      }
-
-      if (event.key === "?") {
-        event.preventDefault();
-        setShowKeyboardShortcuts(true);
-        return;
-      }
-
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setShowCommandPalette(true);
-      }
-
-      if (event.key === "Escape" && showCommandPalette) {
-        setShowCommandPalette(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [featureTab, showCommandPalette]);
+    // Keyboard shortcuts are handled in the global shortcut handler below.
+    // Keeping a single handler avoids duplicate toggles.
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -3251,6 +3217,33 @@ function App() {
       group: "Data",
       run: () => {
         copyVisibleDatasetLinks();
+      },
+    },
+    {
+      id: "copy-visible-dataset-ids",
+      label: "Copy Visible Dataset IDs",
+      detail: "Copy the IDs for the visible datasets",
+      group: "Data",
+      run: () => {
+        copyVisibleDatasetIds();
+      },
+    },
+    {
+      id: "export-filtered-geojson",
+      label: "Export Filtered GeoJSON",
+      detail: "Download visible datasets as GeoJSON",
+      group: "Data",
+      run: () => {
+        exportFilteredDatasetsGeoJson();
+      },
+    },
+    {
+      id: "open-random-dataset",
+      label: "Open Random Dataset",
+      detail: "Open a random dataset from the current filtered list",
+      group: "Navigation",
+      run: () => {
+        openRandomFilteredDataset();
       },
     },
     {
