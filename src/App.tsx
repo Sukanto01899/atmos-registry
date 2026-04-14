@@ -3017,6 +3017,7 @@ function App() {
         setShowKeyboardShortcuts(false);
         setShowDatasetDetail(false);
         setShowTxCenter(false);
+        setStatusMessage("");
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -4687,10 +4688,17 @@ function App() {
               <div
                 className="status-banner"
                 role="status"
-                onClick={() => setStatusMessage("")}
-                title="Click to dismiss"
+                title="Status message"
               >
-                {statusMessage}
+                <div className="status-banner__body">{statusMessage}</div>
+                <button
+                  className="status-banner__close"
+                  type="button"
+                  aria-label="Dismiss status"
+                  onClick={() => setStatusMessage("")}
+                >
+                  ×
+                </button>
               </div>
             )}
             <div className="section-header">
@@ -5608,10 +5616,17 @@ function App() {
               <div
                 className="status-banner"
                 role="status"
-                onClick={() => setStatusMessage("")}
-                title="Click to dismiss"
+                title="Status message"
               >
-                {statusMessage}
+                <div className="status-banner__body">{statusMessage}</div>
+                <button
+                  className="status-banner__close"
+                  type="button"
+                  aria-label="Dismiss status"
+                  onClick={() => setStatusMessage("")}
+                >
+                  ×
+                </button>
               </div>
             )}
             <div className="section-header">
