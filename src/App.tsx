@@ -3173,6 +3173,35 @@ function App() {
             connectWallet();
           },
         },
+    ...(walletAddress
+      ? ([
+          {
+            id: "wallet-copy-address",
+            label: "Copy Wallet Address",
+            detail: "Copy the connected Stacks address",
+            group: "Other",
+            run: () => {
+              copyText(walletAddress, "Wallet address");
+            },
+          },
+          {
+            id: "wallet-open-explorer",
+            label: "Open Wallet in Explorer",
+            detail: "Open the connected address on Hiro Explorer",
+            group: "Other",
+            run: () => {
+              if (typeof window === "undefined") {
+                setStatusMessage("Explorer unavailable.");
+                return;
+              }
+              const href = `https://explorer.hiro.so/address/${encodeURIComponent(
+                walletAddress,
+              )}?chain=mainnet`;
+              window.open(href, "_blank", "noopener,noreferrer");
+            },
+          },
+        ] as CommandAction[])
+      : []),
     {
       id: "toggle-tx-center",
       label: showTxCenter ? "Close Transactions" : "Open Transactions",
