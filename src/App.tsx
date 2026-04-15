@@ -3500,6 +3500,15 @@ function App() {
       },
     },
     {
+      id: "clear-local-cache",
+      label: "Clear Local Cache",
+      detail: "Remove drafts, notes, saved views, and tx history in this browser",
+      group: "Data",
+      run: () => {
+        clearLocalCache();
+      },
+    },
+    {
       id: "toggle-alerts",
       label: "Toggle Alert Center",
       detail: "Open or close Smart Alerts panel",
