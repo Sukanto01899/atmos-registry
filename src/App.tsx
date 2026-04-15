@@ -2363,16 +2363,9 @@ function App() {
       setStatusMessage(`Unable to copy ${label.toLowerCase()}.`);
     }
   };
-  const openIpfsGateway = (pointer: string) => {
-    if (typeof window === "undefined") {
-      setStatusMessage("IPFS gateway unavailable.");
-      return;
-    }
+  const normalizeIpfsCid = (pointer: string) => {
     const trimmed = (pointer ?? "").trim();
-    if (!trimmed) {
-      setStatusMessage("IPFS hash is empty.");
-      return;
-    }
+    if (!trimmed) return "";
 
     let cid = trimmed;
     if (cid.startsWith("ipfs://")) {
@@ -2385,7 +2378,15 @@ function App() {
     }
 
     cid = cid.replace(/^\/?ipfs\//, "").split(/[?#]/)[0].trim();
+    return cid;
+  };
+  const openIpfsGateway = (pointer: string) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("IPFS gateway unavailable.");
+      return;
+    }
 
+    const cid = normalizeIpfsCid(pointer);
     if (!cid) {
       setStatusMessage("IPFS hash is invalid.");
       return;
@@ -2398,6 +2399,51 @@ function App() {
       return;
     }
     setStatusMessage("Opened IPFS gateway.");
+  };
+  const checkIpfsGateway = async (pointer: string) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("IPFS check unavailable.");
+      return;
+    }
+
+    const cid = normalizeIpfsCid(pointer);
+    if (!cid) {
+      setStatusMessage("IPFS hash is invalid.");
+      return;
+    }
+
+    const targets = [
+      {
+        label: "Cloudflare IPFS",
+        url: `https://cloudflare-ipfs.com/ipfs/${encodeURIComponent(cid)}`,
+      },
+      { label: "ipfs.io", url: `https://ipfs.io/ipfs/${encodeURIComponent(cid)}` },
+    ];
+
+    setStatusMessage(`Checking IPFS availability (${cid.slice(0, 10)}...)`);
+
+    for (const target of targets) {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 8_000);
+      try {
+        const response = await fetch(target.url, {
+          method: "HEAD",
+          signal: controller.signal,
+        });
+        if (response.ok) {
+          setStatusMessage(
+            `IPFS available via ${target.label} (${response.status}).`,
+          );
+          return;
+        }
+      } catch {
+        // ignore
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    }
+
+    setStatusMessage("Unable to verify IPFS availability right now.");
   };
   const openStacksExplorer = (path: string, label: string) => {
     if (typeof window === "undefined") {
@@ -3765,6 +3811,15 @@ function App() {
                       onClick={() => openIpfsGateway(lineageDataset.ipfsHash!)}
                     >
                       Open IPFS
+                    </button>
+                  )}
+                  {lineageDataset.ipfsHash?.trim() && (
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => checkIpfsGateway(lineageDataset.ipfsHash!)}
+                    >
+                      Check IPFS
                     </button>
                   )}
                 </div>
@@ -5628,6 +5683,7 @@ function App() {
                   }
                   onCopyLink={() => copyDatasetDetailLink(dataset.id)}
                   onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}
+                  onCheckIpfs={() => checkIpfsGateway(dataset.ipfsHash || "")}
                   onOpenOwnerExplorer={() => openOwnerInExplorer(dataset.owner)}
                   onOpenDetail={() => openDatasetDetail(dataset.id)}
                   onAudit={() => setLineageTarget(dataset.id)}

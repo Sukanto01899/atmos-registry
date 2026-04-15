@@ -145,6 +145,7 @@ export function DatasetCard({
   onCopyIpfs,
   onCopyLink,
   onOpenIpfs,
+  onCheckIpfs,
   onOpenOwnerExplorer,
   onOpenMap,
   onOpenDetail,
@@ -355,6 +356,15 @@ export function DatasetCard({
             onClick={onOpenIpfs}
           >
             Open IPFS
+          </button>
+        )}
+        {dataset.ipfsHash?.trim() && onCheckIpfs && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onCheckIpfs}
+          >
+            Check IPFS
           </button>
         )}
         <button
