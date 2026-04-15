@@ -2445,6 +2445,52 @@ function App() {
 
     setStatusMessage("Unable to verify IPFS availability right now.");
   };
+  const clearLocalCache = () => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Local cache unavailable.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Clear locally stored app data (drafts, notes, saved views, recent commands, watchlist, alerts, and tx history) for this browser?",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      window.localStorage.removeItem(REGISTER_DRAFT_KEY);
+      window.localStorage.removeItem(REGISTER_DRAFT_BACKUP_KEY);
+      window.localStorage.removeItem(RECENT_COMMANDS_KEY);
+      window.localStorage.removeItem(RECENT_DATASETS_KEY);
+      window.localStorage.removeItem(DATASET_NOTES_KEY);
+      window.localStorage.removeItem(SAVED_VIEWS_KEY);
+      window.localStorage.removeItem(DATASET_DENSITY_KEY);
+      window.localStorage.removeItem(FEATURE_TAB_KEY);
+    } catch {
+      // ignore
+    }
+
+    txCenter.clearAll();
+    setSavedViews([]);
+    setSavedViewName("");
+    setRecentCommandIds([]);
+    setRecentDatasetIds([]);
+    setDatasetNotes({});
+    setWatchlistOnly(false);
+    setWatchlistInput("");
+    setWatchlistIds([]);
+    setMutedAlertKinds([]);
+    setReadAlertIds([]);
+    setDismissedAlertIds([]);
+    setRegisterForm(defaultRegisterForm);
+    setRegisterTouched({});
+    setRegisterSubmitAttempted(false);
+    setRegisterDraftBackup(null);
+    setDatasetDensity("comfortable");
+    setFeatureTab("datasets");
+    setStatusMessage("Cleared local cache.");
+  };
   const openStacksExplorer = (path: string, label: string) => {
     if (typeof window === "undefined") {
       setStatusMessage(`${label} unavailable.`);
@@ -5225,6 +5271,13 @@ function App() {
                   disabled={!hasActiveFilters}
                 >
                   Reset filters
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={clearLocalCache}
+                >
+                  Clear local cache
                 </button>
                 <button
                   className="ghost-btn"
