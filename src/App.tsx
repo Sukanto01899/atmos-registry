@@ -2181,6 +2181,52 @@ function App() {
       `Watchlist updated with ${nextIds.length} visible datasets.`,
     );
   };
+  const addVisibleToWatchlist = () => {
+    const visibleIds = Array.from(
+      new Set(sortedDatasets.map((dataset) => String(dataset.id))),
+    );
+    if (!visibleIds.length) {
+      setStatusMessage("No visible datasets available.");
+      return;
+    }
+
+    setWatchlistIds((prev) => {
+      const merged = Array.from(new Set([...prev, ...visibleIds]));
+      const addedCount = merged.length - prev.length;
+      setWatchlistInput(merged.join(", "));
+      setStatusMessage(
+        addedCount === 0
+          ? "All visible datasets are already in the watchlist."
+          : `Added ${addedCount} visible ${addedCount === 1 ? "dataset" : "datasets"} to the watchlist.`,
+      );
+      return merged;
+    });
+  };
+  const removeVisibleFromWatchlist = () => {
+    const visibleSet = new Set(
+      sortedDatasets.map((dataset) => String(dataset.id)),
+    );
+    if (visibleSet.size === 0) {
+      setStatusMessage("No visible datasets available.");
+      return;
+    }
+
+    setWatchlistIds((prev) => {
+      if (!prev.length) {
+        setStatusMessage("Watchlist is already empty.");
+        return prev;
+      }
+      const next = prev.filter((id) => !visibleSet.has(id));
+      const removedCount = prev.length - next.length;
+      setWatchlistInput(next.join(", "));
+      setStatusMessage(
+        removedCount === 0
+          ? "No visible datasets were in the watchlist."
+          : `Removed ${removedCount} visible ${removedCount === 1 ? "dataset" : "datasets"} from the watchlist.`,
+      );
+      return next;
+    });
+  };
   const copyVisibleIpfsHashes = async () => {
     const hashes = sortedDatasets
       .map((dataset) => dataset.ipfsHash.trim())
@@ -5389,7 +5435,23 @@ function App() {
                   onClick={useVisibleAsWatchlist}
                   disabled={filteredDatasets.length === 0}
                 >
-                  Watch visible
+                  Watch visible (replace)
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={addVisibleToWatchlist}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Watch visible (add)
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={removeVisibleFromWatchlist}
+                  disabled={filteredDatasets.length === 0 || watchlistIds.length === 0}
+                >
+                  Unwatch visible
                 </button>
                 <button
                   className="ghost-btn"
