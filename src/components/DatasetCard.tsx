@@ -141,6 +141,7 @@ export function DatasetCard({
   onCopySummary,
   onCopyId,
   onCopyOwner,
+  onFilterOwner,
   onCopyCoords,
   onCopyIpfs,
   onCopyLink,
@@ -306,6 +307,15 @@ export function DatasetCard({
         >
           Copy owner
         </button>
+        {onFilterOwner && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onFilterOwner}
+          >
+            Filter owner
+          </button>
+        )}
         {onOpenOwnerExplorer && (
           <button
             className="ghost-btn dataset-foot__action dataset-foot__action--compare"

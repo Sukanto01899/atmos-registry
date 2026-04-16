@@ -183,6 +183,7 @@ export type DatasetCardProps = {
   onCopySummary?: () => void;
   onCopyId: () => void;
   onCopyOwner: () => void;
+  onFilterOwner?: () => void;
   onCopyCoords?: () => void;
   onCopyIpfs: () => void;
   onCopyLink?: () => void;

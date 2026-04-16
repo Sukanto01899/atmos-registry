@@ -5733,6 +5733,12 @@ function App() {
                   formatCoord={formatCoord}
                   onCopyId={() => copyText(String(dataset.id), "Dataset ID")}
                   onCopyOwner={() => copyText(dataset.owner, "Owner")}
+                  onFilterOwner={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      owner: dataset.owner,
+                    }))
+                  }
                   onCopyCoords={() =>
                     copyText(
                       `${formatCoord(dataset.latitude)}, ${formatCoord(dataset.longitude)}`,
