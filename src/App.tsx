@@ -5722,6 +5722,13 @@ function App() {
                     .trim()
                     .slice(0, 120)}
                   onCopySummary={() => copyDatasetSummary(dataset)}
+                  onCloneToRegister={() => {
+                    setFeatureTab("add-dataset");
+                    setRegisterForm(cloneDatasetToRegister(dataset));
+                    setStatusMessage(
+                      `Loaded dataset #${dataset.id} into the registration form.`,
+                    );
+                  }}
                   stewardshipSignal={stewardshipSignalByDatasetId.get(
                     dataset.id,
                   )}

@@ -139,6 +139,7 @@ export function DatasetCard({
   watchActive,
   formatCoord,
   onCopySummary,
+  onCloneToRegister,
   onCopyId,
   onCopyOwner,
   onFilterOwner,
@@ -291,6 +292,15 @@ export function DatasetCard({
             onClick={onCopySummary}
           >
             Copy summary
+          </button>
+        )}
+        {onCloneToRegister && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onCloneToRegister}
+          >
+            Clone to register
           </button>
         )}
         <button

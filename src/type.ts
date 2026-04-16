@@ -181,6 +181,7 @@ export type DatasetCardProps = {
   watchActive: boolean;
   formatCoord: (value: number) => string;
   onCopySummary?: () => void;
+  onCloneToRegister?: () => void;
   onCopyId: () => void;
   onCopyOwner: () => void;
   onFilterOwner?: () => void;
