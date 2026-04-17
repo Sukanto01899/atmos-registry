@@ -2547,6 +2547,11 @@ function App() {
     setFeatureTab("datasets");
     setStatusMessage("Cleared local cache.");
   };
+  const buildStacksExplorerUrl = (path: string) => {
+    const trimmed = (path ?? "").trim().replace(/^\/+/, "");
+    if (!trimmed) return "";
+    return `https://explorer.hiro.so/${trimmed}?chain=mainnet`;
+  };
   const openStacksExplorer = (path: string, label: string) => {
     if (typeof window === "undefined") {
       setStatusMessage(`${label} unavailable.`);
@@ -2558,13 +2563,21 @@ function App() {
       return;
     }
 
-    const explorerUrl = `https://explorer.hiro.so/${trimmed}?chain=mainnet`;
+    const explorerUrl = buildStacksExplorerUrl(trimmed);
     const opened = window.open(explorerUrl, "_blank", "noopener,noreferrer");
     if (!opened) {
       setStatusMessage(`Popup blocked. Allow popups to open ${label}.`);
       return;
     }
     setStatusMessage(`Opened ${label}.`);
+  };
+  const copyStacksExplorerUrl = async (path: string, label: string) => {
+    const explorerUrl = buildStacksExplorerUrl(path);
+    if (!explorerUrl) {
+      setStatusMessage(`${label} path is empty.`);
+      return;
+    }
+    await copyText(explorerUrl, label);
   };
   const openOwnerInExplorer = (owner: string) => {
     const value = (owner ?? "").trim();
@@ -5843,6 +5856,12 @@ function App() {
                   onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}
                   onCheckIpfs={() => checkIpfsGateway(dataset.ipfsHash || "")}
                   onOpenOwnerExplorer={() => openOwnerInExplorer(dataset.owner)}
+                  onCopyOwnerExplorerUrl={() =>
+                    copyStacksExplorerUrl(
+                      `address/${encodeURIComponent(dataset.owner)}`,
+                      "Owner explorer URL",
+                    )
+                  }
                   onOpenDetail={() => openDatasetDetail(dataset.id)}
                   onAudit={() => setLineageTarget(dataset.id)}
                   onToggleCompare={() => toggleCompareDataset(dataset.id)}

@@ -150,6 +150,7 @@ export function DatasetCard({
   onCopyLink,
   onOpenIpfs,
   onCheckIpfs,
+  onCopyOwnerExplorerUrl,
   onOpenOwnerExplorer,
   onOpenMap,
   onOpenDetail,
@@ -344,6 +345,15 @@ export function DatasetCard({
             onClick={onOpenOwnerExplorer}
           >
             Open owner
+          </button>
+        )}
+        {onCopyOwnerExplorerUrl && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onCopyOwnerExplorerUrl}
+          >
+            Copy owner URL
           </button>
         )}
         {onCopyCoords && (
