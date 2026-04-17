@@ -3694,6 +3694,7 @@ function App() {
         walletAddress={walletAddress}
         onConnectWallet={connectWallet}
         onDisconnectWallet={disconnectWallet}
+        onOpenContractExplorer={openContractInExplorer}
       />
       <AppNotices
         notices={appNotices}
@@ -5812,6 +5813,13 @@ function App() {
                   formatCoord={formatCoord}
                   onCopyId={() => copyText(String(dataset.id), "Dataset ID")}
                   onCopyOwner={() => copyText(dataset.owner, "Owner")}
+                  onLoadOwnerDatasets={() => {
+                    setActiveTab("mine");
+                    setOwnerInput(dataset.owner);
+                    setOwnerAddress(dataset.owner);
+                    loadOwnerDatasets(dataset.owner);
+                    setStatusMessage("Loading datasets for that owner…");
+                  }}
                   onFilterOwner={() =>
                     setFilters((prev) => ({
                       ...prev,

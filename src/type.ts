@@ -184,6 +184,7 @@ export type DatasetCardProps = {
   onCloneToRegister?: () => void;
   onCopyId: () => void;
   onCopyOwner: () => void;
+  onLoadOwnerDatasets?: () => void;
   onFilterOwner?: () => void;
   onCopyCoords?: () => void;
   onCopyIpfs: () => void;
