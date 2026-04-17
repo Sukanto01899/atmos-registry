@@ -5830,6 +5830,12 @@ function App() {
                     .trim()
                     .slice(0, 120)}
                   onCopySummary={() => copyDatasetSummary(dataset)}
+                  onCopyDatasetJson={() =>
+                    copyText(
+                      JSON.stringify(dataset, null, 2),
+                      `Dataset #${dataset.id} JSON`,
+                    )
+                  }
                   onCloneToRegister={() => {
                     setFeatureTab("add-dataset");
                     setRegisterForm(cloneDatasetToRegister(dataset));
