@@ -4056,6 +4056,14 @@ function App() {
                   <button
                     className="ghost-btn"
                     type="button"
+                    onClick={() => copyText(lineageFingerprint, "Fingerprint")}
+                    disabled={!lineageFingerprint}
+                  >
+                    Copy fingerprint
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
                     onClick={() => {
                       toggleWatchlistDataset(lineageDataset.id);
                     }}
