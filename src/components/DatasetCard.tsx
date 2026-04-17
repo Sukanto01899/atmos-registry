@@ -145,6 +145,7 @@ export function DatasetCard({
   onFilterOwner,
   onCopyCoords,
   onCopyIpfs,
+  onCopyIpfsGatewayUrl,
   onCopyLink,
   onOpenIpfs,
   onCheckIpfs,
@@ -360,6 +361,15 @@ export function DatasetCard({
         >
           Copy IPFS
         </button>
+        {dataset.ipfsHash?.trim() && onCopyIpfsGatewayUrl && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onCopyIpfsGatewayUrl}
+          >
+            Copy IPFS URL
+          </button>
+        )}
         {onCopyLink && (
           <button
             className="ghost-btn dataset-foot__action dataset-foot__action--compare"

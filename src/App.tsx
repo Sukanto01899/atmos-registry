@@ -2446,6 +2446,16 @@ function App() {
     }
     setStatusMessage("Opened IPFS gateway.");
   };
+  const copyIpfsGatewayUrl = async (pointer: string) => {
+    const cid = normalizeIpfsCid(pointer);
+    if (!cid) {
+      setStatusMessage("IPFS hash is invalid.");
+      return;
+    }
+
+    const gatewayUrl = `https://ipfs.io/ipfs/${encodeURIComponent(cid)}`;
+    await copyText(gatewayUrl, "IPFS gateway URL");
+  };
   const checkIpfsGateway = async (pointer: string) => {
     if (typeof window === "undefined") {
       setStatusMessage("IPFS check unavailable.");
@@ -5817,6 +5827,9 @@ function App() {
                   onOpenMap={() => openMapAt(dataset.latitude, dataset.longitude)}
                   onCopyIpfs={() =>
                     copyText(dataset.ipfsHash || "", "IPFS hash")
+                  }
+                  onCopyIpfsGatewayUrl={() =>
+                    copyIpfsGatewayUrl(dataset.ipfsHash || "")
                   }
                   onCopyLink={() => copyDatasetDetailLink(dataset.id)}
                   onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}

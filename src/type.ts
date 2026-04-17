@@ -187,6 +187,7 @@ export type DatasetCardProps = {
   onFilterOwner?: () => void;
   onCopyCoords?: () => void;
   onCopyIpfs: () => void;
+  onCopyIpfsGatewayUrl?: () => void;
   onCopyLink?: () => void;
   onOpenIpfs?: () => void;
   onCheckIpfs?: () => void;
