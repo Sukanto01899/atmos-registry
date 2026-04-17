@@ -37,6 +37,7 @@
   onConnectWallet: () => void;
   onDisconnectWallet: () => void;
   onOpenContractExplorer: () => void;
+  onCopyContractExplorerUrl: () => void;
 };
 
 import { useEffect, useRef, useState } from "react";
@@ -65,6 +66,7 @@ export function NavBar({
   onConnectWallet,
   onDisconnectWallet,
   onOpenContractExplorer,
+  onCopyContractExplorerUrl,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
@@ -244,6 +246,15 @@ export function NavBar({
                   }}
                 >
                   Contract explorer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onCopyContractExplorerUrl();
+                  }}
+                >
+                  Copy contract URL
                 </button>
                 <button
                   type="button"

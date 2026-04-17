@@ -2593,28 +2593,49 @@ function App() {
       "Contract explorer",
     );
   };
+  const copyContractExplorerUrl = async () => {
+    await copyStacksExplorerUrl(
+      `address/${encodeURIComponent(`${CONTRACT_ADDRESS}.${CONTRACT_NAME}`)}`,
+      "Contract explorer URL",
+    );
+  };
+  const buildMapUrlAt = (latitudeMicro: number, longitudeMicro: number) => {
+    const lat = latitudeMicro / 1_000_000;
+    const lon = longitudeMicro / 1_000_000;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      return "";
+    }
+    return `https://www.openstreetmap.org/?mlat=${encodeURIComponent(
+      lat,
+    )}&mlon=${encodeURIComponent(lon)}#map=11/${encodeURIComponent(
+      lat,
+    )}/${encodeURIComponent(lon)}`;
+  };
   const openMapAt = (latitudeMicro: number, longitudeMicro: number) => {
     if (typeof window === "undefined") {
       setStatusMessage("Map unavailable.");
       return;
     }
-    const lat = latitudeMicro / 1_000_000;
-    const lon = longitudeMicro / 1_000_000;
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+
+    const url = buildMapUrlAt(latitudeMicro, longitudeMicro);
+    if (!url) {
       setStatusMessage("Coordinates are invalid.");
       return;
     }
-    const url = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(
-      lat,
-    )}&mlon=${encodeURIComponent(lon)}#map=11/${encodeURIComponent(
-      lat,
-    )}/${encodeURIComponent(lon)}`;
     const opened = window.open(url, "_blank", "noopener,noreferrer");
     if (!opened) {
       setStatusMessage("Popup blocked. Allow popups to open the map.");
       return;
     }
     setStatusMessage("Opened map.");
+  };
+  const copyMapUrlAt = async (latitudeMicro: number, longitudeMicro: number) => {
+    const url = buildMapUrlAt(latitudeMicro, longitudeMicro);
+    if (!url) {
+      setStatusMessage("Coordinates are invalid.");
+      return;
+    }
+    await copyText(url, "Map URL");
   };
   const scrollToTop = () => {
     if (typeof window === "undefined") {
@@ -3708,6 +3729,7 @@ function App() {
         onConnectWallet={connectWallet}
         onDisconnectWallet={disconnectWallet}
         onOpenContractExplorer={openContractInExplorer}
+        onCopyContractExplorerUrl={copyContractExplorerUrl}
       />
       <AppNotices
         notices={appNotices}
@@ -5846,6 +5868,9 @@ function App() {
                     )
                   }
                   onOpenMap={() => openMapAt(dataset.latitude, dataset.longitude)}
+                  onCopyMapUrl={() =>
+                    copyMapUrlAt(dataset.latitude, dataset.longitude)
+                  }
                   onCopyIpfs={() =>
                     copyText(dataset.ipfsHash || "", "IPFS hash")
                   }

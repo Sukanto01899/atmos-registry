@@ -195,6 +195,7 @@ export type DatasetCardProps = {
   onCopyOwnerExplorerUrl?: () => void;
   onOpenOwnerExplorer?: () => void;
   onOpenMap?: () => void;
+  onCopyMapUrl?: () => void;
   onOpenDetail: () => void;
   onAudit: () => void;
   onToggleCompare: () => void;
