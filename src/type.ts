@@ -179,6 +179,7 @@ export type DatasetCardProps = {
   isStewardStaked: boolean;
   compareActive: boolean;
   watchActive: boolean;
+  pinActive: boolean;
   formatCoord: (value: number) => string;
   onCopySummary?: () => void;
   onCopyDatasetJson?: () => void;
@@ -201,6 +202,7 @@ export type DatasetCardProps = {
   onAudit: () => void;
   onToggleCompare: () => void;
   onToggleWatch: () => void;
+  onTogglePin: () => void;
 };
 
 export type GeospatialExplorerProps = {

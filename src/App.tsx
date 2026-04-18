@@ -98,6 +98,7 @@ const REGISTER_DRAFT_KEY = "atmos-register-draft";
 const REGISTER_DRAFT_BACKUP_KEY = "atmos-register-draft-backup";
 const RECENT_COMMANDS_KEY = "atmos-command-recent";
 const RECENT_DATASETS_KEY = "atmos-dataset-recent";
+const PINNED_DATASETS_KEY = "atmos-dataset-pins";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
 const DATASET_NOTES_KEY = "atmos-dataset-notes";
@@ -156,6 +157,7 @@ function App() {
   const hasHydratedRegisterDraft = useRef(false);
   const hasHydratedTxStatusesRef = useRef(false);
   const hasHydratedDatasetNotesRef = useRef(false);
+  const hasHydratedPinnedDatasetsRef = useRef(false);
   const txStatusByIdRef = useRef<Map<string, string>>(new Map());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [featureTab, setFeatureTab] = useState<
@@ -209,6 +211,7 @@ function App() {
   const [commandQuery, setCommandQuery] = useState("");
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [recentDatasetIds, setRecentDatasetIds] = useState<string[]>([]);
+  const [pinnedDatasetIds, setPinnedDatasetIds] = useState<string[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
   const [storyStepIndex, setStoryStepIndex] = useState(0);
   const [storyPlaying, setStoryPlaying] = useState(false);
@@ -422,8 +425,18 @@ function App() {
         label: "Watchlist",
         value: watchlistIds.length.toLocaleString(),
       },
+      {
+        label: "Pinned",
+        value: pinnedDatasetIds.length.toLocaleString(),
+      },
     ],
-    [activeDatasets.length, activeTab, filteredDatasets.length, watchlistIds],
+    [
+      activeDatasets.length,
+      activeTab,
+      filteredDatasets.length,
+      pinnedDatasetIds.length,
+      watchlistIds,
+    ],
   );
   const insightItems = useMemo(() => {
     if (filteredDatasets.length === 0) {
@@ -605,6 +618,33 @@ function App() {
     if (typeof window === "undefined") {
       return;
     }
+    const rawPinned = window.localStorage.getItem(PINNED_DATASETS_KEY);
+    if (!rawPinned) {
+      hasHydratedPinnedDatasetsRef.current = true;
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawPinned) as string[];
+      if (Array.isArray(parsed)) {
+        setPinnedDatasetIds(
+          Array.from(
+            new Set(
+              parsed.filter((item) => typeof item === "string" && /^\d+$/.test(item)),
+            ),
+          ),
+        );
+      }
+    } catch {
+      window.localStorage.removeItem(PINNED_DATASETS_KEY);
+    } finally {
+      hasHydratedPinnedDatasetsRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
     const rawNotes = window.localStorage.getItem(DATASET_NOTES_KEY);
     if (!rawNotes) {
       hasHydratedDatasetNotesRef.current = true;
@@ -663,6 +703,22 @@ function App() {
       JSON.stringify(recentDatasetIds.slice(0, 6)),
     );
   }, [recentDatasetIds]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!hasHydratedPinnedDatasetsRef.current) {
+      return;
+    }
+    if (pinnedDatasetIds.length === 0) {
+      window.localStorage.removeItem(PINNED_DATASETS_KEY);
+      return;
+    }
+    window.localStorage.setItem(
+      PINNED_DATASETS_KEY,
+      JSON.stringify(pinnedDatasetIds.slice(0, 50)),
+    );
+  }, [pinnedDatasetIds]);
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -834,7 +890,13 @@ function App() {
   }, [compareSelectionIds, filteredDatasets]);
   const sortedDatasets = useMemo(() => {
     const next = [...filteredDatasets];
+    const pinned = new Set(pinnedDatasetIds);
     next.sort((a, b) => {
+      const aPinned = pinned.has(String(a.id));
+      const bPinned = pinned.has(String(b.id));
+      if (aPinned !== bPinned) {
+        return aPinned ? -1 : 1;
+      }
       if (sortMode === "recent-desc") {
         return b.collectionDate - a.collectionDate;
       }
@@ -850,7 +912,7 @@ function App() {
       return getQualityScore(b) - getQualityScore(a);
     });
     return next;
-  }, [filteredDatasets, sortMode]);
+  }, [filteredDatasets, pinnedDatasetIds, sortMode]);
   const datasetRankById = useMemo(() => {
     const rankMap = new Map<number, number>();
     sortedDatasets.forEach((dataset, index) => {
@@ -2301,6 +2363,12 @@ function App() {
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
+  const togglePinnedDataset = (datasetId: number) => {
+    const id = String(datasetId);
+    setPinnedDatasetIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [id, ...prev],
+    );
+  };
   const toggleAlertMute = (kind: AlertItem["kind"]) => {
     setMutedAlertKinds((prev) =>
       prev.includes(kind)
@@ -2508,7 +2576,7 @@ function App() {
     }
 
     const confirmed = window.confirm(
-      "Clear locally stored app data (drafts, notes, saved views, recent commands, watchlist, alerts, and tx history) for this browser?",
+      "Clear locally stored app data (drafts, notes, saved views, recent commands, pinned datasets, watchlist, alerts, and tx history) for this browser?",
     );
     if (!confirmed) {
       return;
@@ -2519,6 +2587,7 @@ function App() {
       window.localStorage.removeItem(REGISTER_DRAFT_BACKUP_KEY);
       window.localStorage.removeItem(RECENT_COMMANDS_KEY);
       window.localStorage.removeItem(RECENT_DATASETS_KEY);
+      window.localStorage.removeItem(PINNED_DATASETS_KEY);
       window.localStorage.removeItem(DATASET_NOTES_KEY);
       window.localStorage.removeItem(SAVED_VIEWS_KEY);
       window.localStorage.removeItem(DATASET_DENSITY_KEY);
@@ -2532,6 +2601,7 @@ function App() {
     setSavedViewName("");
     setRecentCommandIds([]);
     setRecentDatasetIds([]);
+    setPinnedDatasetIds([]);
     setDatasetNotes({});
     setWatchlistOnly(false);
     setWatchlistInput("");
@@ -5859,6 +5929,7 @@ function App() {
                     String(dataset.id),
                   )}
                   watchActive={watchlistIds.includes(String(dataset.id))}
+                  pinActive={pinnedDatasetIds.includes(String(dataset.id))}
                   formatCoord={formatCoord}
                   onCopyId={() => copyText(String(dataset.id), "Dataset ID")}
                   onCopyOwner={() => copyText(dataset.owner, "Owner")}
@@ -5905,6 +5976,7 @@ function App() {
                   onAudit={() => setLineageTarget(dataset.id)}
                   onToggleCompare={() => toggleCompareDataset(dataset.id)}
                   onToggleWatch={() => toggleWatchlistDataset(dataset.id)}
+                  onTogglePin={() => togglePinnedDataset(dataset.id)}
                 />
               ))}
             </div>

@@ -137,6 +137,7 @@ export function DatasetCard({
   isStewardStaked,
   compareActive,
   watchActive,
+  pinActive,
   formatCoord,
   onCopySummary,
   onCopyDatasetJson,
@@ -159,6 +160,7 @@ export function DatasetCard({
   onAudit,
   onToggleCompare,
   onToggleWatch,
+  onTogglePin,
 }: DatasetCardProps) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const preview = useMemo(
@@ -479,6 +481,15 @@ export function DatasetCard({
           onClick={onToggleWatch}
         >
           {watchActive ? "Watching" : "Watch"}
+        </button>
+        <button
+          className={`ghost-btn dataset-foot__action dataset-foot__action--compare ${
+            pinActive ? "active" : ""
+          }`}
+          type="button"
+          onClick={onTogglePin}
+        >
+          {pinActive ? "Pinned" : "Pin"}
         </button>
       </div>
     </article>
