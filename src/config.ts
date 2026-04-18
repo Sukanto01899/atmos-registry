@@ -22,6 +22,7 @@ export const defaultFilters: DatasetFilters = {
   altitudeMin: "",
   altitudeMax: "",
   notedOnly: false,
+  pinnedOnly: false,
 };
 
 export const defaultVersionDraft: VersionDraft = {

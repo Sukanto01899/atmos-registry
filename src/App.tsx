@@ -367,8 +367,12 @@ function App() {
     const owner = filters.owner.trim().toLowerCase();
     const min = Number.parseInt(filters.altitudeMin, 10);
     const max = Number.parseInt(filters.altitudeMax, 10);
+    const pinned = filters.pinnedOnly ? new Set(pinnedDatasetIds) : null;
     return activeDatasets.filter((dataset) => {
       const note = datasetNotes[String(dataset.id)] ?? "";
+      if (pinned && !pinned.has(String(dataset.id))) {
+        return false;
+      }
       if (search) {
         const haystack = [
           dataset.id,
@@ -410,7 +414,7 @@ function App() {
       }
       return true;
     });
-  }, [activeDatasets, datasetNotes, filters]);
+  }, [activeDatasets, datasetNotes, filters, pinnedDatasetIds]);
   const interfaceSignals = useMemo(
     () => [
       {
@@ -763,7 +767,8 @@ function App() {
         filters.owner ||
         filters.altitudeMin ||
         filters.altitudeMax ||
-        filters.notedOnly,
+        filters.notedOnly ||
+        filters.pinnedOnly,
       ),
     [filters],
   );
@@ -833,6 +838,13 @@ function App() {
         id: "notedOnly",
         label: "Private notes only",
         key: "notedOnly",
+      });
+    }
+    if (filters.pinnedOnly) {
+      chips.push({
+        id: "pinnedOnly",
+        label: "Pinned only",
+        key: "pinnedOnly",
       });
     }
     return chips;
@@ -5390,6 +5402,20 @@ function App() {
                     }
                   />
                   <span>Private notes only</span>
+                </label>
+                <label className="filter-toggle" htmlFor="filter-pinned-only">
+                  <input
+                    id="filter-pinned-only"
+                    type="checkbox"
+                    checked={filters.pinnedOnly}
+                    onChange={(event) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        pinnedOnly: readChecked(event),
+                      }))
+                    }
+                  />
+                  <span>Pinned only</span>
                 </label>
               </div>
               {filterChips.length > 0 && (
