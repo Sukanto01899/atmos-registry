@@ -2301,6 +2301,67 @@ function App() {
       return next;
     });
   };
+  const addVisibleToPins = () => {
+    const visibleIds = Array.from(
+      new Set(sortedDatasets.map((dataset) => String(dataset.id))),
+    );
+    if (!visibleIds.length) {
+      setStatusMessage("No visible datasets available.");
+      return;
+    }
+
+    setPinnedDatasetIds((prev) => {
+      const existing = new Set(prev);
+      const added = visibleIds.filter((id) => !existing.has(id));
+      if (added.length === 0) {
+        setStatusMessage("All visible datasets are already pinned.");
+        return prev;
+      }
+      setStatusMessage(
+        `Pinned ${added.length} visible ${added.length === 1 ? "dataset" : "datasets"}.`,
+      );
+      return [...added, ...prev];
+    });
+  };
+  const removeVisibleFromPins = () => {
+    const visibleSet = new Set(
+      sortedDatasets.map((dataset) => String(dataset.id)),
+    );
+    if (visibleSet.size === 0) {
+      setStatusMessage("No visible datasets available.");
+      return;
+    }
+
+    setPinnedDatasetIds((prev) => {
+      if (!prev.length) {
+        setStatusMessage("Pinned list is already empty.");
+        return prev;
+      }
+      const next = prev.filter((id) => !visibleSet.has(id));
+      const removedCount = prev.length - next.length;
+      setStatusMessage(
+        removedCount === 0
+          ? "No visible datasets were pinned."
+          : `Unpinned ${removedCount} visible ${removedCount === 1 ? "dataset" : "datasets"}.`,
+      );
+      return next;
+    });
+  };
+  const clearPins = () => {
+    if (pinnedDatasetIds.length === 0) {
+      setStatusMessage("Pinned list is already empty.");
+      return;
+    }
+    setPinnedDatasetIds([]);
+    setStatusMessage("Cleared pinned datasets.");
+  };
+  const copyPinnedDatasetIds = async () => {
+    if (!pinnedDatasetIds.length) {
+      setStatusMessage("No pinned dataset IDs to copy.");
+      return;
+    }
+    await copyText(pinnedDatasetIds.join(", "), `Pinned dataset IDs (${pinnedDatasetIds.length})`);
+  };
   const copyVisibleIpfsHashes = async () => {
     const hashes = sortedDatasets
       .map((dataset) => dataset.ipfsHash.trim())
@@ -3556,6 +3617,52 @@ function App() {
       group: "Data",
       run: () => {
         copyVisibleOwners();
+      },
+    },
+    {
+      id: "toggle-pinned-only",
+      label: filters.pinnedOnly ? "Disable Pinned Only" : "Enable Pinned Only",
+      detail: "Toggle filtering to pinned datasets only",
+      group: "Data",
+      run: () => {
+        setFilters((prev) => ({ ...prev, pinnedOnly: !prev.pinnedOnly }));
+        setStatusMessage(filters.pinnedOnly ? "Pinned only disabled." : "Pinned only enabled.");
+      },
+    },
+    {
+      id: "pin-visible-datasets",
+      label: "Pin Visible Datasets",
+      detail: "Add all visible datasets to pinned list",
+      group: "Data",
+      run: () => {
+        addVisibleToPins();
+      },
+    },
+    {
+      id: "unpin-visible-datasets",
+      label: "Unpin Visible Datasets",
+      detail: "Remove visible datasets from pinned list",
+      group: "Data",
+      run: () => {
+        removeVisibleFromPins();
+      },
+    },
+    {
+      id: "copy-pinned-dataset-ids",
+      label: "Copy Pinned Dataset IDs",
+      detail: "Copy pinned dataset IDs as a comma-separated list",
+      group: "Data",
+      run: () => {
+        copyPinnedDatasetIds();
+      },
+    },
+    {
+      id: "clear-pins",
+      label: "Clear Pins",
+      detail: "Remove all pinned datasets",
+      group: "Data",
+      run: () => {
+        clearPins();
       },
     },
     {
