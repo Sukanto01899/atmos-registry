@@ -3625,8 +3625,11 @@ function App() {
       detail: "Toggle filtering to pinned datasets only",
       group: "Data",
       run: () => {
-        setFilters((prev) => ({ ...prev, pinnedOnly: !prev.pinnedOnly }));
-        setStatusMessage(filters.pinnedOnly ? "Pinned only disabled." : "Pinned only enabled.");
+        setFilters((prev) => {
+          const next = !prev.pinnedOnly;
+          setStatusMessage(next ? "Pinned only enabled." : "Pinned only disabled.");
+          return { ...prev, pinnedOnly: next };
+        });
       },
     },
     {
@@ -5709,6 +5712,38 @@ function App() {
                   disabled={filteredDatasets.length === 0 || watchlistIds.length === 0}
                 >
                   Unwatch visible
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={addVisibleToPins}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Pin visible (add)
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={removeVisibleFromPins}
+                  disabled={filteredDatasets.length === 0 || pinnedDatasetIds.length === 0}
+                >
+                  Unpin visible
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyPinnedDatasetIds}
+                  disabled={pinnedDatasetIds.length === 0}
+                >
+                  Copy pinned IDs
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={clearPins}
+                  disabled={pinnedDatasetIds.length === 0}
+                >
+                  Clear pins
                 </button>
                 <button
                   className="ghost-btn"

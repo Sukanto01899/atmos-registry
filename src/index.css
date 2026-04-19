@@ -2863,6 +2863,11 @@ textarea:focus {
   color: #ffd666;
 }
 
+.tag--pinned {
+  border-color: rgba(255, 214, 102, 0.35);
+  color: #ffd666;
+}
+
 .dataset-note-preview {
   display: grid;
   gap: 0.3rem;

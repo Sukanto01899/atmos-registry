@@ -183,6 +183,7 @@ export function DatasetCard({
             >
               {dataset.isPublic ? "Public" : "Private"}
             </span>
+            {pinActive && <span className="tag tag--pinned">Pinned</span>}
             {dataset.metadataFrozen && (
               <span className="tag tag--frozen">Frozen</span>
             )}
