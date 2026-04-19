@@ -1410,6 +1410,15 @@ function App() {
       .map((id) => byId.get(id))
       .filter((dataset): dataset is Dataset => Boolean(dataset));
   }, [lineageOptions, recentDatasetIds]);
+  const pinnedDatasets = useMemo(() => {
+    if (!pinnedDatasetIds.length) {
+      return [];
+    }
+    const byId = new Map(lineageOptions.map((dataset) => [String(dataset.id), dataset]));
+    return pinnedDatasetIds
+      .map((id) => byId.get(id))
+      .filter((dataset): dataset is Dataset => Boolean(dataset));
+  }, [lineageOptions, pinnedDatasetIds]);
   const recentlyNotedDatasets = useMemo(() => {
     const notedIds = Object.entries(datasetNotes)
       .filter(([, note]) => Boolean(note.trim()))
@@ -5297,6 +5306,58 @@ function App() {
                     onClick={() => setRecentDatasetIds([])}
                   >
                     Clear recent
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="saved-view-card">
+              <div className="saved-view-head">
+                <div>
+                  <h3>Pinned datasets</h3>
+                  <p>Keep important datasets at the top of your lists.</p>
+                </div>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={clearPins}
+                  disabled={pinnedDatasetIds.length === 0}
+                >
+                  Clear pins
+                </button>
+              </div>
+              <div className="saved-view-list">
+                {pinnedDatasets.length === 0 && (
+                  <span className="saved-view-empty">
+                    No pinned datasets yet.
+                  </span>
+                )}
+                {pinnedDatasets.map((dataset) => (
+                  <div className="saved-view-item" key={`pinned-dataset-${dataset.id}`}>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => openDatasetDetail(dataset.id)}
+                    >
+                      #{dataset.id} {dataset.name}
+                    </button>
+                    <span>{dataset.dataType}</span>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => togglePinnedDataset(dataset.id)}
+                    >
+                      Unpin
+                    </button>
+                  </div>
+                ))}
+                {pinnedDatasets.length > 1 && (
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyPinnedDatasetIds}
+                    disabled={pinnedDatasetIds.length === 0}
+                  >
+                    Copy pinned IDs
                   </button>
                 )}
               </div>
