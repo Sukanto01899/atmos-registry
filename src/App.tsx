@@ -4006,6 +4006,9 @@ function App() {
               >
                 {lineageDataset.isPublic ? "Public" : "Private"}
               </span>
+              {pinnedDatasetIds.includes(String(lineageDataset.id)) && (
+                <span className="tag tag--pinned">Pinned</span>
+              )}
               {lineageDataset.metadataFrozen && (
                 <span className="tag tag--frozen">Frozen metadata</span>
               )}
@@ -4050,6 +4053,25 @@ function App() {
                   </div>
                 </div>
                 <div className="detail-actions">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => {
+                      const pinned = pinnedDatasetIds.includes(
+                        String(lineageDataset.id),
+                      );
+                      togglePinnedDataset(lineageDataset.id);
+                      setStatusMessage(
+                        pinned
+                          ? `Unpinned dataset #${lineageDataset.id}.`
+                          : `Pinned dataset #${lineageDataset.id}.`,
+                      );
+                    }}
+                  >
+                    {pinnedDatasetIds.includes(String(lineageDataset.id))
+                      ? "Unpin"
+                      : "Pin"}
+                  </button>
                   <button
                     className="ghost-btn"
                     type="button"
