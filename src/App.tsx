@@ -1974,6 +1974,124 @@ function App() {
       `Exported ${filteredDatasets.length} filtered datasets (GeoJSON).`,
     );
   };
+  const exportPinnedDatasets = () => {
+    if (!pinnedDatasets.length || typeof window === "undefined") {
+      setStatusMessage("No pinned datasets to export.");
+      return;
+    }
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      totalPinned: pinnedDatasets.length,
+      pinnedDatasetIds,
+      datasets: pinnedDatasets.map((dataset) => ({
+        id: dataset.id,
+        name: dataset.name,
+        description: dataset.description,
+        dataType: dataset.dataType,
+        status: dataset.status,
+        owner: dataset.owner,
+        isPublic: dataset.isPublic,
+        metadataFrozen: dataset.metadataFrozen,
+        verified: dataset.verified,
+        verifiedBy: dataset.verifiedBy,
+        verifiedAt: dataset.verifiedAt,
+        collectionDate: dataset.collectionDate,
+        createdAt: dataset.createdAt,
+        altitudeMin: dataset.altitudeMin,
+        altitudeMax: dataset.altitudeMax,
+        latitude: dataset.latitude,
+        longitude: dataset.longitude,
+        ipfsHash: dataset.ipfsHash,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-pinned-${Date.now()}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported ${pinnedDatasets.length} pinned datasets.`);
+  };
+  const exportPinnedDatasetsCsv = () => {
+    if (!pinnedDatasets.length || typeof window === "undefined") {
+      setStatusMessage("No pinned datasets to export.");
+      return;
+    }
+
+    const escapeCsv = (value: unknown) => {
+      const raw = value === null || value === undefined ? "" : String(value);
+      const needsQuotes = /[",\n\r]/.test(raw);
+      const escaped = raw.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const columns = [
+      "id",
+      "name",
+      "description",
+      "dataType",
+      "status",
+      "owner",
+      "isPublic",
+      "metadataFrozen",
+      "verified",
+      "verifiedBy",
+      "verifiedAt",
+      "collectionDate",
+      "createdAt",
+      "altitudeMin",
+      "altitudeMax",
+      "latitude",
+      "longitude",
+      "ipfsHash",
+    ] as const;
+
+    const lines = [
+      columns.join(","),
+      ...pinnedDatasets.map((dataset) =>
+        [
+          dataset.id,
+          dataset.name,
+          dataset.description,
+          dataset.dataType,
+          dataset.status,
+          dataset.owner,
+          dataset.isPublic,
+          dataset.metadataFrozen,
+          dataset.verified,
+          dataset.verifiedBy ?? "",
+          dataset.verifiedAt ?? "",
+          dataset.collectionDate,
+          dataset.createdAt,
+          dataset.altitudeMin,
+          dataset.altitudeMax,
+          dataset.latitude,
+          dataset.longitude,
+          dataset.ipfsHash ?? "",
+        ]
+          .map(escapeCsv)
+          .join(","),
+      ),
+    ];
+
+    const blob = new Blob([`\uFEFF${lines.join("\n")}`], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-pinned-${Date.now()}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported ${pinnedDatasets.length} pinned datasets (CSV).`);
+  };
   const exportSingleDatasetJson = (dataset: Dataset) => {
     if (typeof window === "undefined") {
       setStatusMessage("Export unavailable.");
@@ -3706,6 +3824,24 @@ function App() {
       },
     },
     {
+      id: "export-pinned-json",
+      label: "Export Pinned JSON",
+      detail: "Download pinned datasets as JSON",
+      group: "Data",
+      run: () => {
+        exportPinnedDatasets();
+      },
+    },
+    {
+      id: "export-pinned-csv",
+      label: "Export Pinned CSV",
+      detail: "Download pinned datasets as CSV",
+      group: "Data",
+      run: () => {
+        exportPinnedDatasetsCsv();
+      },
+    },
+    {
       id: "clear-pins",
       label: "Clear Pins",
       detail: "Remove all pinned datasets",
@@ -5433,7 +5569,7 @@ function App() {
                     </button>
                   </div>
                 ))}
-                {pinnedDatasets.length > 1 && (
+                {pinnedDatasets.length > 0 && (
                   <button
                     className="ghost-btn"
                     type="button"
@@ -5441,6 +5577,26 @@ function App() {
                     disabled={pinnedDatasetIds.length === 0}
                   >
                     Copy pinned IDs
+                  </button>
+                )}
+                {pinnedDatasets.length > 0 && (
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportPinnedDatasets}
+                    disabled={pinnedDatasets.length === 0}
+                  >
+                    Export pinned JSON
+                  </button>
+                )}
+                {pinnedDatasets.length > 0 && (
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportPinnedDatasetsCsv}
+                    disabled={pinnedDatasets.length === 0}
+                  >
+                    Export pinned CSV
                   </button>
                 )}
               </div>
@@ -5730,6 +5886,19 @@ function App() {
                   disabled={!hasActiveFilters}
                 >
                   Reset filters
+                </button>
+                <button
+                  className={`ghost-btn ${filters.pinnedOnly ? "active" : ""}`}
+                  type="button"
+                  onClick={() =>
+                    setFilters((prev) => {
+                      const next = !prev.pinnedOnly;
+                      setStatusMessage(next ? "Pinned only enabled." : "Pinned only disabled.");
+                      return { ...prev, pinnedOnly: next };
+                    })
+                  }
+                >
+                  {filters.pinnedOnly ? "Pinned only: on" : "Pinned only: off"}
                 </button>
                 <button
                   className="ghost-btn"
