@@ -2763,6 +2763,14 @@ function App() {
       lat,
     )}/${encodeURIComponent(lon)}`;
   };
+  const buildGoogleMapsUrlAt = (latitudeMicro: number, longitudeMicro: number) => {
+    const lat = latitudeMicro / 1_000_000;
+    const lon = longitudeMicro / 1_000_000;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      return "";
+    }
+    return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lon}`)}&z=11`;
+  };
   const openMapAt = (latitudeMicro: number, longitudeMicro: number) => {
     if (typeof window === "undefined") {
       setStatusMessage("Map unavailable.");
@@ -2781,6 +2789,24 @@ function App() {
     }
     setStatusMessage("Opened map.");
   };
+  const openGoogleMapsAt = (latitudeMicro: number, longitudeMicro: number) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Map unavailable.");
+      return;
+    }
+
+    const url = buildGoogleMapsUrlAt(latitudeMicro, longitudeMicro);
+    if (!url) {
+      setStatusMessage("Coordinates are invalid.");
+      return;
+    }
+    const opened = window.open(url, "_blank", "noopener,noreferrer");
+    if (!opened) {
+      setStatusMessage("Popup blocked. Allow popups to open the map.");
+      return;
+    }
+    setStatusMessage("Opened Google Maps.");
+  };
   const copyMapUrlAt = async (latitudeMicro: number, longitudeMicro: number) => {
     const url = buildMapUrlAt(latitudeMicro, longitudeMicro);
     if (!url) {
@@ -2788,6 +2814,17 @@ function App() {
       return;
     }
     await copyText(url, "Map URL");
+  };
+  const copyGoogleMapsUrlAt = async (
+    latitudeMicro: number,
+    longitudeMicro: number,
+  ) => {
+    const url = buildGoogleMapsUrlAt(latitudeMicro, longitudeMicro);
+    if (!url) {
+      setStatusMessage("Coordinates are invalid.");
+      return;
+    }
+    await copyText(url, "Google Maps URL");
   };
   const scrollToTop = () => {
     if (typeof window === "undefined") {
@@ -4164,6 +4201,30 @@ function App() {
                     }
                   >
                     Open map
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      openGoogleMapsAt(
+                        lineageDataset.latitude,
+                        lineageDataset.longitude,
+                      )
+                    }
+                  >
+                    Open Google Maps
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() =>
+                      copyGoogleMapsUrlAt(
+                        lineageDataset.latitude,
+                        lineageDataset.longitude,
+                      )
+                    }
+                  >
+                    Copy Google Maps URL
                   </button>
                   <button
                     className="ghost-btn"
