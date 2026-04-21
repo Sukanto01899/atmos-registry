@@ -3501,6 +3501,33 @@ function App() {
         );
         setStatusMessage("Toggled dataset density.");
       }
+      if (
+        event.key.toLowerCase() === "p" &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        if (showDatasetDetail && lineageDataset) {
+          event.preventDefault();
+          const pinned = pinnedDatasetIds.includes(String(lineageDataset.id));
+          togglePinnedDataset(lineageDataset.id);
+          setStatusMessage(
+            pinned
+              ? `Unpinned dataset #${lineageDataset.id}.`
+              : `Pinned dataset #${lineageDataset.id}.`,
+          );
+          return;
+        }
+
+        if (featureTab === "datasets") {
+          event.preventDefault();
+          setFilters((prev) => {
+            const next = !prev.pinnedOnly;
+            setStatusMessage(next ? "Pinned only enabled." : "Pinned only disabled.");
+            return { ...prev, pinnedOnly: next };
+          });
+        }
+      }
       if (event.key === "Escape") {
         setShowCommandPalette(false);
         setShowKeyboardShortcuts(false);
@@ -3511,7 +3538,7 @@ function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [featureTab]);
+  }, [featureTab, lineageDataset, pinnedDatasetIds, showDatasetDetail]);
 
   const keyboardShortcuts = useMemo(
     () => [
@@ -3524,6 +3551,7 @@ function App() {
       { keys: "A", description: "Toggle the alerts view" },
       { keys: "T", description: "Toggle the transaction center" },
       { keys: "D", description: "Toggle dataset density (Comfort/Compact)" },
+      { keys: "P", description: "Toggle pinned-only (or pin dataset in detail)" },
       { keys: "Esc", description: "Close open panels and overlays" },
     ],
     [],
