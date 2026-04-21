@@ -2092,6 +2092,57 @@ function App() {
     URL.revokeObjectURL(url);
     setStatusMessage(`Exported ${pinnedDatasets.length} pinned datasets (CSV).`);
   };
+  const exportPinnedDatasetsGeoJson = () => {
+    if (!pinnedDatasets.length || typeof window === "undefined") {
+      setStatusMessage("No pinned datasets to export.");
+      return;
+    }
+
+    const featureCollection = {
+      type: "FeatureCollection",
+      generatedAt: new Date().toISOString(),
+      totalPinned: pinnedDatasets.length,
+      pinnedDatasetIds,
+      features: pinnedDatasets.map((dataset) => ({
+        type: "Feature",
+        id: dataset.id,
+        geometry: {
+          type: "Point",
+          coordinates: [dataset.longitude / 1_000_000, dataset.latitude / 1_000_000],
+        },
+        properties: {
+          name: dataset.name,
+          description: dataset.description,
+          dataType: dataset.dataType,
+          status: dataset.status,
+          owner: dataset.owner,
+          isPublic: dataset.isPublic,
+          metadataFrozen: dataset.metadataFrozen,
+          verified: dataset.verified,
+          verifiedBy: dataset.verifiedBy,
+          verifiedAt: dataset.verifiedAt,
+          collectionDate: dataset.collectionDate,
+          createdAt: dataset.createdAt,
+          altitudeMin: dataset.altitudeMin,
+          altitudeMax: dataset.altitudeMax,
+          ipfsHash: dataset.ipfsHash,
+        },
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(featureCollection, null, 2)], {
+      type: "application/geo+json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-pinned-${Date.now()}.geojson`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported ${pinnedDatasets.length} pinned datasets (GeoJSON).`);
+  };
   const exportSingleDatasetJson = (dataset: Dataset) => {
     if (typeof window === "undefined") {
       setStatusMessage("Export unavailable.");
@@ -3890,6 +3941,15 @@ function App() {
       },
     },
     {
+      id: "export-pinned-geojson",
+      label: "Export Pinned GeoJSON",
+      detail: "Download pinned datasets as GeoJSON",
+      group: "Data",
+      run: () => {
+        exportPinnedDatasetsGeoJson();
+      },
+    },
+    {
       id: "clear-pins",
       label: "Clear Pins",
       detail: "Remove all pinned datasets",
@@ -5645,6 +5705,16 @@ function App() {
                     disabled={pinnedDatasets.length === 0}
                   >
                     Export pinned CSV
+                  </button>
+                )}
+                {pinnedDatasets.length > 0 && (
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportPinnedDatasetsGeoJson}
+                    disabled={pinnedDatasets.length === 0}
+                  >
+                    Export pinned GeoJSON
                   </button>
                 )}
               </div>
