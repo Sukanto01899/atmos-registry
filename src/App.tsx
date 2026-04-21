@@ -2450,6 +2450,17 @@ function App() {
       return [...added, ...prev];
     });
   };
+  const useVisibleAsPins = () => {
+    const nextIds = Array.from(
+      new Set(sortedDatasets.map((dataset) => String(dataset.id))),
+    );
+    if (!nextIds.length) {
+      setStatusMessage("No visible datasets available.");
+      return;
+    }
+    setPinnedDatasetIds(nextIds);
+    setStatusMessage(`Pinned list updated with ${nextIds.length} visible datasets.`);
+  };
   const removeVisibleFromPins = () => {
     const visibleSet = new Set(
       sortedDatasets.map((dataset) => String(dataset.id)),
@@ -3831,6 +3842,15 @@ function App() {
       group: "Data",
       run: () => {
         addVisibleToPins();
+      },
+    },
+    {
+      id: "pin-visible-datasets-replace",
+      label: "Pin Visible Datasets (Replace)",
+      detail: "Replace pinned list with the visible datasets",
+      group: "Data",
+      run: () => {
+        useVisibleAsPins();
       },
     },
     {
@@ -6061,6 +6081,14 @@ function App() {
                   disabled={filteredDatasets.length === 0}
                 >
                   Pin visible (add)
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={useVisibleAsPins}
+                  disabled={filteredDatasets.length === 0}
+                >
+                  Pin visible (replace)
                 </button>
                 <button
                   className="ghost-btn"
