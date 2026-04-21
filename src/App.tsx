@@ -4421,6 +4421,18 @@ function App() {
                   <button
                     className="ghost-btn"
                     type="button"
+                    onClick={() =>
+                      copyStacksExplorerUrl(
+                        `address/${encodeURIComponent(lineageDataset.owner)}`,
+                        "Owner explorer URL",
+                      )
+                    }
+                  >
+                    Copy owner URL
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
                     onClick={() => openOwnerInExplorer(lineageDataset.owner)}
                   >
                     Open owner
@@ -4479,6 +4491,15 @@ function App() {
                   >
                     Copy IPFS
                   </button>
+                  {lineageDataset.ipfsHash?.trim() && (
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => copyIpfsGatewayUrl(lineageDataset.ipfsHash!)}
+                    >
+                      Copy IPFS URL
+                    </button>
+                  )}
                   {lineageDataset.ipfsHash?.trim() && (
                     <button
                       className="ghost-btn"
