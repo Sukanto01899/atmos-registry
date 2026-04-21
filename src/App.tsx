@@ -158,6 +158,7 @@ function App() {
   const hasHydratedTxStatusesRef = useRef(false);
   const hasHydratedDatasetNotesRef = useRef(false);
   const hasHydratedPinnedDatasetsRef = useRef(false);
+  const copyToastTimeoutRef = useRef<number | null>(null);
   const txStatusByIdRef = useRef<Map<string, string>>(new Map());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [featureTab, setFeatureTab] = useState<
@@ -541,6 +542,15 @@ function App() {
   useEffect(() => {
     // Keyboard shortcuts are handled in the global shortcut handler below.
     // Keeping a single handler avoids duplicate toggles.
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (copyToastTimeoutRef.current !== null) {
+        window.clearTimeout(copyToastTimeoutRef.current);
+        copyToastTimeoutRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -2735,6 +2745,14 @@ function App() {
         area.remove();
       }
       setStatusMessage(`${label} copied.`);
+      if (typeof window !== "undefined") {
+        if (copyToastTimeoutRef.current !== null) {
+          window.clearTimeout(copyToastTimeoutRef.current);
+        }
+        copyToastTimeoutRef.current = window.setTimeout(() => {
+          setStatusMessage("");
+        }, 1200);
+      }
     } catch {
       setStatusMessage(`Unable to copy ${label.toLowerCase()}.`);
     }
