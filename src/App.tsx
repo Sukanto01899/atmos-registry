@@ -2176,6 +2176,43 @@ function App() {
     URL.revokeObjectURL(url);
     setStatusMessage(`Exported dataset #${dataset.id} (JSON).`);
   };
+  const copyDatasetJson = async (dataset: Dataset) => {
+    await copyText(
+      JSON.stringify(dataset, null, 2),
+      `Dataset #${dataset.id} JSON`,
+    );
+  };
+  const copyDatasetGeoJsonFeature = async (dataset: Dataset) => {
+    const feature = {
+      type: "Feature",
+      id: dataset.id,
+      geometry: {
+        type: "Point",
+        coordinates: [dataset.longitude / 1_000_000, dataset.latitude / 1_000_000],
+      },
+      properties: {
+        name: dataset.name,
+        description: dataset.description,
+        dataType: dataset.dataType,
+        status: dataset.status,
+        owner: dataset.owner,
+        isPublic: dataset.isPublic,
+        metadataFrozen: dataset.metadataFrozen,
+        verified: dataset.verified,
+        verifiedBy: dataset.verifiedBy,
+        verifiedAt: dataset.verifiedAt,
+        collectionDate: dataset.collectionDate,
+        createdAt: dataset.createdAt,
+        altitudeMin: dataset.altitudeMin,
+        altitudeMax: dataset.altitudeMax,
+        ipfsHash: dataset.ipfsHash,
+      },
+    };
+    await copyText(
+      JSON.stringify(feature, null, 2),
+      `Dataset #${dataset.id} GeoJSON feature`,
+    );
+  };
   const copyDatasetMarkdown = async (dataset: Dataset) => {
     const detailLink = buildDatasetDetailLink(dataset.id);
     const osmLink = buildMapUrlAt(dataset.latitude, dataset.longitude);
@@ -4421,6 +4458,20 @@ function App() {
                     onClick={() => copyDatasetDetailLink(lineageDataset.id)}
                   >
                     Copy link
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyDatasetJson(lineageDataset)}
+                  >
+                    Copy JSON
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyDatasetGeoJsonFeature(lineageDataset)}
+                  >
+                    Copy GeoJSON feature
                   </button>
                   <button
                     className="ghost-btn"
