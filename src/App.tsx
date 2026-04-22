@@ -2176,6 +2176,36 @@ function App() {
     URL.revokeObjectURL(url);
     setStatusMessage(`Exported dataset #${dataset.id} (JSON).`);
   };
+  const copyDatasetMarkdown = async (dataset: Dataset) => {
+    const detailLink = buildDatasetDetailLink(dataset.id);
+    const osmLink = buildMapUrlAt(dataset.latitude, dataset.longitude);
+    const googleLink = buildGoogleMapsUrlAt(dataset.latitude, dataset.longitude);
+    const ipfsLink = dataset.ipfsHash?.trim()
+      ? buildIpfsGatewayUrl(dataset.ipfsHash)
+      : "";
+
+    const lines = [
+      `## Dataset #${dataset.id}: ${dataset.name}`,
+      ``,
+      `- Type: ${dataset.dataType}`,
+      `- Status: ${dataset.status}`,
+      `- Visibility: ${dataset.isPublic ? "Public" : "Private"}`,
+      `- Owner: ${dataset.owner}`,
+      `- Coordinates: ${formatCoord(dataset.latitude)}, ${formatCoord(dataset.longitude)} (deg)`,
+      `- Altitude: ${dataset.altitudeMin}-${dataset.altitudeMax} m`,
+      `- Collected: ${formatChainValue(dataset.collectionDate)}`,
+      `- Recorded: ${formatChainValue(dataset.createdAt)}`,
+      `- IPFS: ${dataset.ipfsHash || "n/a"}`,
+      ``,
+      `Links:`,
+      detailLink ? `- Detail: ${detailLink}` : "",
+      osmLink ? `- OpenStreetMap: ${osmLink}` : "",
+      googleLink ? `- Google Maps: ${googleLink}` : "",
+      ipfsLink ? `- IPFS gateway: ${ipfsLink}` : "",
+    ].filter(Boolean);
+
+    await copyText(lines.join("\n"), `Dataset #${dataset.id} markdown`);
+  };
   const openRandomFilteredDataset = () => {
     if (!sortedDatasets.length) {
       setStatusMessage("No filtered datasets available.");
@@ -2794,14 +2824,19 @@ function App() {
     }
     setStatusMessage("Opened IPFS gateway.");
   };
-  const copyIpfsGatewayUrl = async (pointer: string) => {
+  const buildIpfsGatewayUrl = (pointer: string) => {
     const cid = normalizeIpfsCid(pointer);
     if (!cid) {
+      return "";
+    }
+    return `https://ipfs.io/ipfs/${encodeURIComponent(cid)}`;
+  };
+  const copyIpfsGatewayUrl = async (pointer: string) => {
+    const gatewayUrl = buildIpfsGatewayUrl(pointer);
+    if (!gatewayUrl) {
       setStatusMessage("IPFS hash is invalid.");
       return;
     }
-
-    const gatewayUrl = `https://ipfs.io/ipfs/${encodeURIComponent(cid)}`;
     await copyText(gatewayUrl, "IPFS gateway URL");
   };
   const checkIpfsGateway = async (pointer: string) => {
@@ -4386,6 +4421,13 @@ function App() {
                     onClick={() => copyDatasetDetailLink(lineageDataset.id)}
                   >
                     Copy link
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyDatasetMarkdown(lineageDataset)}
+                  >
+                    Copy markdown
                   </button>
                   <button
                     className="ghost-btn"
