@@ -115,6 +115,35 @@
   )
 )
 
+(define-private (remove-dataset-from-owner-fold
+    (id uint)
+    (acc { ids: (list 1000 uint), remove-id: uint })
+  )
+  (let (
+      (remove-id (get remove-id acc))
+      (ids (get ids acc))
+    )
+    (if (is-eq id remove-id)
+      acc
+      (match (as-max-len? (append ids id) u1000)
+        updated { ids: updated, remove-id: remove-id }
+        acc
+      )
+    )
+  )
+)
+
+(define-private (remove-dataset-from-owner
+    (owner principal)
+    (dataset-id uint)
+  )
+  (let ((current (get dataset-ids (get-owner-entry owner))))
+    (let ((acc (fold remove-dataset-from-owner-fold current { ids: (list), remove-id: dataset-id })))
+      (ok (map-set datasets-by-owner { owner: owner } { dataset-ids: (get ids acc) }))
+    )
+  )
+)
+
 (define-private (check-not-paused)
   (or (not (var-get contract-paused)) (is-eq tx-sender (var-get contract-admin)))
 )
@@ -271,6 +300,7 @@
     (asserts! (check-not-paused) ERR-CONTRACT-PAUSED)
     (asserts! (is-dataset-owner dataset-id) ERR-NOT-AUTHORIZED)
 
+    (unwrap! (remove-dataset-from-owner (get owner dataset) dataset-id) ERR-INVALID-PARAMS)
     (map-set datasets { dataset-id: dataset-id }
       (merge dataset { owner: new-owner })
     )

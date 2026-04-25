@@ -296,6 +296,31 @@ describe("atmos-v4 contract tests", () => {
     expect(tuple.verified.value).toBe(false);
   });
 
+  it("should update owner dataset lists on transfer", () => {
+    const id = registerDataset(wallet1, "Transferable Data", "wind");
+
+    const transfer = simnet.callPublicFn("atmos-v4", "transfer-dataset", [
+      Cl.uint(id),
+      Cl.principal(wallet2),
+    ], wallet1);
+
+    expect(transfer.result).toBeOk(Cl.bool(true));
+
+    const oldOwner = simnet.callReadOnlyFn("atmos-v4", "get-datasets-by-owner", [Cl.principal(wallet1)], deployer);
+    const oldJson = cvToJSON(oldOwner.result as any) as any;
+    const oldIds = (oldJson.value ?? []).map((item: any) => Number.parseInt(String(item.value ?? "0"), 10));
+    expect(oldIds).not.toContain(id);
+
+    const newOwner = simnet.callReadOnlyFn("atmos-v4", "get-datasets-by-owner", [Cl.principal(wallet2)], deployer);
+    const newJson = cvToJSON(newOwner.result as any) as any;
+    const newIds = (newJson.value ?? []).map((item: any) => Number.parseInt(String(item.value ?? "0"), 10));
+    expect(newIds).toContain(id);
+
+    const fetched = simnet.callReadOnlyFn("atmos-v4", "get-dataset", [Cl.uint(id)], deployer);
+    const tuple = tupleFromResponse(fetched.result);
+    expect(tuple.owner.value).toBe(wallet2);
+  });
+
   it("should reject invalid latitude", () => {
     const { result } = simnet.callPublicFn("atmos-v4", "register-dataset", [
       Cl.stringUtf8("Invalid Lat Data"),
