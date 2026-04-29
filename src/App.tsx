@@ -1528,6 +1528,19 @@ function App() {
     }));
     setStatusMessage(`Loaded coordinates from dataset #${selectedGeoDataset.id}.`);
   };
+
+  const setRegisterCollectionDateNow = () => {
+    const timestamp = nowUnix();
+    setRegisterForm((prev) => ({ ...prev, collectionDate: String(timestamp) }));
+    setStatusMessage("Set collection date to current timestamp.");
+  };
+
+  const applyRegisterTemplate = (nextType: string) => {
+    const trimmed = nextType.trim();
+    if (!trimmed) return;
+    setRegisterForm((prev) => ({ ...prev, dataType: trimmed }));
+    setStatusMessage(`Set data type to "${trimmed}".`);
+  };
   const readContractValue = async (
     contractName: string,
     functionName: string,
@@ -7009,6 +7022,40 @@ function App() {
                         placeholder="Optional (Qm... or bafy...)"
                       />
                     </div>
+                  </div>
+                  <div className="field-row">
+                    <button
+                      className="ghost-btn compact"
+                      type="button"
+                      onClick={setRegisterCollectionDateNow}
+                      title="Set collection date to current Unix timestamp"
+                    >
+                      Set date to now
+                    </button>
+                    <button
+                      className="ghost-btn compact"
+                      type="button"
+                      onClick={() => applyRegisterTemplate("sensor")}
+                      title="Quick-fill the data type field"
+                    >
+                      Sensor template
+                    </button>
+                    <button
+                      className="ghost-btn compact"
+                      type="button"
+                      onClick={() => applyRegisterTemplate("imagery")}
+                      title="Quick-fill the data type field"
+                    >
+                      Imagery template
+                    </button>
+                    <button
+                      className="ghost-btn compact"
+                      type="button"
+                      onClick={() => applyRegisterTemplate("model")}
+                      title="Quick-fill the data type field"
+                    >
+                      Model template
+                    </button>
                   </div>
 
                   <div className="field-row">
