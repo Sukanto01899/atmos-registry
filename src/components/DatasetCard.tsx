@@ -140,6 +140,7 @@ export function DatasetCard({
   pinActive,
   formatCoord,
   onCopySummary,
+  onCopyCitation,
   onCopyDatasetJson,
   onCloneToRegister,
   onCopyId,
@@ -300,6 +301,15 @@ export function DatasetCard({
             onClick={onCopySummary}
           >
             Copy summary
+          </button>
+        )}
+        {onCopyCitation && (
+          <button
+            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+            type="button"
+            onClick={onCopyCitation}
+          >
+            Copy citation
           </button>
         )}
         {onCopyDatasetJson && (

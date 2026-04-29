@@ -2696,6 +2696,24 @@ function App() {
     ].filter(Boolean);
     await copyText(lines.join("\n"), `Dataset #${dataset.id} summary`);
   };
+  const copyDatasetCitation = async (dataset: Dataset) => {
+    const detailLink = buildDatasetDetailLink(dataset.id);
+    const accessedAt = new Date().toISOString().slice(0, 10);
+    const citation = [
+      `${dataset.name}.`,
+      `Atmos Registry dataset #${dataset.id}.`,
+      `Type: ${dataset.dataType}.`,
+      `Owner: ${dataset.owner}.`,
+      `Collection date: ${formatChainValue(dataset.collectionDate)}.`,
+      `Recorded: ${formatChainValue(dataset.createdAt)}.`,
+      detailLink ? `Available at: ${detailLink}.` : "",
+      `Accessed: ${accessedAt}.`,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    await copyText(citation, `Dataset #${dataset.id} citation`);
+  };
   const toggleWatchlistDataset = (datasetId: number) => {
     const id = String(datasetId);
     setWatchlistIds((prev) =>
@@ -6647,6 +6665,7 @@ function App() {
                     .trim()
                     .slice(0, 120)}
                   onCopySummary={() => copyDatasetSummary(dataset)}
+                  onCopyCitation={() => copyDatasetCitation(dataset)}
                   onCopyDatasetJson={() =>
                     copyText(
                       JSON.stringify(dataset, null, 2),

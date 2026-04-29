@@ -183,6 +183,7 @@ export type DatasetCardProps = {
   pinActive: boolean;
   formatCoord: (value: number) => string;
   onCopySummary?: () => void;
+  onCopyCitation?: () => void;
   onCopyDatasetJson?: () => void;
   onCloneToRegister?: () => void;
   onCopyId: () => void;
