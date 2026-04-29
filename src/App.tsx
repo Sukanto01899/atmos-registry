@@ -99,6 +99,7 @@ const REGISTER_DRAFT_BACKUP_KEY = "atmos-register-draft-backup";
 const RECENT_COMMANDS_KEY = "atmos-command-recent";
 const RECENT_DATASETS_KEY = "atmos-dataset-recent";
 const PINNED_DATASETS_KEY = "atmos-dataset-pins";
+const RECENT_SEARCHES_KEY = "atmos-search-recent";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
 const DATASET_NOTES_KEY = "atmos-dataset-notes";
@@ -151,6 +152,12 @@ const microTokenToInputValue = (value: number) => {
   }
   return `${whole}.${fraction.toString().padStart(6, "0").replace(/0+$/, "")}`;
 };
+
+const microCoordToInputValue = (value: number) =>
+  (value / 1_000_000)
+    .toFixed(6)
+    .replace(/0+$/, "")
+    .replace(/\.$/, "");
 
 function App() {
   const hasHydratedUrlRef = useRef(false);
@@ -212,6 +219,7 @@ function App() {
   const [commandQuery, setCommandQuery] = useState("");
   const [recentCommandIds, setRecentCommandIds] = useState<string[]>([]);
   const [recentDatasetIds, setRecentDatasetIds] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [pinnedDatasetIds, setPinnedDatasetIds] = useState<string[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("quality-desc");
   const [storyStepIndex, setStoryStepIndex] = useState(0);
@@ -595,6 +603,28 @@ function App() {
     if (typeof window === "undefined") {
       return;
     }
+    const rawRecentSearches = window.localStorage.getItem(RECENT_SEARCHES_KEY);
+    if (!rawRecentSearches) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawRecentSearches) as string[];
+      if (Array.isArray(parsed)) {
+        setRecentSearches(
+          parsed
+            .filter((item) => typeof item === "string")
+            .map((item) => item.trim())
+            .filter((item) => Boolean(item)),
+        );
+      }
+    } catch {
+      window.localStorage.removeItem(RECENT_SEARCHES_KEY);
+    }
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
     const rawDraftBackup = window.localStorage.getItem(REGISTER_DRAFT_BACKUP_KEY);
     if (!rawDraftBackup) {
       return;
@@ -717,6 +747,15 @@ function App() {
       JSON.stringify(recentDatasetIds.slice(0, 6)),
     );
   }, [recentDatasetIds]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(
+      RECENT_SEARCHES_KEY,
+      JSON.stringify(recentSearches.slice(0, 8)),
+    );
+  }, [recentSearches]);
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -1456,6 +1495,39 @@ function App() {
       const value = event.currentTarget.value;
       setFilters((prev) => ({ ...prev, [field]: value }));
     };
+
+  const commitRecentSearch = (raw: string) => {
+    const term = raw.trim();
+    if (!term) {
+      return;
+    }
+    setRecentSearches((prev) => {
+      const next = [term, ...prev.filter((item) => item !== term)];
+      return next.slice(0, 8);
+    });
+  };
+
+  const clearRecentSearches = () => {
+    if (recentSearches.length === 0) {
+      setStatusMessage("No recent searches to clear.");
+      return;
+    }
+    setRecentSearches([]);
+    setStatusMessage("Cleared recent searches.");
+  };
+
+  const applySelectedGeoCoordsToRegister = () => {
+    if (!selectedGeoDataset) {
+      setStatusMessage("Select a point in the geospatial explorer first.");
+      return;
+    }
+    setRegisterForm((prev) => ({
+      ...prev,
+      latitude: microCoordToInputValue(selectedGeoDataset.latitude),
+      longitude: microCoordToInputValue(selectedGeoDataset.longitude),
+    }));
+    setStatusMessage(`Loaded coordinates from dataset #${selectedGeoDataset.id}.`);
+  };
   const readContractValue = async (
     contractName: string,
     functionName: string,
@@ -5971,6 +6043,14 @@ function App() {
                     ref={searchInputRef}
                     value={filters.search}
                     onChange={updateFilterField("search")}
+                    onBlur={(event) => commitRecentSearch(readValue(event))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        commitRecentSearch(
+                          (event.currentTarget as HTMLInputElement).value,
+                        );
+                      }
+                    }}
                     placeholder="Search id, name, description, hash"
                   />
                   {filters.search && (
@@ -5984,6 +6064,33 @@ function App() {
                     </button>
                   )}
                 </div>
+                {recentSearches.length > 0 && (
+                  <div className="filter-chips">
+                    {recentSearches.map((term) => (
+                      <button
+                        key={`recent-search-${term}`}
+                        className="filter-chip"
+                        type="button"
+                        onClick={() => {
+                          setFilters((prev) => ({ ...prev, search: term }));
+                          commitRecentSearch(term);
+                          searchInputRef.current?.focus();
+                        }}
+                        title={`Search: ${term}`}
+                      >
+                        <span className="filter-chip__label">{term}</span>
+                      </button>
+                    ))}
+                    <button
+                      className="filter-chip filter-chip--clear"
+                      type="button"
+                      onClick={clearRecentSearches}
+                      title="Clear recent searches"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
                 <select
                   value={filters.status}
                   onChange={updateFilterField("status")}
@@ -7004,6 +7111,22 @@ function App() {
                         </span>
                       )}
                     </div>
+                  </div>
+
+                  <div className="field-row">
+                    <button
+                      className="ghost-btn compact"
+                      type="button"
+                      onClick={applySelectedGeoCoordsToRegister}
+                      disabled={!selectedGeoDataset}
+                      title={
+                        selectedGeoDataset
+                          ? `Use coordinates from dataset #${selectedGeoDataset.id}`
+                          : "Select a point in the geospatial explorer first"
+                      }
+                    >
+                      Use selected map coords
+                    </button>
                   </div>
 
                   <label className="checkbox-row">
