@@ -165,6 +165,7 @@ function App() {
   const hasHydratedTxStatusesRef = useRef(false);
   const hasHydratedDatasetNotesRef = useRef(false);
   const hasHydratedPinnedDatasetsRef = useRef(false);
+  const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
   const copyToastTimeoutRef = useRef<number | null>(null);
   const txStatusByIdRef = useRef<Map<string, string>>(new Map());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -2962,6 +2963,133 @@ function App() {
     );
     setStatusMessage(`Renamed view: ${trimmed}`);
   };
+
+  const normalizeSavedViewsImport = (raw: unknown): SavedView[] | null => {
+    const unwrap = (value: any) => {
+      if (value && typeof value === "object" && Array.isArray(value.savedViews)) {
+        return value.savedViews;
+      }
+      return value;
+    };
+
+    const items = unwrap(raw);
+    if (!Array.isArray(items)) {
+      return null;
+    }
+
+    const next: SavedView[] = [];
+    items.forEach((candidate) => {
+      if (!candidate || typeof candidate !== "object") return;
+
+      const id = String((candidate as any).id ?? "").trim();
+      const name = String((candidate as any).name ?? "").trim();
+      const createdAtRaw = Number((candidate as any).createdAt ?? 0);
+      const payload = (candidate as any).payload;
+
+      if (!id || !name || !payload || typeof payload !== "object") return;
+
+      const filters = {
+        ...defaultFilters,
+        ...((payload as any).filters ?? {}),
+      };
+
+      const geoTimePercent = clampPercent(
+        Number.parseInt(String((payload as any).geoTimePercent ?? 100), 10) || 100,
+      );
+
+      const compareSelectionIds = Array.isArray((payload as any).compareSelectionIds)
+        ? (payload as any).compareSelectionIds.filter(
+            (value: any) => typeof value === "string" && /^\d+$/.test(value),
+          )
+        : [];
+
+      const watchlistIds = Array.isArray((payload as any).watchlistIds)
+        ? (payload as any).watchlistIds.filter(
+            (value: any) => typeof value === "string" && /^\d+$/.test(value),
+          )
+        : [];
+
+      const mutedAlertKinds = Array.isArray((payload as any).mutedAlertKinds)
+        ? (payload as any).mutedAlertKinds.filter(
+            (value: any) => typeof value === "string",
+          )
+        : [];
+
+      next.push({
+        id,
+        name,
+        createdAt:
+          Number.isFinite(createdAtRaw) && createdAtRaw > 0 ? createdAtRaw : nowUnix(),
+        payload: {
+          activeTab: (payload as any).activeTab === "mine" ? "mine" : "explore",
+          filters,
+          geoTimePercent,
+          compareSelectionIds,
+          watchlistOnly: Boolean((payload as any).watchlistOnly),
+          watchlistIds,
+          mutedAlertKinds,
+        },
+      });
+    });
+
+    return next;
+  };
+
+  const exportSavedViewsJson = () => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Export unavailable.");
+      return;
+    }
+    if (savedViews.length === 0) {
+      setStatusMessage("No saved views to export.");
+      return;
+    }
+
+    const payload = {
+      version: 1,
+      exportedAt: nowUnix(),
+      app: "atmos",
+      savedViews,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-saved-views-${Date.now()}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported ${savedViews.length} saved views (JSON).`);
+  };
+
+  const importSavedViewsJson = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as unknown;
+      const normalized = normalizeSavedViewsImport(parsed);
+      if (!normalized) {
+        setStatusMessage("Invalid saved views file.");
+        return;
+      }
+
+      setSavedViews((prev) => {
+        const byId = new Map<string, SavedView>();
+        prev.forEach((view) => byId.set(view.id, view));
+        normalized.forEach((view) => byId.set(view.id, view));
+        return Array.from(byId.values())
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .slice(0, 20);
+      });
+
+      setStatusMessage(`Imported ${normalized.length} saved view(s).`);
+    } catch {
+      setStatusMessage("Failed to import saved views.");
+    }
+  };
   const copyText = async (value: string, label: string) => {
     if (!value) {
       setStatusMessage(`${label} is empty.`);
@@ -3294,6 +3422,124 @@ function App() {
       return;
     }
     await copyText(window.location.href, "Share link");
+  };
+  const exportSavedViewsJson = () => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Export unavailable.");
+      return;
+    }
+    if (savedViews.length === 0) {
+      setStatusMessage("No saved views to export.");
+      return;
+    }
+
+    const payload = {
+      version: 1,
+      exportedAt: nowUnix(),
+      app: "atmos",
+      savedViews,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-saved-views-${Date.now()}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported ${savedViews.length} saved views (JSON).`);
+  };
+
+  const normalizeSavedViews = (raw: unknown): SavedView[] | null => {
+    const unwrap = (value: any) => {
+      if (value && typeof value === "object" && Array.isArray(value.savedViews)) {
+        return value.savedViews;
+      }
+      return value;
+    };
+
+    const items = unwrap(raw);
+    if (!Array.isArray(items)) {
+      return null;
+    }
+
+    const next: SavedView[] = [];
+    items.forEach((candidate) => {
+      if (!candidate || typeof candidate !== "object") return;
+      const id = String((candidate as any).id ?? "").trim();
+      const name = String((candidate as any).name ?? "").trim();
+      const createdAt = Number((candidate as any).createdAt ?? 0);
+      const payload = (candidate as any).payload;
+
+      if (!id || !name || !payload || typeof payload !== "object") return;
+
+      const filters = {
+        ...defaultFilters,
+        ...((payload as any).filters ?? {}),
+      };
+
+      const activeTab = (payload as any).activeTab === "mine" ? "mine" : "explore";
+      const geo = Number.parseInt(String((payload as any).geoTimePercent ?? "100"), 10);
+      const geoTimePercent = Number.isNaN(geo) ? 100 : clampPercent(geo);
+      const compareSelectionIds = Array.isArray((payload as any).compareSelectionIds)
+        ? (payload as any).compareSelectionIds.filter((v: any) => typeof v === "string")
+        : [];
+      const watchlistOnly = Boolean((payload as any).watchlistOnly);
+      const watchlistIds = Array.isArray((payload as any).watchlistIds)
+        ? (payload as any).watchlistIds.filter((v: any) => typeof v === "string")
+        : [];
+      const mutedAlertKinds = Array.isArray((payload as any).mutedAlertKinds)
+        ? (payload as any).mutedAlertKinds.filter((v: any) => typeof v === "string")
+        : [];
+
+      next.push({
+        id,
+        name,
+        createdAt: Number.isFinite(createdAt) ? createdAt : nowUnix(),
+        payload: {
+          activeTab,
+          filters,
+          geoTimePercent,
+          compareSelectionIds,
+          watchlistOnly,
+          watchlistIds,
+          mutedAlertKinds,
+        },
+      });
+    });
+
+    return next;
+  };
+
+  const importSavedViewsJson = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as unknown;
+      const normalized = normalizeSavedViews(parsed);
+      if (!normalized) {
+        setStatusMessage("Invalid saved views file.");
+        return;
+      }
+
+      setSavedViews((prev) => {
+        const byId = new Map<string, SavedView>();
+        prev.forEach((view) => byId.set(view.id, view));
+        normalized.forEach((view) => {
+          byId.set(view.id, view);
+        });
+        return Array.from(byId.values())
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .slice(0, 20);
+      });
+
+      setStatusMessage(`Imported ${normalized.length} saved views.`);
+    } catch {
+      setStatusMessage("Failed to import saved views.");
+    }
   };
   const buildDatasetDetailLink = (datasetId: number) => {
     if (typeof window === "undefined") {
@@ -6072,6 +6318,33 @@ function App() {
                   onClick={saveCurrentView}
                 >
                   Save view
+                </button>
+                <input
+                  ref={savedViewsImportInputRef}
+                  type="file"
+                  accept="application/json"
+                  style={{ display: "none" }}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    if (!file) return;
+                    importSavedViewsJson(file);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => savedViewsImportInputRef.current?.click()}
+                >
+                  Import
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={exportSavedViewsJson}
+                  disabled={savedViews.length === 0}
+                >
+                  Export
                 </button>
                 <button
                   className="ghost-btn"
