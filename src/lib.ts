@@ -57,6 +57,9 @@ export const parseUrlViewState = (search: string): UrlViewState => {
   const lineage = params.get("lineage");
   const geoId = params.get("geoId");
   const visibility = params.get("visibility");
+  const verified = params.get("ver");
+  const frozen = params.get("frozen");
+  const ipfs = params.get("ipfs");
 
   return {
     activeTab: tab === "mine" ? "mine" : "explore",
@@ -66,6 +69,18 @@ export const parseUrlViewState = (search: string): UrlViewState => {
       visibility:
         visibility === "public" || visibility === "private"
           ? (visibility as "public" | "private")
+          : "all",
+      verified:
+        verified === "verified" || verified === "unverified"
+          ? (verified as "verified" | "unverified")
+          : "all",
+      frozen:
+        frozen === "frozen" || frozen === "mutable"
+          ? (frozen as "frozen" | "mutable")
+          : "all",
+      ipfs:
+        ipfs === "has-ipfs" || ipfs === "no-ipfs"
+          ? (ipfs as "has-ipfs" | "no-ipfs")
           : "all",
       dataType: params.get("type") ?? "all",
       owner: params.get("owner") ?? "",
@@ -98,6 +113,9 @@ export const buildUrlViewSearch = (state: UrlViewState) => {
   if (state.filters.visibility !== "all") {
     params.set("visibility", state.filters.visibility);
   }
+  if (state.filters.verified !== "all") params.set("ver", state.filters.verified);
+  if (state.filters.frozen !== "all") params.set("frozen", state.filters.frozen);
+  if (state.filters.ipfs !== "all") params.set("ipfs", state.filters.ipfs);
   if (state.filters.dataType !== "all") params.set("type", state.filters.dataType);
   if (state.filters.owner) params.set("owner", state.filters.owner);
   if (state.filters.altitudeMin) params.set("amin", state.filters.altitudeMin);

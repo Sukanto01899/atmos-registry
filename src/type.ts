@@ -40,6 +40,9 @@ export type DatasetFilters = {
   search: string;
   status: string;
   visibility: "all" | "public" | "private";
+  verified: "all" | "verified" | "unverified";
+  frozen: "all" | "frozen" | "mutable";
+  ipfs: "all" | "has-ipfs" | "no-ipfs";
   dataType: string;
   owner: string;
   altitudeMin: string;

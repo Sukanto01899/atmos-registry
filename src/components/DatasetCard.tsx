@@ -127,6 +127,22 @@ const buildDatasetPreview = (
   };
 };
 
+const getCompleteness = (dataset: Dataset) => {
+  const total = 6;
+  let score = 0;
+
+  if (dataset.description?.trim()) score += 1;
+  if (dataset.dataType?.trim()) score += 1;
+  if (dataset.collectionDate > 0) score += 1;
+  if (dataset.latitude !== 0 && dataset.longitude !== 0) score += 1;
+  if (Number.isFinite(dataset.altitudeMin) && Number.isFinite(dataset.altitudeMax)) {
+    if (dataset.altitudeMax >= dataset.altitudeMin) score += 1;
+  }
+  if (dataset.ipfsHash?.trim()) score += 1;
+
+  return { score, total };
+};
+
 export function DatasetCard({
   dataset,
   statusClass,
@@ -168,6 +184,7 @@ export function DatasetCard({
     () => buildDatasetPreview(dataset, formatCoord),
     [dataset, formatCoord],
   );
+  const completeness = useMemo(() => getCompleteness(dataset), [dataset]);
   const previewId = `dataset-preview-${dataset.id}`;
 
   return (
@@ -179,6 +196,14 @@ export function DatasetCard({
           <div className="dataset-title">{dataset.name}</div>
           <div className="dataset-tags">
             <span className="tag">{dataset.dataType}</span>
+            <span
+              className={`tag tag--complete ${
+                completeness.score === completeness.total ? "tag--complete-full" : ""
+              }`}
+              title="Field completeness: description, type, collection date, coordinates, altitude range, and IPFS hash"
+            >
+              Complete {completeness.score}/{completeness.total}
+            </span>
             <span
               className={`tag ${dataset.isPublic ? "tag--public" : "tag--private"}`}
             >

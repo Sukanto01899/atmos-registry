@@ -379,6 +379,8 @@ function App() {
     const pinned = filters.pinnedOnly ? new Set(pinnedDatasetIds) : null;
     return activeDatasets.filter((dataset) => {
       const note = datasetNotes[String(dataset.id)] ?? "";
+      const isVerified = dataset.verified || dataset.status === "verified";
+      const hasIpfs = Boolean(dataset.ipfsHash?.trim());
       if (pinned && !pinned.has(String(dataset.id))) {
         return false;
       }
@@ -404,6 +406,24 @@ function App() {
         return false;
       }
       if (filters.visibility === "private" && dataset.isPublic) {
+        return false;
+      }
+      if (filters.verified === "verified" && !isVerified) {
+        return false;
+      }
+      if (filters.verified === "unverified" && isVerified) {
+        return false;
+      }
+      if (filters.frozen === "frozen" && !dataset.metadataFrozen) {
+        return false;
+      }
+      if (filters.frozen === "mutable" && dataset.metadataFrozen) {
+        return false;
+      }
+      if (filters.ipfs === "has-ipfs" && !hasIpfs) {
+        return false;
+      }
+      if (filters.ipfs === "no-ipfs" && hasIpfs) {
         return false;
       }
       if (filters.dataType !== "all" && dataset.dataType !== filters.dataType) {
@@ -812,6 +832,9 @@ function App() {
         filters.search ||
         (filters.status !== "all" && filters.status) ||
         (filters.visibility !== "all" && filters.visibility) ||
+        (filters.verified !== "all" && filters.verified) ||
+        (filters.frozen !== "all" && filters.frozen) ||
+        (filters.ipfs !== "all" && filters.ipfs) ||
         (filters.dataType !== "all" && filters.dataType) ||
         filters.owner ||
         filters.altitudeMin ||
@@ -850,6 +873,27 @@ function App() {
         label: `Visibility: ${filters.visibility}`,
         key: "visibility",
         className: `visibility--${filters.visibility}`,
+      });
+    }
+    if (filters.verified !== "all") {
+      chips.push({
+        id: "verified",
+        label: `Verified: ${filters.verified}`,
+        key: "verified",
+      });
+    }
+    if (filters.frozen !== "all") {
+      chips.push({
+        id: "frozen",
+        label: `Frozen: ${filters.frozen}`,
+        key: "frozen",
+      });
+    }
+    if (filters.ipfs !== "all") {
+      chips.push({
+        id: "ipfs",
+        label: `IPFS: ${filters.ipfs}`,
+        key: "ipfs",
       });
     }
     if (filters.dataType !== "all") {
@@ -2346,6 +2390,9 @@ function App() {
       filters.search ? `Search: ${filters.search}` : "",
       filters.status !== "all" ? `Status: ${filters.status}` : "",
       filters.visibility !== "all" ? `Visibility: ${filters.visibility}` : "",
+      filters.verified !== "all" ? `Verified: ${filters.verified}` : "",
+      filters.frozen !== "all" ? `Frozen: ${filters.frozen}` : "",
+      filters.ipfs !== "all" ? `IPFS: ${filters.ipfs}` : "",
       filters.dataType !== "all" ? `Type: ${filters.dataType}` : "",
       filters.owner ? `Owner: ${filters.owner}` : "",
       filters.altitudeMin ? `Altitude min: ${filters.altitudeMin}` : "",
@@ -2357,6 +2404,23 @@ function App() {
     ].filter((item) => Boolean(item));
 
     await copyText(summaryParts.join(" | "), "Filter summary");
+  };
+  const copyDatasetsApiPath = async () => {
+    const params = new URLSearchParams();
+    if (filters.search) params.set("search", filters.search);
+    if (filters.status !== "all") params.set("status", filters.status);
+    if (filters.visibility !== "all") params.set("visibility", filters.visibility);
+    if (filters.verified === "verified") params.set("verified", "true");
+    if (filters.verified === "unverified") params.set("verified", "false");
+    if (filters.frozen === "frozen") params.set("metadataFrozen", "true");
+    if (filters.frozen === "mutable") params.set("metadataFrozen", "false");
+    if (filters.dataType !== "all") params.set("dataType", filters.dataType);
+    if (filters.owner) params.set("owner", filters.owner);
+    if (filters.altitudeMin) params.set("altitudeMin", filters.altitudeMin);
+    if (filters.altitudeMax) params.set("altitudeMax", filters.altitudeMax);
+    const query = params.toString();
+    const path = `/datasets${query ? `?${query}` : ""}`;
+    await copyText(path, "Datasets API path");
   };
   const clearCompareSelection = () => {
     setCompareSelectionIds([]);
@@ -6124,6 +6188,27 @@ function App() {
                   <option value="private">Private</option>
                 </select>
                 <select
+                  value={filters.verified}
+                  onChange={updateFilterField("verified")}
+                >
+                  <option value="all">All verification</option>
+                  <option value="verified">Verified</option>
+                  <option value="unverified">Unverified</option>
+                </select>
+                <select
+                  value={filters.frozen}
+                  onChange={updateFilterField("frozen")}
+                >
+                  <option value="all">All metadata</option>
+                  <option value="frozen">Frozen</option>
+                  <option value="mutable">Mutable</option>
+                </select>
+                <select value={filters.ipfs} onChange={updateFilterField("ipfs")}>
+                  <option value="all">All IPFS</option>
+                  <option value="has-ipfs">Has IPFS</option>
+                  <option value="no-ipfs">No IPFS</option>
+                </select>
+                <select
                   value={filters.dataType}
                   onChange={updateFilterField("dataType")}
                 >
@@ -6134,6 +6219,75 @@ function App() {
                     </option>
                   ))}
                 </select>
+                <div className="quick-filters" aria-label="Quick filters">
+                  <button
+                    className={`quick-filter ${filters.verified === "verified" ? "active" : ""}`}
+                    type="button"
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        verified:
+                          prev.verified === "verified" ? "all" : "verified",
+                      }))
+                    }
+                    title="Toggle verified datasets"
+                  >
+                    Verified
+                  </button>
+                  <button
+                    className={`quick-filter ${filters.status === "pending" ? "active" : ""}`}
+                    type="button"
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        status: prev.status === "pending" ? "all" : "pending",
+                      }))
+                    }
+                    title="Toggle pending status"
+                  >
+                    Pending
+                  </button>
+                  <button
+                    className={`quick-filter ${filters.frozen === "frozen" ? "active" : ""}`}
+                    type="button"
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        frozen: prev.frozen === "frozen" ? "all" : "frozen",
+                      }))
+                    }
+                    title="Toggle metadata frozen"
+                  >
+                    Frozen
+                  </button>
+                  <button
+                    className={`quick-filter ${filters.visibility === "public" ? "active" : ""}`}
+                    type="button"
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        visibility:
+                          prev.visibility === "public" ? "all" : "public",
+                      }))
+                    }
+                    title="Toggle public datasets"
+                  >
+                    Public
+                  </button>
+                  <button
+                    className={`quick-filter ${filters.ipfs === "has-ipfs" ? "active" : ""}`}
+                    type="button"
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        ipfs: prev.ipfs === "has-ipfs" ? "all" : "has-ipfs",
+                      }))
+                    }
+                    title="Toggle datasets with IPFS hashes"
+                  >
+                    Has IPFS
+                  </button>
+                </div>
                 <div className="input-clear">
                   <input
                     value={filters.owner}
@@ -6317,6 +6471,13 @@ function App() {
                   onClick={copyFilterSummary}
                 >
                   Copy summary
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyDatasetsApiPath}
+                >
+                  Copy API path
                 </button>
                 <button
                   className="ghost-btn"
