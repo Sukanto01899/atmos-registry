@@ -4007,10 +4007,16 @@ function App() {
         !event.metaKey &&
         !event.altKey
       ) {
-        if (featureTab === "datasets") {
-          event.preventDefault();
-          searchInputRef.current?.focus();
+        event.preventDefault();
+        if (featureTab !== "datasets") {
+          setShowDatasetDetail(false);
+          setFeatureTab("datasets");
+          if (typeof window !== "undefined") {
+            window.setTimeout(() => searchInputRef.current?.focus(), 0);
+          }
+          return;
         }
+        searchInputRef.current?.focus();
       }
       if (event.key.toLowerCase() === "t") {
         event.preventDefault();
