@@ -199,6 +199,7 @@ export type DatasetCardProps = {
   onCopyLink?: () => void;
   onOpenIpfs?: () => void;
   onCheckIpfs?: () => void;
+  ipfsHealth?: "unchecked" | "checking" | "ok" | "fail";
   onCopyOwnerExplorerUrl?: () => void;
   onOpenOwnerExplorer?: () => void;
   onOpenMap?: () => void;

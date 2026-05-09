@@ -2917,6 +2917,26 @@ textarea:focus {
   color: var(--accent-2);
 }
 
+.tag--ipfs {
+  border-color: rgba(140, 163, 194, 0.24);
+  color: var(--muted);
+}
+
+.tag--ipfs-checking {
+  border-color: rgba(255, 214, 102, 0.3);
+  color: #ffd666;
+}
+
+.tag--ipfs-ok {
+  border-color: rgba(32, 201, 151, 0.35);
+  color: var(--accent-2);
+}
+
+.tag--ipfs-fail {
+  border-color: rgba(255, 107, 107, 0.35);
+  color: rgba(255, 107, 107, 0.95);
+}
+
 .dataset-note-preview {
   display: grid;
   gap: 0.3rem;

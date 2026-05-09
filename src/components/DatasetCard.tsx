@@ -169,6 +169,7 @@ export function DatasetCard({
   onCopyLink,
   onOpenIpfs,
   onCheckIpfs,
+  ipfsHealth,
   onCopyOwnerExplorerUrl,
   onOpenOwnerExplorer,
   onOpenMap,
@@ -204,6 +205,14 @@ export function DatasetCard({
             >
               Complete {completeness.score}/{completeness.total}
             </span>
+            {dataset.ipfsHash?.trim() && (
+              <span
+                className={`tag tag--ipfs tag--ipfs-${ipfsHealth ?? "unchecked"}`}
+                title="IPFS gateway reachability (last check in this browser)"
+              >
+                IPFS: {(ipfsHealth ?? "unchecked").toUpperCase()}
+              </span>
+            )}
             <span
               className={`tag ${dataset.isPublic ? "tag--public" : "tag--private"}`}
             >

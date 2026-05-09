@@ -103,6 +103,7 @@ const RECENT_SEARCHES_KEY = "atmos-search-recent";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
 const DATASET_NOTES_KEY = "atmos-dataset-notes";
+const IPFS_HEALTH_KEY = "atmos-ipfs-health";
 const NOTE_PRESETS = ["review", "trusted", "needs-update", "follow-up"] as const;
 
 const emptyRegisterForm: RegisterFormState = {
@@ -236,6 +237,15 @@ function App() {
     }
     return "comfortable";
   });
+  const [ipfsHealthByCid, setIpfsHealthByCid] = useState<
+    Record<
+      string,
+      {
+        status: "unchecked" | "checking" | "ok" | "fail";
+        checkedAt: number;
+      }
+    >
+  >({});
   const [versionStore, setVersionStore] = useState<
     Record<number, VersionRecord[]>
   >({});
@@ -572,6 +582,44 @@ function App() {
     // Keyboard shortcuts are handled in the global shortcut handler below.
     // Keeping a single handler avoids duplicate toggles.
   }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const raw = window.localStorage.getItem(IPFS_HEALTH_KEY);
+    if (!raw) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw) as Record<string, any>;
+      if (!parsed || typeof parsed !== "object") {
+        return;
+      }
+      const next: Record<string, { status: "unchecked" | "checking" | "ok" | "fail"; checkedAt: number }> =
+        {};
+      Object.entries(parsed).forEach(([cid, value]) => {
+        if (typeof cid !== "string" || !cid.trim()) return;
+        if (!value || typeof value !== "object") return;
+        const status = (value as any).status;
+        const checkedAt = Number((value as any).checkedAt ?? 0);
+        if (
+          status !== "unchecked" &&
+          status !== "checking" &&
+          status !== "ok" &&
+          status !== "fail"
+        ) {
+          return;
+        }
+        next[cid] = {
+          status,
+          checkedAt: Number.isFinite(checkedAt) ? checkedAt : 0,
+        };
+      });
+      setIpfsHealthByCid(next);
+    } catch {
+      window.localStorage.removeItem(IPFS_HEALTH_KEY);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -823,6 +871,16 @@ function App() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(DATASET_DENSITY_KEY, datasetDensity);
   }, [datasetDensity]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (Object.keys(ipfsHealthByCid).length === 0) {
+      window.localStorage.removeItem(IPFS_HEALTH_KEY);
+      return;
+    }
+    window.localStorage.setItem(IPFS_HEALTH_KEY, JSON.stringify(ipfsHealthByCid));
+  }, [ipfsHealthByCid]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(FEATURE_TAB_KEY, featureTab);
@@ -2993,8 +3051,12 @@ function App() {
         ...((payload as any).filters ?? {}),
       };
 
-      const geoTimePercent = clampPercent(
-        Number.parseInt(String((payload as any).geoTimePercent ?? 100), 10) || 100,
+      const geoTimePercent = Math.max(
+        0,
+        Math.min(
+          100,
+          Number.parseInt(String((payload as any).geoTimePercent ?? 100), 10) || 100,
+        ),
       );
 
       const compareSelectionIds = Array.isArray((payload as any).compareSelectionIds)
@@ -3171,6 +3233,11 @@ function App() {
     }
     await copyText(gatewayUrl, "IPFS gateway URL");
   };
+  const getIpfsHealth = (pointer: string) => {
+    const cid = normalizeIpfsCid(pointer);
+    if (!cid) return "unchecked" as const;
+    return ipfsHealthByCid[cid]?.status ?? ("unchecked" as const);
+  };
   const checkIpfsGateway = async (pointer: string) => {
     if (typeof window === "undefined") {
       setStatusMessage("IPFS check unavailable.");
@@ -3182,6 +3249,11 @@ function App() {
       setStatusMessage("IPFS hash is invalid.");
       return;
     }
+
+    setIpfsHealthByCid((prev) => ({
+      ...prev,
+      [cid]: { status: "checking", checkedAt: nowUnix() },
+    }));
 
     const targets = [
       {
@@ -3202,6 +3274,10 @@ function App() {
           signal: controller.signal,
         });
         if (response.ok) {
+          setIpfsHealthByCid((prev) => ({
+            ...prev,
+            [cid]: { status: "ok", checkedAt: nowUnix() },
+          }));
           setStatusMessage(
             `IPFS available via ${target.label} (${response.status}).`,
           );
@@ -3214,6 +3290,10 @@ function App() {
       }
     }
 
+    setIpfsHealthByCid((prev) => ({
+      ...prev,
+      [cid]: { status: "fail", checkedAt: nowUnix() },
+    }));
     setStatusMessage("Unable to verify IPFS availability right now.");
   };
   const clearLocalCache = () => {
@@ -3422,124 +3502,6 @@ function App() {
       return;
     }
     await copyText(window.location.href, "Share link");
-  };
-  const exportSavedViewsJson = () => {
-    if (typeof window === "undefined") {
-      setStatusMessage("Export unavailable.");
-      return;
-    }
-    if (savedViews.length === 0) {
-      setStatusMessage("No saved views to export.");
-      return;
-    }
-
-    const payload = {
-      version: 1,
-      exportedAt: nowUnix(),
-      app: "atmos",
-      savedViews,
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-saved-views-${Date.now()}.json`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-    setStatusMessage(`Exported ${savedViews.length} saved views (JSON).`);
-  };
-
-  const normalizeSavedViews = (raw: unknown): SavedView[] | null => {
-    const unwrap = (value: any) => {
-      if (value && typeof value === "object" && Array.isArray(value.savedViews)) {
-        return value.savedViews;
-      }
-      return value;
-    };
-
-    const items = unwrap(raw);
-    if (!Array.isArray(items)) {
-      return null;
-    }
-
-    const next: SavedView[] = [];
-    items.forEach((candidate) => {
-      if (!candidate || typeof candidate !== "object") return;
-      const id = String((candidate as any).id ?? "").trim();
-      const name = String((candidate as any).name ?? "").trim();
-      const createdAt = Number((candidate as any).createdAt ?? 0);
-      const payload = (candidate as any).payload;
-
-      if (!id || !name || !payload || typeof payload !== "object") return;
-
-      const filters = {
-        ...defaultFilters,
-        ...((payload as any).filters ?? {}),
-      };
-
-      const activeTab = (payload as any).activeTab === "mine" ? "mine" : "explore";
-      const geo = Number.parseInt(String((payload as any).geoTimePercent ?? "100"), 10);
-      const geoTimePercent = Number.isNaN(geo) ? 100 : clampPercent(geo);
-      const compareSelectionIds = Array.isArray((payload as any).compareSelectionIds)
-        ? (payload as any).compareSelectionIds.filter((v: any) => typeof v === "string")
-        : [];
-      const watchlistOnly = Boolean((payload as any).watchlistOnly);
-      const watchlistIds = Array.isArray((payload as any).watchlistIds)
-        ? (payload as any).watchlistIds.filter((v: any) => typeof v === "string")
-        : [];
-      const mutedAlertKinds = Array.isArray((payload as any).mutedAlertKinds)
-        ? (payload as any).mutedAlertKinds.filter((v: any) => typeof v === "string")
-        : [];
-
-      next.push({
-        id,
-        name,
-        createdAt: Number.isFinite(createdAt) ? createdAt : nowUnix(),
-        payload: {
-          activeTab,
-          filters,
-          geoTimePercent,
-          compareSelectionIds,
-          watchlistOnly,
-          watchlistIds,
-          mutedAlertKinds,
-        },
-      });
-    });
-
-    return next;
-  };
-
-  const importSavedViewsJson = async (file: File) => {
-    try {
-      const text = await file.text();
-      const parsed = JSON.parse(text) as unknown;
-      const normalized = normalizeSavedViews(parsed);
-      if (!normalized) {
-        setStatusMessage("Invalid saved views file.");
-        return;
-      }
-
-      setSavedViews((prev) => {
-        const byId = new Map<string, SavedView>();
-        prev.forEach((view) => byId.set(view.id, view));
-        normalized.forEach((view) => {
-          byId.set(view.id, view);
-        });
-        return Array.from(byId.values())
-          .sort((a, b) => b.createdAt - a.createdAt)
-          .slice(0, 20);
-      });
-
-      setStatusMessage(`Imported ${normalized.length} saved views.`);
-    } catch {
-      setStatusMessage("Failed to import saved views.");
-    }
   };
   const buildDatasetDetailLink = (datasetId: number) => {
     if (typeof window === "undefined") {
@@ -7277,6 +7239,7 @@ function App() {
                   onCopyLink={() => copyDatasetDetailLink(dataset.id)}
                   onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}
                   onCheckIpfs={() => checkIpfsGateway(dataset.ipfsHash || "")}
+                  ipfsHealth={getIpfsHealth(dataset.ipfsHash || "")}
                   onOpenOwnerExplorer={() => openOwnerInExplorer(dataset.owner)}
                   onCopyOwnerExplorerUrl={() =>
                     copyStacksExplorerUrl(
