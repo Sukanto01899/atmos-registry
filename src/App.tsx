@@ -36,6 +36,7 @@ import {
   getStatusClass,
   getStatusPriority,
   getUserAddress,
+  estimateContractCallFee,
   getVersionStatusClass,
   mapDatasetToVersionStatus,
   nowUnix,
@@ -3790,13 +3791,42 @@ function App() {
       return;
     }
 
-    setTxStatus("Opening wallet for transaction approval...");
+    const functionArgs = [
+      stringUtf8CV(registerForm.name),
+      stringUtf8CV(registerForm.description),
+      stringUtf8CV(registerForm.dataType),
+      uintCV(collectionDate),
+      uintCV(altitudeMin),
+      uintCV(altitudeMax),
+      intCV(latitude),
+      intCV(longitude),
+      stringAsciiCV(registerForm.ipfsHash || ""),
+      boolCV(registerForm.isPublic),
+    ];
+
+    setTxStatus("Preparing transaction...");
     try {
+      const feePromise = estimateContractCallFee({
+        stacksApiBaseUrl: STACKS_API_BASE_URL,
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName: "register-dataset",
+        functionArgs,
+      });
+
       const uiReady = await ensureConnectUi();
       if (!uiReady) {
         setTxStatus("Wallet UI failed to load. Refresh and try again.");
         return;
       }
+
+      // Don't block forever on fee estimation. If it takes too long, let the wallet estimate.
+      const fee = await Promise.race([
+        feePromise,
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
+      ]);
+
+      setTxStatus("Opening wallet for transaction approval...");
       await showContractCall({
         userSession,
         appDetails: APP_DETAILS,
@@ -3807,18 +3837,8 @@ function App() {
         contractAddress: CONTRACT_ADDRESS,
         contractName: CONTRACT_NAME,
         functionName: "register-dataset",
-        functionArgs: [
-          stringUtf8CV(registerForm.name),
-          stringUtf8CV(registerForm.description),
-          stringUtf8CV(registerForm.dataType),
-          uintCV(collectionDate),
-          uintCV(altitudeMin),
-          uintCV(altitudeMax),
-          intCV(latitude),
-          intCV(longitude),
-          stringAsciiCV(registerForm.ipfsHash || ""),
-          boolCV(registerForm.isPublic),
-        ],
+        functionArgs,
+        fee: fee ?? undefined,
         postConditions: [],
         stxAddress: walletAddress,
         onFinish: (data: { txId: string }) => {

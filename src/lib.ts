@@ -1,7 +1,14 @@
 ﻿import { UserSession } from "@stacks/auth";
 import { DEFAULT_PROVIDERS } from "@stacks/connect";
 import { defineCustomElements } from "@stacks/connect-ui/loader";
-import { cvToJSON } from "@stacks/transactions";
+import { bytesToHex } from "@stacks/common";
+import {
+  createContractCallPayload,
+  cvToJSON,
+  fetchFeeEstimateTransaction,
+  serializePayloadBytes,
+  type ClarityValue,
+} from "@stacks/transactions";
 import { Dataset, DatasetFilters, SortMode, VersionStatus } from "./type";
 
 export const SORT_MODES = [
@@ -368,6 +375,51 @@ export const ensureConnectUi = async () => {
     });
 
   return connectUiPromise;
+};
+
+type FeeEstimateCacheEntry = { fee: number; expiresAt: number };
+const feeEstimateCache = new Map<string, FeeEstimateCacheEntry>();
+
+export const estimateContractCallFee = async ({
+  stacksApiBaseUrl,
+  contractAddress,
+  contractName,
+  functionName,
+  functionArgs,
+}: {
+  stacksApiBaseUrl: string;
+  contractAddress: string;
+  contractName: string;
+  functionName: string;
+  functionArgs: ClarityValue[];
+}): Promise<number | null> => {
+  if (typeof window === "undefined") return null;
+
+  const payload = createContractCallPayload(
+    contractAddress,
+    contractName,
+    functionName,
+    functionArgs,
+  );
+  const payloadHex = bytesToHex(serializePayloadBytes(payload));
+  const cacheKey = `${stacksApiBaseUrl}:${payloadHex}`;
+  const now = Date.now();
+  const cached = feeEstimateCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) return cached.fee;
+
+  try {
+    const estimations = await fetchFeeEstimateTransaction({
+      payload: payloadHex,
+      network: "mainnet",
+      client: { baseUrl: stacksApiBaseUrl, fetch: window.fetch.bind(window) },
+    });
+    const fee = Number(estimations[1]?.fee ?? estimations[0]?.fee ?? 0);
+    if (!Number.isFinite(fee) || fee <= 0) return null;
+    feeEstimateCache.set(cacheKey, { fee, expiresAt: now + 60_000 });
+    return fee;
+  } catch {
+    return null;
+  }
 };
 
 export const readValue = (event?: { currentTarget?: { value?: string } }) =>
