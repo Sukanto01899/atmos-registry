@@ -105,6 +105,12 @@ const FEATURE_TAB_KEY = "atmos-feature-tab";
 const DATASET_NOTES_KEY = "atmos-dataset-notes";
 const IPFS_HEALTH_KEY = "atmos-ipfs-health";
 const NOTE_PRESETS = ["review", "trusted", "needs-update", "follow-up"] as const;
+const REGISTER_FIELD_LIMITS = {
+  name: 100,
+  description: 500,
+  dataType: 50,
+  ipfsHash: 100,
+} as const;
 
 const emptyRegisterForm: RegisterFormState = {
   name: "",
@@ -271,23 +277,48 @@ function App() {
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
   const txCenter = useTxCenter({ apiBaseUrl: STACKS_API_BASE_URL });
 
+  useEffect(() => {
+    const preloadTimer = window.setTimeout(() => {
+      void ensureConnectUi();
+    }, 250);
+
+    return () => window.clearTimeout(preloadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (featureTab === "add-dataset" || featureTab === "staking") {
+      void ensureConnectUi();
+    }
+  }, [featureTab]);
+
   const registerValidation = useMemo(() => {
     const issues: Partial<Record<keyof RegisterFormState, string>> = {};
     const ok: Partial<Record<keyof RegisterFormState, boolean>> = {};
     if (!registerForm.name.trim()) {
       issues.name = "Name is required.";
+    } else if (registerForm.name.length > REGISTER_FIELD_LIMITS.name) {
+      issues.name = `Name must be ${REGISTER_FIELD_LIMITS.name} characters or less.`;
     } else {
       ok.name = true;
     }
     if (!registerForm.dataType.trim()) {
       issues.dataType = "Data type is required.";
+    } else if (registerForm.dataType.length > REGISTER_FIELD_LIMITS.dataType) {
+      issues.dataType = `Data type must be ${REGISTER_FIELD_LIMITS.dataType} characters or less.`;
     } else {
       ok.dataType = true;
     }
     if (!registerForm.description.trim()) {
       issues.description = "Description is required.";
+    } else if (
+      registerForm.description.length > REGISTER_FIELD_LIMITS.description
+    ) {
+      issues.description = `Description must be ${REGISTER_FIELD_LIMITS.description} characters or less.`;
     } else {
       ok.description = true;
+    }
+    if (registerForm.ipfsHash.length > REGISTER_FIELD_LIMITS.ipfsHash) {
+      issues.ipfsHash = `IPFS hash must be ${REGISTER_FIELD_LIMITS.ipfsHash} characters or less.`;
     }
 
     const collectionDate = Number.parseInt(registerForm.collectionDate, 10);
@@ -3725,6 +3756,10 @@ function App() {
       !registerForm.dataType
     ) {
       setTxStatus("Name, description, and data type are required.");
+      return;
+    }
+    if (Object.keys(registerValidation.issues).length > 0) {
+      setTxStatus("Fix the highlighted fields before opening the wallet.");
       return;
     }
     if (
@@ -7312,6 +7347,7 @@ function App() {
                     id="dataset-name"
                     value={registerForm.name}
                     onChange={updateRegisterField("name")}
+                    maxLength={REGISTER_FIELD_LIMITS.name}
                     onBlur={() =>
                       setRegisterTouched((prev) => ({ ...prev, name: true }))
                     }
@@ -7338,6 +7374,7 @@ function App() {
                     id="dataset-type"
                     value={registerForm.dataType}
                     onChange={updateRegisterField("dataType")}
+                    maxLength={REGISTER_FIELD_LIMITS.dataType}
                     onBlur={() =>
                       setRegisterTouched((prev) => ({ ...prev, dataType: true }))
                     }
@@ -7364,6 +7401,7 @@ function App() {
                     id="dataset-description"
                     value={registerForm.description}
                     onChange={updateRegisterField("description")}
+                    maxLength={REGISTER_FIELD_LIMITS.description}
                     onBlur={() =>
                       setRegisterTouched((prev) => ({
                         ...prev,
@@ -7422,8 +7460,22 @@ function App() {
                         id="ipfs-hash"
                         value={registerForm.ipfsHash}
                         onChange={updateRegisterField("ipfsHash")}
+                        onBlur={() =>
+                          setRegisterTouched((prev) => ({
+                            ...prev,
+                            ipfsHash: true,
+                          }))
+                        }
+                        maxLength={REGISTER_FIELD_LIMITS.ipfsHash}
                         placeholder="Optional (Qm... or bafy...)"
                       />
+                      {registerValidation.issues.ipfsHash &&
+                        (registerTouched.ipfsHash ||
+                          registerSubmitAttempted) && (
+                        <span className="field-hint field-hint--error">
+                          {registerValidation.issues.ipfsHash}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="field-row">

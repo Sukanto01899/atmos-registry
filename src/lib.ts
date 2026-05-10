@@ -350,18 +350,24 @@ export const getConnectProviders = () => {
   return [inAppProvider, ...DEFAULT_PROVIDERS];
 };
 
+let connectUiPromise: Promise<boolean> | null = null;
+
 export const ensureConnectUi = async () => {
   if (typeof window === "undefined") {
     return false;
   }
-  if (!window.customElements?.get("connect-modal")) {
-    try {
-      await defineCustomElements(window);
-    } catch {
-      return false;
-    }
+  if (window.customElements?.get("connect-modal")) {
+    return true;
   }
-  return Boolean(window.customElements?.get("connect-modal"));
+
+  connectUiPromise ??= defineCustomElements(window)
+    .then(() => Boolean(window.customElements?.get("connect-modal")))
+    .catch(() => {
+      connectUiPromise = null;
+      return false;
+    });
+
+  return connectUiPromise;
 };
 
 export const readValue = (event?: { currentTarget?: { value?: string } }) =>
