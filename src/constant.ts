@@ -9,6 +9,10 @@ export const SAVED_VIEWS_KEY = "atmos.saved-views.v1";
 export const network = createNetwork(STACKS_MAINNET);
 export const STACKS_API_BASE_URL =
   import.meta.env.VITE_STACKS_API_BASE_URL ?? "https://api.mainnet.hiro.so";
+// Core node API (v2/* endpoints) is typically faster for wallet fee/simulation.
+export const STACKS_CORE_NODE_URL =
+  import.meta.env.VITE_STACKS_CORE_NODE_URL ??
+  "https://stacks-node-api.mainnet.stacks.co";
 export const appConfig = new AppConfig(["store_write", "publish_data"]);
 export const userSession = new UserSession({ appConfig });
 

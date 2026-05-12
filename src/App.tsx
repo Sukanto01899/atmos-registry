@@ -7,9 +7,10 @@ import {
   type ChangeEvent,
 } from "react";
 import {
-  showConnect,
-  showContractCall,
-  disconnect as clearSelectedProvider,
+  connect,
+  disconnect as disconnectConnect,
+  getLocalStorage,
+  request,
 } from "@stacks/connect";
 import {
   boolCV,
@@ -30,7 +31,6 @@ import {
   formatCoord,
   formatPercentFromBps,
   formatTokenAmount,
-  getAppIcon,
   getConnectProviders,
   getQualityScore,
   getStatusClass,
@@ -48,7 +48,6 @@ import {
   parseUrlViewState,
   readChecked,
   readValue,
-  resetInvalidSession,
   safeIsSignedIn,
   unwrapResponseOk,
 } from "./lib";
@@ -81,6 +80,7 @@ import {
   network,
   SAVED_VIEWS_KEY,
   STACKS_API_BASE_URL,
+  STACKS_CORE_NODE_URL,
   STAKING_CONTRACT_NAME,
   TOKEN_CONTRACT_NAME,
   userSession,
@@ -90,11 +90,6 @@ import {
   defaultRegisterForm,
   defaultVersionDraft,
 } from "./config";
-
-const APP_DETAILS = {
-  name: "Atmos Registry",
-  icon: getAppIcon(),
-};
 
 const REGISTER_DRAFT_KEY = "atmos-register-draft";
 const REGISTER_DRAFT_BACKUP_KEY = "atmos-register-draft-backup";
@@ -107,7 +102,6 @@ const FEATURE_TAB_KEY = "atmos-feature-tab";
 const DATASET_NOTES_KEY = "atmos-dataset-notes";
 const IPFS_HEALTH_KEY = "atmos-ipfs-health";
 const NOTE_PRESETS = ["review", "trusted", "needs-update", "follow-up"] as const;
-const STACKS_API_URL_KEY = "atmos-stacks-api-url";
 const REGISTER_FIELD_LIMITS = {
   name: 100,
   description: 500,
@@ -163,11 +157,16 @@ const microTokenToInputValue = (value: number) => {
   return `${whole}.${fraction.toString().padStart(6, "0").replace(/0+$/, "")}`;
 };
 
-const microCoordToInputValue = (value: number) =>
-  (value / 1_000_000)
-    .toFixed(6)
-    .replace(/0+$/, "")
-    .replace(/\.$/, "");
+const postConditionModeName = (mode?: PostConditionMode) =>
+  mode === PostConditionMode.Deny ? "deny" : "allow";
+
+const getStoredStacksAddress = () => {
+  try {
+    return getLocalStorage()?.addresses?.stx?.[0]?.address ?? "";
+  } catch {
+    return "";
+  }
+};
 
 function App() {
   const hasHydratedUrlRef = useRef(false);
@@ -278,25 +277,8 @@ function App() {
   const [registerDraftBackup, setRegisterDraftBackup] =
     useState<RegisterFormState | null>(null);
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
-  const [stacksApiUrl, setStacksApiUrl] = useState(() => {
-    if (typeof window === "undefined") return STACKS_API_BASE_URL;
-    const saved = window.localStorage.getItem(STACKS_API_URL_KEY);
-    if (saved && /^https?:\/\//i.test(saved.trim())) return saved.trim();
-    return STACKS_API_BASE_URL;
-  });
+  const stacksApiUrl = STACKS_API_BASE_URL;
   const txCenter = useTxCenter({ apiBaseUrl: stacksApiUrl });
-
-  const walletNetwork = useMemo(() => {
-    // If user hasn't overridden the API URL, don't force Leather onto our chosen endpoint.
-    // Let it use the standard network object (often faster / better-connected for the wallet).
-    if (stacksApiUrl === STACKS_API_BASE_URL) return network;
-    return { url: stacksApiUrl };
-  }, [stacksApiUrl]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(STACKS_API_URL_KEY, stacksApiUrl);
-  }, [stacksApiUrl]);
 
   useEffect(() => {
     const preloadTimer = window.setTimeout(() => {
@@ -1671,31 +1653,6 @@ function App() {
     setStatusMessage("Cleared recent searches.");
   };
 
-  const applySelectedGeoCoordsToRegister = () => {
-    if (!selectedGeoDataset) {
-      setStatusMessage("Select a point in the geospatial explorer first.");
-      return;
-    }
-    setRegisterForm((prev) => ({
-      ...prev,
-      latitude: microCoordToInputValue(selectedGeoDataset.latitude),
-      longitude: microCoordToInputValue(selectedGeoDataset.longitude),
-    }));
-    setStatusMessage(`Loaded coordinates from dataset #${selectedGeoDataset.id}.`);
-  };
-
-  const setRegisterCollectionDateNow = () => {
-    const timestamp = nowUnix();
-    setRegisterForm((prev) => ({ ...prev, collectionDate: String(timestamp) }));
-    setStatusMessage("Set collection date to current timestamp.");
-  };
-
-  const applyRegisterTemplate = (nextType: string) => {
-    const trimmed = nextType.trim();
-    if (!trimmed) return;
-    setRegisterForm((prev) => ({ ...prev, dataType: trimmed }));
-    setStatusMessage(`Set data type to "${trimmed}".`);
-  };
   const readContractValue = async (
     contractName: string,
     functionName: string,
@@ -3666,42 +3623,24 @@ function App() {
 
   const connectWallet = async () => {
     setWalletMessage("");
-    if (!safeIsSignedIn(userSession)) {
-      resetInvalidSession(userSession);
-    }
-    clearSelectedProvider();
-    const uiReady = await ensureConnectUi();
-    if (!uiReady) {
-      setWalletMessage("Wallet UI failed to load. Refresh and try again.");
-      return;
-    }
     try {
-      const defaultProviders = getConnectProviders();
-      const connectOptions = {
-        userSession,
-        appDetails: APP_DETAILS,
-        redirectTo: "/redirect.html",
-        manifestPath: "/manifest.json",
-        defaultProviders,
-        network: walletNetwork,
-        onFinish: () => {
-          const address = getUserAddress(userSession);
-          setWalletAddress(address);
-          setWalletMessage(
-            address
-              ? "Wallet connected."
-              : "Wallet connected, address unavailable.",
-          );
-          if (address) {
-            setOwnerInput(address);
-            loadTokenSnapshot(address);
-          }
-        },
-        onCancel: () => {
-          setWalletMessage("Wallet connection canceled.");
-        },
-      } as any;
-      showConnect(connectOptions);
+      disconnectConnect();
+      const result = await connect({
+        defaultProviders: getConnectProviders(),
+        forceWalletSelect: true,
+        network: "mainnet",
+      });
+      const address = result.addresses.find((entry) => entry.address.startsWith("SP"))?.address
+        ?? result.addresses[0]?.address
+        ?? "";
+      setWalletAddress(address);
+      setWalletMessage(
+        address ? "Wallet connected." : "Wallet connected, address unavailable.",
+      );
+      if (address) {
+        setOwnerInput(address);
+        loadTokenSnapshot(address);
+      }
     } catch (error) {
       setWalletMessage(
         "Unable to open wallet connector. Check extension or browser popups.",
@@ -3710,6 +3649,7 @@ function App() {
   };
 
   const disconnectWallet = () => {
+    disconnectConnect();
     userSession.signUserOut(window.location.origin);
     setWalletAddress("");
     setWalletMessage("Wallet disconnected.");
@@ -3734,14 +3674,14 @@ function App() {
     contractName: string;
   }) => {
     const feePromise = estimateContractCallFee({
-      stacksApiBaseUrl: stacksApiUrl,
+      stacksApiBaseUrl: STACKS_CORE_NODE_URL,
       contractAddress: CONTRACT_ADDRESS,
       contractName,
       functionName,
       functionArgs,
     });
     const noncePromise = estimateNextNonce({
-      stacksApiBaseUrl: stacksApiUrl,
+      stacksApiBaseUrl: STACKS_CORE_NODE_URL,
       stxAddress: walletAddress,
     });
 
@@ -3759,25 +3699,36 @@ function App() {
       new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
     ]);
 
-    await showContractCall({
-      userSession,
-      appDetails: APP_DETAILS,
-      redirectTo: "/redirect.html",
-      manifestPath: "/manifest.json",
-      defaultProviders: getConnectProviders(),
-      network: walletNetwork,
-      contractAddress: CONTRACT_ADDRESS,
-      contractName,
-      functionName,
-      functionArgs,
-      fee: fee ?? undefined,
-      nonce: typeof nonce === "number" ? nonce : undefined,
-      postConditions: postConditions ?? [],
-      postConditionMode: postConditionMode ?? PostConditionMode.Allow,
-      stxAddress: walletAddress || undefined,
-      onFinish,
-      onCancel,
-    } as any);
+    try {
+      const result = await request(
+        {
+          defaultProviders: getConnectProviders(),
+        },
+        "stx_callContract",
+        {
+          address: walletAddress as any,
+          network: "mainnet",
+          contract: `${CONTRACT_ADDRESS}.${contractName}` as any,
+          functionName,
+          functionArgs,
+          fee: fee ?? undefined,
+          nonce: typeof nonce === "number" ? nonce : undefined,
+          postConditions: postConditions ?? [],
+          postConditionMode: postConditionModeName(postConditionMode),
+        },
+      );
+
+      if (!result.txid) {
+        throw new Error("Wallet did not return a transaction id.");
+      }
+      onFinish({ txId: result.txid });
+    } catch (error: any) {
+      if (String(error?.message ?? "").toLowerCase().includes("cancel")) {
+        onCancel();
+        return;
+      }
+      throw error;
+    }
   };
 
   const handleRegisterSubmit = async () => {
@@ -3853,14 +3804,14 @@ function App() {
     setTxStatus("Preparing transaction...");
     try {
       const feePromise = estimateContractCallFee({
-        stacksApiBaseUrl: stacksApiUrl,
+        stacksApiBaseUrl: STACKS_CORE_NODE_URL,
         contractAddress: CONTRACT_ADDRESS,
         contractName: CONTRACT_NAME,
         functionName: "register-dataset",
         functionArgs,
       });
       const noncePromise = estimateNextNonce({
-        stacksApiBaseUrl: stacksApiUrl,
+        stacksApiBaseUrl: STACKS_CORE_NODE_URL,
         stxAddress: walletAddress,
       });
 
@@ -3881,39 +3832,42 @@ function App() {
       ]);
 
       setTxStatus("Opening wallet for transaction approval...");
-      await showContractCall({
-        userSession,
-        appDetails: APP_DETAILS,
-        redirectTo: "/redirect.html",
-        manifestPath: "/manifest.json",
-        defaultProviders: getConnectProviders(),
-        network: walletNetwork,
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: CONTRACT_NAME,
-        functionName: "register-dataset",
-        functionArgs,
-        fee: fee ?? undefined,
-        nonce: typeof nonce === "number" ? nonce : undefined,
-        postConditions: [],
-        stxAddress: walletAddress,
-        onFinish: (data: { txId: string }) => {
-          setTxStatus(`Transaction submitted: ${data.txId}`);
-          txCenter.addTx(data.txId, "Register dataset");
-          loadLatest();
-          setRegisterForm(defaultRegisterForm);
-          setRegisterDraftBackup(null);
-          setRegisterTouched({});
-          setRegisterSubmitAttempted(false);
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(REGISTER_DRAFT_KEY);
-            window.localStorage.removeItem(REGISTER_DRAFT_BACKUP_KEY);
-          }
+      const result = await request(
+        {
+          defaultProviders: getConnectProviders(),
         },
-        onCancel: () => {
-          setTxStatus("Transaction canceled.");
+        "stx_callContract",
+        {
+          address: walletAddress as any,
+          network: "mainnet",
+          contract: `${CONTRACT_ADDRESS}.${CONTRACT_NAME}` as any,
+          functionName: "register-dataset",
+          functionArgs,
+          fee: fee ?? undefined,
+          nonce: typeof nonce === "number" ? nonce : undefined,
+          postConditions: [],
+          postConditionMode: "allow",
         },
-      } as any);
-    } catch {
+      );
+      if (!result.txid) {
+        throw new Error("Wallet did not return a transaction id.");
+      }
+      setTxStatus(`Transaction submitted: ${result.txid}`);
+      txCenter.addTx(result.txid, "Register dataset");
+      loadLatest();
+      setRegisterForm(defaultRegisterForm);
+      setRegisterDraftBackup(null);
+      setRegisterTouched({});
+      setRegisterSubmitAttempted(false);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(REGISTER_DRAFT_KEY);
+        window.localStorage.removeItem(REGISTER_DRAFT_BACKUP_KEY);
+      }
+    } catch (error: any) {
+      if (String(error?.message ?? "").toLowerCase().includes("cancel")) {
+        setTxStatus("Transaction canceled.");
+        return;
+      }
       setTxStatus("Unable to open the wallet transaction popup.");
     }
   };
@@ -4013,6 +3967,13 @@ function App() {
       if (safeIsSignedIn(userSession)) {
         const address = getUserAddress(userSession);
         setWalletAddress(address);
+        loadTokenSnapshot(address);
+        return;
+      }
+      const address = getStoredStacksAddress();
+      if (address) {
+        setWalletAddress(address);
+        setOwnerInput(address);
         loadTokenSnapshot(address);
       }
     };
@@ -7395,31 +7356,17 @@ function App() {
                 </button>
               </div>
             )}
-                <div className="section-header">
-                  <div>
-                    <h2>Register a dataset</h2>
-                    <p>Submit a new dataset to the Atmos mainnet registry.</p>
-                  </div>
-                </div>
-                <div className="field-row" style={{ marginBottom: 12 }}>
-                  <div style={{ flex: 1 }}>
-                    <label className="field-label" htmlFor="stacks-api-url">
-                      Stacks API
-                    </label>
-                    <input
-                      id="stacks-api-url"
-                      value={stacksApiUrl}
-                      onChange={(event) => setStacksApiUrl(readValue(event))}
-                      placeholder="https://api.mainnet.hiro.so"
-                      title="Used for fee/nonce prefetch and wallet network URL"
-                    />
-                  </div>
-                </div>
-                <form
-                  className="form-grid"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    handleRegisterSubmit();
+            <div className="section-header register-section-header">
+              <div>
+                <h2>Register a dataset</h2>
+                <p>Submit a new dataset to the Atmos mainnet registry.</p>
+              </div>
+            </div>
+            <form
+              className="form-grid form-grid--register"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleRegisterSubmit();
               }}
             >
               <div className="form-card">
@@ -7570,41 +7517,6 @@ function App() {
                     </div>
                   </div>
                   <div className="field-row">
-                    <button
-                      className="ghost-btn compact"
-                      type="button"
-                      onClick={setRegisterCollectionDateNow}
-                      title="Set collection date to current Unix timestamp"
-                    >
-                      Set date to now
-                    </button>
-                    <button
-                      className="ghost-btn compact"
-                      type="button"
-                      onClick={() => applyRegisterTemplate("sensor")}
-                      title="Quick-fill the data type field"
-                    >
-                      Sensor template
-                    </button>
-                    <button
-                      className="ghost-btn compact"
-                      type="button"
-                      onClick={() => applyRegisterTemplate("imagery")}
-                      title="Quick-fill the data type field"
-                    >
-                      Imagery template
-                    </button>
-                    <button
-                      className="ghost-btn compact"
-                      type="button"
-                      onClick={() => applyRegisterTemplate("model")}
-                      title="Quick-fill the data type field"
-                    >
-                      Model template
-                    </button>
-                  </div>
-
-                  <div className="field-row">
                     <div>
                       <label className="field-label" htmlFor="altitude-min">
                         Altitude min (m)
@@ -7704,22 +7616,6 @@ function App() {
                         </span>
                       )}
                     </div>
-                  </div>
-
-                  <div className="field-row">
-                    <button
-                      className="ghost-btn compact"
-                      type="button"
-                      onClick={applySelectedGeoCoordsToRegister}
-                      disabled={!selectedGeoDataset}
-                      title={
-                        selectedGeoDataset
-                          ? `Use coordinates from dataset #${selectedGeoDataset.id}`
-                          : "Select a point in the geospatial explorer first"
-                      }
-                    >
-                      Use selected map coords
-                    </button>
                   </div>
 
                   <label className="checkbox-row">

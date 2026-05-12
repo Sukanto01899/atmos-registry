@@ -3258,6 +3258,15 @@ textarea:focus {
   gap: 1.5rem;
 }
 
+.form-grid--register {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  align-items: start;
+}
+
+.register-section-header {
+  margin-bottom: 0.9rem;
+}
+
 .form-header {
   display: flex;
   flex-direction: column;
@@ -3341,7 +3350,7 @@ textarea:focus {
 
 .form-card {
   padding: 1.5rem;
-  border-radius: 20px;
+  border-radius: 8px;
   background: rgba(17, 25, 34, 0.85);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
@@ -3365,6 +3374,10 @@ textarea:focus {
 .field-grid {
   display: grid;
   gap: 0.9rem;
+}
+
+.form-grid--register .field-grid {
+  gap: 1rem;
 }
 
 .checkbox-row {
@@ -3427,6 +3440,10 @@ textarea:focus {
 
   .field-row,
   .owner-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid--register {
     grid-template-columns: 1fr;
   }
 

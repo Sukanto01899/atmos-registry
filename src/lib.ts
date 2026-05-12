@@ -368,7 +368,7 @@ export const ensureConnectUi = async () => {
     return true;
   }
 
-  connectUiPromise ??= defineCustomElements(window)
+  connectUiPromise ??= Promise.resolve(defineCustomElements(window))
     .then(() => Boolean(window.customElements?.get("connect-modal")))
     .catch(() => {
       connectUiPromise = null;
