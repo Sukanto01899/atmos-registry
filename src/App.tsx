@@ -286,6 +286,13 @@ function App() {
   });
   const txCenter = useTxCenter({ apiBaseUrl: stacksApiUrl });
 
+  const walletNetwork = useMemo(() => {
+    // If user hasn't overridden the API URL, don't force Leather onto our chosen endpoint.
+    // Let it use the standard network object (often faster / better-connected for the wallet).
+    if (stacksApiUrl === STACKS_API_BASE_URL) return network;
+    return { url: stacksApiUrl };
+  }, [stacksApiUrl]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STACKS_API_URL_KEY, stacksApiUrl);
@@ -3676,7 +3683,7 @@ function App() {
         redirectTo: "/redirect.html",
         manifestPath: "/manifest.json",
         defaultProviders,
-        network: { url: stacksApiUrl },
+        network: walletNetwork,
         onFinish: () => {
           const address = getUserAddress(userSession);
           setWalletAddress(address);
@@ -3716,6 +3723,7 @@ function App() {
     onCancel,
     postConditions,
     postConditionMode,
+    contractName,
   }: {
     functionName: string;
     functionArgs: any[];
@@ -3723,11 +3731,33 @@ function App() {
     onCancel: () => void;
     postConditions?: any[];
     postConditionMode?: PostConditionMode;
+    contractName: string;
   }) => {
+    const feePromise = estimateContractCallFee({
+      stacksApiBaseUrl: stacksApiUrl,
+      contractAddress: CONTRACT_ADDRESS,
+      contractName,
+      functionName,
+      functionArgs,
+    });
+    const noncePromise = estimateNextNonce({
+      stacksApiBaseUrl: stacksApiUrl,
+      stxAddress: walletAddress,
+    });
+
     const uiReady = await ensureConnectUi();
     if (!uiReady) {
       throw new Error("Wallet UI failed to load.");
     }
+
+    const fee = await Promise.race([
+      feePromise,
+      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
+    ]);
+    const nonce = await Promise.race([
+      noncePromise,
+      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
+    ]);
 
     await showContractCall({
       userSession,
@@ -3735,11 +3765,13 @@ function App() {
       redirectTo: "/redirect.html",
       manifestPath: "/manifest.json",
       defaultProviders: getConnectProviders(),
-      network,
+      network: walletNetwork,
       contractAddress: CONTRACT_ADDRESS,
-      contractName: STAKING_CONTRACT_NAME,
+      contractName,
       functionName,
       functionArgs,
+      fee: fee ?? undefined,
+      nonce: typeof nonce === "number" ? nonce : undefined,
       postConditions: postConditions ?? [],
       postConditionMode: postConditionMode ?? PostConditionMode.Allow,
       stxAddress: walletAddress || undefined,
@@ -3855,7 +3887,7 @@ function App() {
         redirectTo: "/redirect.html",
         manifestPath: "/manifest.json",
         defaultProviders: getConnectProviders(),
-        network: { url: stacksApiUrl },
+        network: walletNetwork,
         contractAddress: CONTRACT_ADDRESS,
         contractName: CONTRACT_NAME,
         functionName: "register-dataset",
@@ -3918,6 +3950,7 @@ function App() {
           ]
         : [];
       await requestContractCall({
+        contractName: STAKING_CONTRACT_NAME,
         functionName,
         functionArgs: [uintCV(amount)],
         postConditions,
@@ -3949,6 +3982,7 @@ function App() {
     setStakeStatus("Opening wallet to claim rewards...");
     try {
       await requestContractCall({
+        contractName: STAKING_CONTRACT_NAME,
         functionName: "claim-rewards",
         functionArgs: [],
         postConditionMode: PostConditionMode.Allow,
