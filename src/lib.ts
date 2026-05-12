@@ -6,6 +6,7 @@ import {
   createContractCallPayload,
   cvToJSON,
   fetchFeeEstimateTransaction,
+  fetchNonce,
   serializePayloadBytes,
   type ClarityValue,
 } from "@stacks/transactions";
@@ -417,6 +418,31 @@ export const estimateContractCallFee = async ({
     if (!Number.isFinite(fee) || fee <= 0) return null;
     feeEstimateCache.set(cacheKey, { fee, expiresAt: now + 60_000 });
     return fee;
+  } catch {
+    return null;
+  }
+};
+
+export const estimateNextNonce = async ({
+  stacksApiBaseUrl,
+  stxAddress,
+}: {
+  stacksApiBaseUrl: string;
+  stxAddress: string;
+}): Promise<number | null> => {
+  if (typeof window === "undefined") return null;
+  const address = (stxAddress ?? "").trim();
+  if (!address) return null;
+
+  try {
+    const nonce = await fetchNonce({
+      address,
+      network: "mainnet",
+      client: { baseUrl: stacksApiBaseUrl, fetch: window.fetch.bind(window) },
+    });
+    const value = Number(nonce);
+    if (!Number.isFinite(value) || value < 0) return null;
+    return value;
   } catch {
     return null;
   }

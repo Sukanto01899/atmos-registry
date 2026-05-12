@@ -37,6 +37,7 @@ import {
   getStatusPriority,
   getUserAddress,
   estimateContractCallFee,
+  estimateNextNonce,
   getVersionStatusClass,
   mapDatasetToVersionStatus,
   nowUnix,
@@ -106,6 +107,7 @@ const FEATURE_TAB_KEY = "atmos-feature-tab";
 const DATASET_NOTES_KEY = "atmos-dataset-notes";
 const IPFS_HEALTH_KEY = "atmos-ipfs-health";
 const NOTE_PRESETS = ["review", "trusted", "needs-update", "follow-up"] as const;
+const STACKS_API_URL_KEY = "atmos-stacks-api-url";
 const REGISTER_FIELD_LIMITS = {
   name: 100,
   description: 500,
@@ -276,7 +278,18 @@ function App() {
   const [registerDraftBackup, setRegisterDraftBackup] =
     useState<RegisterFormState | null>(null);
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
-  const txCenter = useTxCenter({ apiBaseUrl: STACKS_API_BASE_URL });
+  const [stacksApiUrl, setStacksApiUrl] = useState(() => {
+    if (typeof window === "undefined") return STACKS_API_BASE_URL;
+    const saved = window.localStorage.getItem(STACKS_API_URL_KEY);
+    if (saved && /^https?:\/\//i.test(saved.trim())) return saved.trim();
+    return STACKS_API_BASE_URL;
+  });
+  const txCenter = useTxCenter({ apiBaseUrl: stacksApiUrl });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STACKS_API_URL_KEY, stacksApiUrl);
+  }, [stacksApiUrl]);
 
   useEffect(() => {
     const preloadTimer = window.setTimeout(() => {
@@ -3663,6 +3676,7 @@ function App() {
         redirectTo: "/redirect.html",
         manifestPath: "/manifest.json",
         defaultProviders,
+        network: { url: stacksApiUrl },
         onFinish: () => {
           const address = getUserAddress(userSession);
           setWalletAddress(address);
@@ -3807,11 +3821,15 @@ function App() {
     setTxStatus("Preparing transaction...");
     try {
       const feePromise = estimateContractCallFee({
-        stacksApiBaseUrl: STACKS_API_BASE_URL,
+        stacksApiBaseUrl: stacksApiUrl,
         contractAddress: CONTRACT_ADDRESS,
         contractName: CONTRACT_NAME,
         functionName: "register-dataset",
         functionArgs,
+      });
+      const noncePromise = estimateNextNonce({
+        stacksApiBaseUrl: stacksApiUrl,
+        stxAddress: walletAddress,
       });
 
       const uiReady = await ensureConnectUi();
@@ -3825,6 +3843,10 @@ function App() {
         feePromise,
         new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
       ]);
+      const nonce = await Promise.race([
+        noncePromise,
+        new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 2500)),
+      ]);
 
       setTxStatus("Opening wallet for transaction approval...");
       await showContractCall({
@@ -3833,12 +3855,13 @@ function App() {
         redirectTo: "/redirect.html",
         manifestPath: "/manifest.json",
         defaultProviders: getConnectProviders(),
-        network,
+        network: { url: stacksApiUrl },
         contractAddress: CONTRACT_ADDRESS,
         contractName: CONTRACT_NAME,
         functionName: "register-dataset",
         functionArgs,
         fee: fee ?? undefined,
+        nonce: typeof nonce === "number" ? nonce : undefined,
         postConditions: [],
         stxAddress: walletAddress,
         onFinish: (data: { txId: string }) => {
@@ -7338,17 +7361,31 @@ function App() {
                 </button>
               </div>
             )}
-            <div className="section-header">
-              <div>
-                <h2>Register a dataset</h2>
-                <p>Submit a new dataset to the Atmos mainnet registry.</p>
-              </div>
-            </div>
-            <form
-              className="form-grid"
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleRegisterSubmit();
+                <div className="section-header">
+                  <div>
+                    <h2>Register a dataset</h2>
+                    <p>Submit a new dataset to the Atmos mainnet registry.</p>
+                  </div>
+                </div>
+                <div className="field-row" style={{ marginBottom: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="field-label" htmlFor="stacks-api-url">
+                      Stacks API
+                    </label>
+                    <input
+                      id="stacks-api-url"
+                      value={stacksApiUrl}
+                      onChange={(event) => setStacksApiUrl(readValue(event))}
+                      placeholder="https://api.mainnet.hiro.so"
+                      title="Used for fee/nonce prefetch and wallet network URL"
+                    />
+                  </div>
+                </div>
+                <form
+                  className="form-grid"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    handleRegisterSubmit();
               }}
             >
               <div className="form-card">
