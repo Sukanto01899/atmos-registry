@@ -276,6 +276,7 @@ function App() {
     Partial<Record<keyof RegisterFormState, boolean>>
   >({});
   const [registerSubmitAttempted, setRegisterSubmitAttempted] = useState(false);
+  const [registerSubmitting, setRegisterSubmitting] = useState(false);
   const [registerDraftBackup, setRegisterDraftBackup] =
     useState<RegisterFormState | null>(null);
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
@@ -3851,6 +3852,7 @@ function App() {
     ];
 
     setTxStatus("Preparing transaction...");
+    setRegisterSubmitting(true);
     try {
       const feePromise = estimateContractCallFee({
         stacksApiBaseUrl: STACKS_CORE_NODE_URL,
@@ -3918,6 +3920,8 @@ function App() {
         return;
       }
       setTxStatus("Unable to open the wallet transaction popup.");
+    } finally {
+      setRegisterSubmitting(false);
     }
   };
 
@@ -7740,10 +7744,14 @@ function App() {
                     <button
                       className="primary-btn"
                       type="submit"
-                      disabled={contractPaused === true}
+                      disabled={contractPaused === true || registerSubmitting}
                       title={contractPaused === true ? "Contract is paused — read-only mode" : undefined}
                     >
-                      {contractPaused === true ? "Read-only mode" : "Submit dataset"}
+                      {contractPaused === true
+                        ? "Read-only mode"
+                        : registerSubmitting
+                        ? "Submitting…"
+                        : "Submit dataset"}
                     </button>
                     <button
                       className="ghost-btn"
