@@ -69,6 +69,7 @@ export function NavBar({
   onCopyContractExplorerUrl,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
   const [copied, setCopied] = useState(false);
   const featureTabs = [
@@ -129,7 +130,18 @@ export function NavBar({
             {networkLabel}
           </span>
         </div>
-        <div className="nav__actions">
+        <button
+          className="nav__burger"
+          type="button"
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((prev) => !prev)}
+        >
+          <span className={`burger-icon ${mobileOpen ? "open" : ""}`}>
+            <span /><span /><span />
+          </span>
+        </button>
+        <div className={`nav__actions${mobileOpen ? " nav__actions--open" : ""}`}>
           <ThemeToggle />
           <button
             className="ghost-btn"
