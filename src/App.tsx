@@ -279,6 +279,7 @@ function App() {
   const [registerDraftBackup, setRegisterDraftBackup] =
     useState<RegisterFormState | null>(null);
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
+  const [contractPaused, setContractPaused] = useState<boolean | null>(null);
   const stacksApiUrl = STACKS_API_BASE_URL;
   const atmosApiUrl =
     import.meta.env.VITE_ATMOS_API_URL ?? "http://127.0.0.1:4000";
@@ -1694,6 +1695,17 @@ function App() {
       senderAddress: sender,
       network,
     });
+
+  const fetchContractPaused = async () => {
+    try {
+      const response = await readContractValue(CONTRACT_NAME, "is-contract-paused", []);
+      const ok = unwrapResponseOk(response);
+      const json = cvToJSON(ok as any) as any;
+      setContractPaused(json.value === true);
+    } catch {
+      // leave contractPaused as null (unknown) on error
+    }
+  };
 
   const fetchDataset = async (datasetId: number) => {
     const response = await readContractValue(CONTRACT_NAME, "get-dataset", [
@@ -4018,6 +4030,7 @@ function App() {
     hydrateSession();
     loadLatest();
     loadTokenSnapshot(CONTRACT_ADDRESS);
+    fetchContractPaused();
   }, []);
   useEffect(() => {
     loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS);
@@ -4767,11 +4780,18 @@ function App() {
   });
   const appNotices = useMemo(() => {
     const notices: Notice[] = [];
+    if (contractPaused === true) {
+      notices.push({
+        id: "contract-paused",
+        tone: "critical",
+        message: "Contract is paused — read-only mode. Dataset registration and updates are disabled until the contract is unpaused.",
+      });
+    }
     if (walletMessage) {
       notices.push({ id: "wallet", tone: "info", message: walletMessage });
     }
     return [...notices, ...transientNotices];
-  }, [transientNotices, walletMessage]);
+  }, [transientNotices, walletMessage, contractPaused]);
 
   return (
     <div className="app">
@@ -4825,6 +4845,7 @@ function App() {
       <AppNotices
         notices={appNotices}
         onDismissNotice={(noticeId) => {
+          if (noticeId === "contract-paused") return;
           if (noticeId === "wallet") {
             setWalletMessage("");
             return;
@@ -7716,8 +7737,13 @@ function App() {
                 </div>
                 <div className="form-actions">
                   <div className="form-actions-row">
-                    <button className="primary-btn" type="submit">
-                      Submit dataset
+                    <button
+                      className="primary-btn"
+                      type="submit"
+                      disabled={contractPaused === true}
+                      title={contractPaused === true ? "Contract is paused — read-only mode" : undefined}
+                    >
+                      {contractPaused === true ? "Read-only mode" : "Submit dataset"}
                     </button>
                     <button
                       className="ghost-btn"
