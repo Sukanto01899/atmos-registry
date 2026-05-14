@@ -68,11 +68,13 @@ export const parseUrlViewState = (search: string): UrlViewState => {
   const verified = params.get("ver");
   const frozen = params.get("frozen");
   const ipfs = params.get("ipfs");
+  const tags = params.get("tags");
 
   return {
     activeTab: tab === "mine" ? "mine" : "explore",
     filters: {
       search: params.get("search") ?? "",
+      tags: tags ?? "",
       status: params.get("status") ?? "all",
       visibility:
         visibility === "public" || visibility === "private"
@@ -117,6 +119,7 @@ export const buildUrlViewSearch = (state: UrlViewState) => {
   if (state.activeTab !== "explore") params.set("tab", state.activeTab);
   if (state.sortMode !== "quality-desc") params.set("sort", state.sortMode);
   if (state.filters.search) params.set("search", state.filters.search);
+  if (state.filters.tags) params.set("tags", state.filters.tags);
   if (state.filters.status !== "all") params.set("status", state.filters.status);
   if (state.filters.visibility !== "all") {
     params.set("visibility", state.filters.visibility);

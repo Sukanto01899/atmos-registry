@@ -15,6 +15,7 @@ export const defaultRegisterForm: RegisterFormState = {
 
 export const defaultFilters: DatasetFilters = {
   search: "",
+  tags: "",
   status: "all",
   visibility: "all",
   verified: "all",

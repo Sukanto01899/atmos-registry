@@ -5,6 +5,7 @@ export type Dataset = {
   name: string;
   description: string;
   dataType: string;
+  tags?: string[];
   collectionDate: number;
   altitudeMin: number;
   altitudeMax: number;
@@ -38,6 +39,7 @@ export type RegisterFormState = {
 // Define the structure for dataset filters
 export type DatasetFilters = {
   search: string;
+  tags: string;
   status: string;
   visibility: "all" | "public" | "private";
   verified: "all" | "verified" | "unverified";

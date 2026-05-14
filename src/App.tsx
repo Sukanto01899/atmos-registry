@@ -174,6 +174,8 @@ function App() {
   const hasHydratedTxStatusesRef = useRef(false);
   const hasHydratedDatasetNotesRef = useRef(false);
   const hasHydratedPinnedDatasetsRef = useRef(false);
+  const exploreAbortRef = useRef<AbortController | null>(null);
+  const exploreFetchTimerRef = useRef<number | null>(null);
   const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
   const copyToastTimeoutRef = useRef<number | null>(null);
   const txStatusByIdRef = useRef<Map<string, string>>(new Map());
@@ -278,6 +280,8 @@ function App() {
     useState<RegisterFormState | null>(null);
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
   const stacksApiUrl = STACKS_API_BASE_URL;
+  const atmosApiUrl =
+    import.meta.env.VITE_ATMOS_API_URL ?? "http://127.0.0.1:4000";
   const txCenter = useTxCenter({ apiBaseUrl: stacksApiUrl });
 
   useEffect(() => {
@@ -419,6 +423,10 @@ function App() {
   const filteredDatasets = useMemo(() => {
     const search = filters.search.trim().toLowerCase();
     const owner = filters.owner.trim().toLowerCase();
+    const requiredTags = filters.tags
+      .split(",")
+      .map((tag) => tag.trim().toLowerCase())
+      .filter(Boolean);
     const min = Number.parseInt(filters.altitudeMin, 10);
     const max = Number.parseInt(filters.altitudeMax, 10);
     const pinned = filters.pinnedOnly ? new Set(pinnedDatasetIds) : null;
@@ -426,6 +434,17 @@ function App() {
       const note = datasetNotes[String(dataset.id)] ?? "";
       const isVerified = dataset.verified || dataset.status === "verified";
       const hasIpfs = Boolean(dataset.ipfsHash?.trim());
+      if (requiredTags.length > 0) {
+        const datasetTags = (Array.isArray(dataset.tags) ? dataset.tags : [])
+          .map((tag) => String(tag).trim().toLowerCase())
+          .filter(Boolean);
+        const tagSet = new Set(datasetTags);
+        for (const requiredTag of requiredTags) {
+          if (!tagSet.has(requiredTag)) {
+            return false;
+          }
+        }
+      }
       if (pinned && !pinned.has(String(dataset.id))) {
         return false;
       }
@@ -923,6 +942,7 @@ function App() {
     () =>
       Boolean(
         filters.search ||
+        filters.tags ||
         (filters.status !== "all" && filters.status) ||
         (filters.visibility !== "all" && filters.visibility) ||
         (filters.verified !== "all" && filters.verified) ||
@@ -950,6 +970,13 @@ function App() {
         id: "search",
         label: `Search: ${filters.search}`,
         key: "search",
+      });
+    }
+    if (filters.tags) {
+      chips.push({
+        id: "tags",
+        label: `Tags: ${filters.tags}`,
+        key: "tags",
       });
     }
     if (filters.status !== "all") {
@@ -1745,33 +1772,41 @@ function App() {
     setLoading(true);
     setStatusMessage("");
     try {
-      const countResponse = await fetchCallReadOnlyFunction({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: CONTRACT_NAME,
-        functionName: "get-dataset-count",
-        functionArgs: [],
-        senderAddress: CONTRACT_ADDRESS,
-        network,
-      });
-      const countValue = unwrapResponseOk(countResponse);
-      const total = Number.parseInt(String(countValue.value ?? "0"), 10);
+      exploreAbortRef.current?.abort();
+      const controller = new AbortController();
+      exploreAbortRef.current = controller;
 
-      if (total === 0) {
-        setLatestDatasets([]);
-        return;
+      const params = new URLSearchParams();
+      params.set("limit", "200");
+      if (filters.search) params.set("search", filters.search);
+      if (filters.tags) params.set("tags", filters.tags);
+      if (filters.visibility !== "all") params.set("visibility", filters.visibility);
+      if (filters.verified === "verified") params.set("verified", "true");
+      if (filters.verified === "unverified") params.set("verified", "false");
+      if (filters.frozen === "frozen") params.set("metadataFrozen", "true");
+      if (filters.frozen === "mutable") params.set("metadataFrozen", "false");
+
+      const url = `${atmosApiUrl}/datasets?${params.toString()}`;
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        throw new Error(text || `API request failed (${response.status}).`);
       }
-      const ids = Array.from(
-        { length: Math.min(4, total) },
-        (_, index) => total - index,
-      );
-      const results = await Promise.all(ids.map((id) => fetchDataset(id)));
+      const payload = (await response.json()) as { items?: Dataset[] };
+      const items = Array.isArray(payload.items) ? payload.items : [];
       setLatestDatasets(
-        results.filter((item): item is Dataset => Boolean(item)),
+        items.map((item) => ({
+          verifiedBy: "",
+          verifiedAt: 0,
+          ...(item as any),
+        })),
       );
     } catch (error) {
-      setStatusMessage(
-        "Unable to load datasets from mainnet. Check your connection and try again.",
-      );
+      if ((error as any)?.name === "AbortError") {
+        return;
+      }
+      setLatestDatasets([]);
+      setStatusMessage("Unable to load datasets from the data service API.");
     } finally {
       setLoading(false);
     }
@@ -2456,6 +2491,7 @@ function App() {
       `Results: ${filteredDatasets.length}/${activeDatasets.length}`,
       `Sort: ${sortMode}`,
       filters.search ? `Search: ${filters.search}` : "",
+      filters.tags ? `Tags: ${filters.tags}` : "",
       filters.status !== "all" ? `Status: ${filters.status}` : "",
       filters.visibility !== "all" ? `Visibility: ${filters.visibility}` : "",
       filters.verified !== "all" ? `Verified: ${filters.verified}` : "",
@@ -2476,6 +2512,7 @@ function App() {
   const copyDatasetsApiPath = async () => {
     const params = new URLSearchParams();
     if (filters.search) params.set("search", filters.search);
+    if (filters.tags) params.set("tags", filters.tags);
     if (filters.status !== "all") params.set("status", filters.status);
     if (filters.visibility !== "all") params.set("visibility", filters.visibility);
     if (filters.verified === "verified") params.set("verified", "true");
@@ -2984,7 +3021,7 @@ function App() {
   };
   const applySavedView = (view: SavedView) => {
     setActiveTab(view.payload.activeTab);
-    setFilters(view.payload.filters);
+    setFilters({ ...defaultFilters, ...(view.payload.filters ?? {}) });
     setGeoTimePercent(Math.max(0, Math.min(100, view.payload.geoTimePercent)));
     setCompareSelectionIds(view.payload.compareSelectionIds);
     setWatchlistOnly(view.payload.watchlistOnly);
@@ -4030,6 +4067,34 @@ function App() {
     lineageSelectionId,
     selectedGeoDatasetId,
     showDatasetDetail,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (activeTab !== "explore") return;
+
+    if (exploreFetchTimerRef.current) {
+      window.clearTimeout(exploreFetchTimerRef.current);
+    }
+
+    exploreFetchTimerRef.current = window.setTimeout(() => {
+      void loadLatest();
+    }, 300);
+
+    return () => {
+      if (exploreFetchTimerRef.current) {
+        window.clearTimeout(exploreFetchTimerRef.current);
+        exploreFetchTimerRef.current = null;
+      }
+    };
+  }, [
+    activeTab,
+    atmosApiUrl,
+    filters.search,
+    filters.tags,
+    filters.visibility,
+    filters.verified,
+    filters.frozen,
   ]);
 
   useEffect(() => {
@@ -6452,6 +6517,23 @@ function App() {
                       aria-label="Clear search"
                     >
                       ×
+                    </button>
+                  )}
+                </div>
+                <div className="input-clear">
+                  <input
+                    value={filters.tags}
+                    onChange={updateFilterField("tags")}
+                    placeholder="Tags (comma separated)"
+                  />
+                  {filters.tags && (
+                    <button
+                      className="input-clear__btn"
+                      type="button"
+                      onClick={() => clearFilter("tags")}
+                      aria-label="Clear tags"
+                    >
+                      Ã—
                     </button>
                   )}
                 </div>
