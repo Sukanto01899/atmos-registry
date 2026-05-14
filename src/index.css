@@ -826,104 +826,147 @@ textarea:focus {
 .stake-grid {
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
-  gap: 1rem;
+  gap: 1.25rem;
+  align-items: start;
 }
 
 .stake-card {
-  padding: 1.2rem;
-  border-radius: 18px;
+  padding: 1.5rem;
+  border-radius: 20px;
   border: 1px solid var(--border);
   background: rgba(17, 25, 34, 0.8);
   box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 .stake-card--overview {
   background:
-    radial-gradient(
-      circle at top right,
-      rgba(245, 138, 61, 0.14),
-      transparent 36%
-    ),
+    radial-gradient(circle at top right, rgba(245, 138, 61, 0.1), transparent 40%),
     rgba(17, 25, 34, 0.84);
 }
 
+.stake-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .stake-card__title {
-  font-size: 1.05rem;
+  font-size: 0.8rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.stake-card__badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 159, 75, 0.4);
+  background: rgba(245, 159, 75, 0.12);
+  color: var(--accent);
+  letter-spacing: 0.06em;
 }
 
 .stake-card__subtitle {
-  margin-top: 0.35rem;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  margin: -0.5rem 0 0;
 }
 
 .stake-metrics {
-  margin-top: 0.9rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
 }
 
-.stake-metrics div {
+.stake-stat {
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 0.8rem 0.9rem;
-  background: rgba(24, 33, 44, 0.55);
+  padding: 0.85rem 1rem;
+  background: rgba(24, 33, 44, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
-.stake-metrics span {
-  display: block;
+.stake-stat span {
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 0.35rem;
 }
 
-.stake-metrics strong {
-  font-size: 0.98rem;
+.stake-stat strong {
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-.stake-actions-grid {
-  margin-top: 0.9rem;
-  display: grid;
-  gap: 0.8rem;
+.stake-stat--highlight {
+  border-color: rgba(55, 209, 161, 0.3);
+  background: rgba(55, 209, 161, 0.06);
 }
 
-.stake-field {
-  display: grid;
-  gap: 0.4rem;
+.stake-stat--highlight strong {
+  color: var(--accent-2);
 }
 
-.stake-field span {
+.stake-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.stake-action-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stake-label {
+  font-size: 0.82rem;
   color: var(--muted);
-  font-size: 0.8rem;
+  width: 52px;
+  flex-shrink: 0;
 }
 
-.stake-inline {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.6rem;
+.stake-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.stake-input-group input {
+  flex: 1;
+  min-width: 0;
 }
 
 .stake-footer {
-  margin-top: 0.9rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.stake-inline-note {
-  margin-top: 0.85rem;
-  display: grid;
-  gap: 0.35rem;
-  color: var(--muted);
+.stake-warning {
   font-size: 0.82rem;
+  color: rgba(255, 138, 138, 0.9);
+  margin: -0.5rem 0 0;
 }
 
-.stake-inline-note__warning {
-  color: rgba(255, 138, 138, 0.92);
+.stake-status-msg {
+  font-size: 0.85rem;
+  color: rgba(245, 138, 61, 0.85);
+  margin: -0.5rem 0 0;
 }
 
 .stat-card {
@@ -3529,6 +3572,18 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .stake-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stake-action-row {
+    flex-wrap: wrap;
+  }
+
+  .stake-input-group {
+    flex-wrap: wrap;
+  }
+
   .dataset-header {
     flex-direction: column;
   }
@@ -3537,9 +3592,6 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .stake-inline {
-    grid-template-columns: 1fr;
-  }
 
   .filter-actions {
     flex-direction: column;

@@ -5485,114 +5485,119 @@ function App() {
           <section className="section stake-section" id="staking">
             <div className="section-header">
               <div>
-                <h2>ATMOS staking and trust layer</h2>
-                <p>
-                  Monitor token economics and manage wallet staking directly
-                  from the registry.
-                </p>
+                <h2>Staking</h2>
+                <p>Stake ATMOS to signal stewardship and earn protocol rewards.</p>
               </div>
             </div>
             <div className="stake-grid">
               <article className="stake-card stake-card--overview">
-                <div className="stake-card__title">Protocol economics</div>
+                <div className="stake-card__header">
+                  <span className="stake-card__title">Protocol</span>
+                  {tokenSnapshot && (
+                    <span className="stake-card__badge">{tokenSnapshot.symbol}</span>
+                  )}
+                </div>
                 <div className="stake-metrics">
-                  <div>
+                  <div className="stake-stat">
                     <span>Token</span>
-                    <strong>
-                      {tokenSnapshot
-                        ? `${tokenSnapshot.name} (${tokenSnapshot.symbol})`
-                        : "Loading..."}
-                    </strong>
+                    <strong>{tokenSnapshot ? tokenSnapshot.name : "—"}</strong>
                   </div>
-                  <div>
+                  <div className="stake-stat">
                     <span>Total supply</span>
                     <strong>
                       {tokenSnapshot
                         ? `${formatTokenAmount(tokenSnapshot.totalSupply, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "Loading..."}
+                        : "—"}
                     </strong>
                   </div>
-                  <div>
+                  <div className="stake-stat">
                     <span>Total staked</span>
                     <strong>
                       {tokenSnapshot
                         ? `${formatTokenAmount(tokenSnapshot.totalStaked, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "Loading..."}
+                        : "—"}
                     </strong>
                   </div>
-                  <div>
-                    <span>Staking APY</span>
+                  <div className="stake-stat stake-stat--highlight">
+                    <span>APY</span>
                     <strong>
                       {tokenSnapshot
                         ? formatPercentFromBps(tokenSnapshot.apyBps)
-                        : "Loading..."}
+                        : "—"}
                     </strong>
                   </div>
                 </div>
               </article>
+
               <article className="stake-card">
-                <div className="stake-card__title">Wallet position</div>
-                <p className="stake-card__subtitle">
-                  {walletAddress
-                    ? "Use ATMOS to signal stewardship and earn rewards."
-                    : "Connect a wallet to stake, unstake, and claim rewards."}
-                </p>
+                <div className="stake-card__header">
+                  <span className="stake-card__title">Your position</span>
+                  <button
+                    className="ghost-btn compact"
+                    type="button"
+                    onClick={() => loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS)}
+                    disabled={tokenLoading}
+                  >
+                    {tokenLoading ? "Refreshing…" : "Refresh"}
+                  </button>
+                </div>
+                {!walletAddress && (
+                  <p className="stake-card__subtitle">
+                    Connect your wallet to stake, unstake, and claim rewards.
+                  </p>
+                )}
                 <div className="stake-metrics">
-                  <div>
-                    <span>Wallet balance</span>
+                  <div className="stake-stat">
+                    <span>Available</span>
                     <strong>
                       {tokenSnapshot
                         ? `${formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "Loading..."}
+                        : "—"}
                     </strong>
                   </div>
-                  <div>
-                    <span>Currently staked</span>
+                  <div className="stake-stat">
+                    <span>Staked</span>
                     <strong>
                       {tokenSnapshot
                         ? `${formatTokenAmount(myStakeInfo.amount, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "Loading..."}
+                        : "—"}
                     </strong>
                   </div>
-                  <div>
+                  <div className="stake-stat">
                     <span>Pending reward</span>
                     <strong>
                       {tokenSnapshot
                         ? `${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "Loading..."}
+                        : "—"}
                     </strong>
                   </div>
-                  <div>
+                  <div className="stake-stat">
                     <span>Total claimed</span>
                     <strong>
                       {tokenSnapshot
                         ? `${formatTokenAmount(myStakeInfo.totalClaimed, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "Loading..."}
+                        : "—"}
                     </strong>
                   </div>
                 </div>
-                <div className="stake-actions-grid">
-                  <label className="stake-field">
-                    <span>Stake ATMOS</span>
-                    <div className="stake-inline">
+
+                <div className="stake-actions">
+                  <div className="stake-action-row">
+                    <label className="stake-label">Stake</label>
+                    <div className="stake-input-group">
                       <input
                         value={stakeAmount}
                         onChange={(event) => setStakeAmount(readValue(event))}
-                        placeholder="10"
+                        placeholder="Amount"
                       />
                       <button
-                        className="ghost-btn"
+                        className="ghost-btn compact"
                         type="button"
                         onClick={() =>
-                          setStakeAmount(
-                            microTokenToInputValue(tokenSnapshot?.balance ?? 0),
-                          )
+                          setStakeAmount(microTokenToInputValue(tokenSnapshot?.balance ?? 0))
                         }
                         disabled={
-                          !walletAddress ||
-                          tokenLoading ||
-                          !tokenSnapshot ||
-                          tokenSnapshot.balance <= 0
+                          !walletAddress || tokenLoading || !tokenSnapshot || tokenSnapshot.balance <= 0
                         }
                       >
                         Max
@@ -5602,83 +5607,54 @@ function App() {
                         type="button"
                         onClick={() => handleStakeAction("stake", stakeAmount)}
                         disabled={
-                          !walletAddress ||
-                          tokenLoading ||
-                          !stakeAmountValue ||
-                          hasInsufficientStakeBalance
+                          !walletAddress || tokenLoading || !stakeAmountValue || hasInsufficientStakeBalance
                         }
                       >
                         Stake
                       </button>
                     </div>
-                  </label>
-                  <label className="stake-field">
-                    <span>Unstake ATMOS</span>
-                    <div className="stake-inline">
+                  </div>
+                  <div className="stake-action-row">
+                    <label className="stake-label">Unstake</label>
+                    <div className="stake-input-group">
                       <input
                         value={unstakeAmount}
                         onChange={(event) => setUnstakeAmount(readValue(event))}
-                        placeholder="10"
+                        placeholder="Amount"
                       />
                       <button
-                        className="ghost-btn"
+                        className="primary-btn compact"
                         type="button"
-                        onClick={() =>
-                          handleStakeAction("unstake", unstakeAmount)
-                        }
-                        disabled={
-                          !walletAddress || tokenLoading || !unstakeAmountValue
-                        }
+                        onClick={() => handleStakeAction("unstake", unstakeAmount)}
+                        disabled={!walletAddress || tokenLoading || !unstakeAmountValue}
                       >
                         Unstake
                       </button>
                     </div>
-                  </label>
+                  </div>
                 </div>
-                <div className="stake-inline-note">
-                  <span>
-                    {stakeAmountValue
-                      ? "Stake amount looks valid."
-                      : "Enter a positive ATMOS amount to enable staking."}
-                  </span>
-                  {hasInsufficientStakeBalance && tokenSnapshot && (
-                    <span className="stake-inline-note__warning">
-                      Entered amount exceeds wallet balance (
-                      {formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)}{" "}
-                      {tokenSnapshot.symbol}).
-                    </span>
-                  )}
-                  <span>
-                    {unstakeAmountValue
-                      ? "Unstake amount looks valid."
-                      : "Enter a positive ATMOS amount to enable unstaking."}
-                  </span>
-                </div>
+
+                {hasInsufficientStakeBalance && tokenSnapshot && (
+                  <p className="stake-warning">
+                    Exceeds available balance ({formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)}{" "}
+                    {tokenSnapshot.symbol})
+                  </p>
+                )}
+
                 <div className="stake-footer">
                   <button
                     className="ghost-btn"
                     type="button"
                     onClick={handleClaimRewards}
                     disabled={
-                      !walletAddress ||
-                      tokenLoading ||
-                      tokenSnapshot?.pendingReward === 0
+                      !walletAddress || tokenLoading || tokenSnapshot?.pendingReward === 0
                     }
                   >
                     Claim rewards
                   </button>
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() =>
-                      loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS)
-                    }
-                    disabled={tokenLoading}
-                  >
-                    {tokenLoading ? "Refreshing..." : "Refresh staking"}
-                  </button>
                 </div>
-                {stakeStatus && <div className="form-note">{stakeStatus}</div>}
+
+                {stakeStatus && <p className="stake-status-msg">{stakeStatus}</p>}
               </article>
             </div>
           </section>
