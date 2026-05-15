@@ -4800,6 +4800,7 @@ function App() {
   return (
     <div className="app">
       <div className="glow-layer" />
+      <div className="dashboard">
       <NavBar
         networkLabel={networkLabel}
         featureTab={featureTab}
@@ -4846,6 +4847,7 @@ function App() {
         onOpenContractExplorer={openContractInExplorer}
         onCopyContractExplorerUrl={copyContractExplorerUrl}
       />
+      <div className="dashboard-body">
       <AppNotices
         notices={appNotices}
         onDismissNotice={(noticeId) => {
@@ -5392,7 +5394,7 @@ function App() {
       )}
 
       {/* Main content */}
-      <main className="container">
+      <main className="content">
         {featureTab === "datasets" && (
           <>
             <section className="hero" id="home">
@@ -7778,6 +7780,8 @@ function App() {
           Top
         </button>
       )}
+      </div>{/* dashboard-body */}
+      </div>{/* dashboard */}
     </div>
   );
 }

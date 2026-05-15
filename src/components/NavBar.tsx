@@ -1,4 +1,4 @@
-﻿type Props = {
+type Props = {
   featureTab:
     | "datasets"
     | "add-dataset"
@@ -49,6 +49,15 @@ const shortenAddress = (value: string) => {
   return `${trimmed.slice(0, 6)}…${trimmed.slice(-6)}`;
 };
 
+const NAV_ICONS: Record<string, string> = {
+  datasets: "⌂",
+  "add-dataset": "+",
+  staking: "◈",
+  alerts: "◎",
+  audit: "▦",
+  versions: "⊞",
+};
+
 export function NavBar({
   featureTab,
   onFeatureTabChange,
@@ -68,10 +77,11 @@ export function NavBar({
   onOpenContractExplorer,
   onCopyContractExplorerUrl,
 }: Props) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
   const [copied, setCopied] = useState(false);
+
   const featureTabs = [
     { id: "datasets", label: "Home" },
     { id: "add-dataset", label: "Add dataset" },
@@ -118,37 +128,126 @@ export function NavBar({
   };
 
   return (
-    <nav className="nav">
-      <div className="nav__row">
-        <div className="nav__brand">
+    <>
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Left sidebar */}
+      <aside className={`sidebar${sidebarOpen ? " sidebar--open" : ""}`}>
+        <div className="sidebar__brand">
           <div className="logo-orb">A</div>
-          <div>
-            <div className="brand-title">Atmos Registry</div>
-            <div className="brand-subtitle">Mainnet data mesh</div>
+          <div className="sidebar__brand-text">
+            <div className="brand-title">Atmos</div>
+            <div className="brand-subtitle">Registry</div>
           </div>
-          <span className="network-badge" title="Connected network">
-            {networkLabel}
-          </span>
+          <button
+            className="sidebar__close"
+            type="button"
+            aria-label="Close sidebar"
+            onClick={() => setSidebarOpen(false)}
+          >
+            ✕
+          </button>
         </div>
+
+        <nav className="sidebar__nav">
+          {featureTabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`sidebar__item${featureTab === tab.id ? " active" : ""}`}
+              onClick={() => {
+                onFeatureTabChange(tab.id);
+                setSidebarOpen(false);
+              }}
+            >
+              <span className="sidebar__item-icon">{NAV_ICONS[tab.id]}</span>
+              <span className="sidebar__item-label">{tab.label}</span>
+              {tab.id === "alerts" && unreadAlertCount > 0 && (
+                <span className="sidebar__badge">{unreadAlertCount}</span>
+              )}
+              {tab.id === "staking" && pendingTxCount > 0 && (
+                <span className="sidebar__badge">{pendingTxCount}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar__footer">
+          <span className="network-badge">{networkLabel}</span>
+          <ThemeToggle />
+          {walletAddress ? (
+            <div className="sidebar__wallet">
+              <span className="sidebar__wallet-addr" title={walletAddress}>
+                {shortenAddress(walletAddress)}
+              </span>
+              <div className="sidebar__wallet-actions">
+                <button
+                  className="ghost-btn compact"
+                  type="button"
+                  onClick={copyWalletAddress}
+                  title={copied ? "Copied!" : "Copy address"}
+                >
+                  {copied ? "Copied" : "Copy"}
+                </button>
+                <button
+                  className="ghost-btn compact"
+                  type="button"
+                  onClick={openWalletExplorer}
+                >
+                  Open
+                </button>
+                <button
+                  className="ghost-btn compact"
+                  type="button"
+                  onClick={onDisconnectWallet}
+                >
+                  Out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="primary-btn"
+              style={{ width: "100%" }}
+              onClick={onConnectWallet}
+            >
+              Connect Wallet
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* Top bar */}
+      <header className="topbar">
         <button
-          className="nav__burger"
+          className="topbar__burger"
           type="button"
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen((prev) => !prev)}
+          aria-label="Open sidebar"
+          onClick={() => setSidebarOpen(true)}
         >
-          <span className={`burger-icon ${mobileOpen ? "open" : ""}`}>
-            <span /><span /><span />
+          <span className="burger-icon">
+            <span />
+            <span />
+            <span />
           </span>
         </button>
-        <div className={`nav__actions${mobileOpen ? " nav__actions--open" : ""}`}>
-          <ThemeToggle />
+
+        <div className="topbar__page-title">
+          {featureTabs.find((t) => t.id === featureTab)?.label ?? "Home"}
+        </div>
+
+        <div className="topbar__actions">
           <button
             className="ghost-btn"
             onClick={onSyncMainnet}
             disabled={loading}
           >
-            {loading ? "Syncing..." : "Sync Mainnet"}
+            {loading ? "Syncing…" : "Sync"}
           </button>
           <button
             className="ghost-btn alert-bell"
@@ -156,9 +255,7 @@ export function NavBar({
             onClick={onToggleAlerts}
           >
             Alerts
-            <span
-              className={`alert-count ${unreadAlertCount > 0 ? "active" : ""}`}
-            >
+            <span className={`alert-count${unreadAlertCount > 0 ? " active" : ""}`}>
               {unreadAlertCount}
             </span>
           </button>
@@ -168,7 +265,7 @@ export function NavBar({
             onClick={onToggleTxCenter}
           >
             Tx
-            <span className={`alert-count ${pendingTxCount > 0 ? "active" : ""}`}>
+            <span className={`alert-count${pendingTxCount > 0 ? " active" : ""}`}>
               {pendingTxCount}
             </span>
           </button>
@@ -179,137 +276,70 @@ export function NavBar({
           >
             Command
           </button>
-          <button className="ghost-btn" type="button" onClick={onOpenShortcuts}>
+          <button
+            className="ghost-btn"
+            type="button"
+            onClick={onOpenShortcuts}
+          >
             Shortcuts
           </button>
-          {walletAddress ? (
-            <div className="wallet-chip">
-              <span className="wallet-address" title={walletAddress}>
-                {shortenAddress(walletAddress)}
-              </span>
-              <button
-                className="ghost-btn compact"
-                type="button"
-                onClick={copyWalletAddress}
-                aria-label="Copy wallet address"
-                title={copied ? "Copied!" : "Copy"}
-              >
-                {copied ? "Copied" : "Copy"}
-              </button>
-              <button
-                className="ghost-btn compact"
-                type="button"
-                onClick={openWalletExplorer}
-              >
-                Open
-              </button>
-              <button
-                className="ghost-btn compact"
-                type="button"
-                onClick={onDisconnectWallet}
-              >
-                Disconnect
-              </button>
-            </div>
-          ) : (
-            <button className="primary-btn compact" onClick={onConnectWallet}>
-              Connect Wallet
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="nav__bar">
-        <div className="nav__bar-row">
-          <div className="nav__tabs">
-            {featureTabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={`tab-btn ${featureTab === tab.id ? "active" : ""}`}
-                onClick={() => onFeatureTabChange(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div className="nav__menu">
+
+          {/* More menu */}
+          <div className="topbar__menu">
             <button
               className="ghost-btn"
               type="button"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
-              Menu
+              More
             </button>
             {menuOpen && (
               <div className="nav__dropdown">
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onMenuAction("home");
-                  }}
+                  onClick={() => { setMenuOpen(false); onMenuAction("home"); }}
                 >
                   Home
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onOpenContractExplorer();
-                  }}
+                  onClick={() => { setMenuOpen(false); onOpenContractExplorer(); }}
                 >
                   Contract explorer
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onCopyContractExplorerUrl();
-                  }}
+                  onClick={() => { setMenuOpen(false); onCopyContractExplorerUrl(); }}
                 >
                   Copy contract URL
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onMenuAction("add-dataset");
-                  }}
+                  onClick={() => { setMenuOpen(false); onMenuAction("add-dataset"); }}
                 >
                   Add dataset
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onMenuAction("staking");
-                  }}
+                  onClick={() => { setMenuOpen(false); onMenuAction("staking"); }}
                 >
                   Staking
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onMenuAction("alerts");
-                  }}
+                  onClick={() => { setMenuOpen(false); onMenuAction("alerts"); }}
                 >
                   Alerts
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onMenuAction("audit");
-                  }}
+                  onClick={() => { setMenuOpen(false); onMenuAction("audit"); }}
                 >
                   Audit
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onMenuAction("versions");
-                  }}
+                  onClick={() => { setMenuOpen(false); onMenuAction("versions"); }}
                 >
                   Versions
                 </button>
@@ -317,10 +347,7 @@ export function NavBar({
             )}
           </div>
         </div>
-      </div>
-    </nav>
+      </header>
+    </>
   );
 }
-
-
-
