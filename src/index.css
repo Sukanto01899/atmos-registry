@@ -3490,7 +3490,20 @@ textarea:focus {
   color: rgba(245, 138, 61, 0.85);
 }
 
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero__panel {
+    width: 100%;
+  }
+}
+
 @media (max-width: 760px) {
+  .container {
+    padding: 1.5rem 1rem 3rem;
+  }
   .nav {
     gap: 1rem;
   }
@@ -3560,8 +3573,15 @@ textarea:focus {
   }
 
   .field-row,
+  .lookup-row,
   .owner-form {
     grid-template-columns: 1fr;
+  }
+
+  .lookup-row .primary-btn,
+  .lookup-row .ghost-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .form-grid--register {
@@ -3709,6 +3729,44 @@ textarea:focus {
 }
 
 @media (max-width: 560px) {
+  .container {
+    padding: 1rem 0.75rem 2.5rem;
+  }
+
+  .hero {
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.75rem, 7vw, 2.4rem);
+  }
+
+  .hero__subtitle {
+    font-size: 0.95rem;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 1.25rem;
+  }
+
+  .hero__actions .primary-btn,
+  .hero__actions .ghost-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .hero-signals {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hero__panel {
+    padding: 1.1rem;
+  }
+
   .form-card {
     padding: 1.1rem;
   }
