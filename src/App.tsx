@@ -5397,21 +5397,22 @@ function App() {
       <main className="content">
         {featureTab === "datasets" && (
           <>
-            <section className="hero" id="home">
-              <div className="hero__content">
-                <p className="eyebrow">Atmospheric data registry</p>
-                <h1>Trusted climate signals, anchored on Stacks.</h1>
-                <p className="hero__subtitle">
-                  Browse datasets, verify provenance, and register new records
-                  directly from the Atmos mainnet contract.
-                </p>
-                <div className="hero__actions">
+            {/* ── Home banner ─────────────────────────────────── */}
+            <div className="home-banner" id="home">
+              <div className="home-banner__top">
+                <div className="home-banner__heading">
+                  <p className="eyebrow">Atmospheric data registry</p>
+                  <h1 className="home-banner__title">
+                    Trusted climate signals,<br />anchored on Stacks.
+                  </h1>
+                </div>
+                <div className="home-banner__ctas">
                   <button
                     className="primary-btn"
                     onClick={loadLatest}
                     disabled={loading}
                   >
-                    {loading ? "Fetching data..." : "Refresh on-chain data"}
+                    {loading ? "Fetching…" : "Refresh on-chain data"}
                   </button>
                   <button
                     className="ghost-btn"
@@ -5419,49 +5420,182 @@ function App() {
                     onClick={openRandomFilteredDataset}
                     disabled={sortedDatasets.length === 0}
                   >
-                    Random dataset
+                    Random
                   </button>
-                </div>
-                <div className="hero-signals" aria-label="Interface signals">
-                  {interfaceSignals.map((item) => (
-                    <div key={item.label} className="hero-signal">
-                      <span>{item.label}</span>
-                      <strong>{item.value}</strong>
-                    </div>
-                  ))}
                 </div>
               </div>
-              <div className="hero__panel">
-                <div className="panel-title">Lookup a dataset</div>
-                <p className="panel-subtitle">
-                  Fetch a single dataset by id from the registry.
-                </p>
-                <div className="field-row lookup-row">
+
+              {/* Full-width search */}
+              <div className="home-search">
+                <div className="input-clear home-search__wrap">
+                  <span className="home-search__icon" aria-hidden="true">⌕</span>
                   <input
-                    value={queryId}
-                    onChange={(event) => setQueryId(readValue(event))}
-                    placeholder="Dataset id (e.g. 12)"
-                  />
-                  <button
-                    className="primary-btn compact"
-                    onClick={handleLookup}
-                    disabled={queryLoading}
-                  >
-                    {queryLoading ? "Checking..." : "Lookup"}
-                  </button>
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() => {
-                      setQueryId("");
-                      setQueryResult(null);
+                    ref={searchInputRef}
+                    value={filters.search}
+                    onChange={updateFilterField("search")}
+                    onBlur={(event) => commitRecentSearch(readValue(event))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        commitRecentSearch(
+                          (event.currentTarget as HTMLInputElement).value,
+                        );
+                      }
                     }}
-                    disabled={!queryId && !queryResult}
-                  >
-                    Clear
-                  </button>
+                    placeholder="Search datasets by id, name, description, or hash…"
+                    className="home-search__input"
+                  />
+                  {filters.search && (
+                    <button
+                      className="input-clear__btn"
+                      type="button"
+                      onClick={() => clearFilter("search")}
+                      aria-label="Clear search"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
-                {queryResult && (
+
+                <div className="home-search__row">
+                  {/* Quick filter pills */}
+                  <div className="quick-filters" aria-label="Quick filters">
+                    <button
+                      className={`quick-filter${filters.verified === "verified" ? " active" : ""}`}
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          verified: prev.verified === "verified" ? "all" : "verified",
+                        }))
+                      }
+                    >
+                      ✓ Verified
+                    </button>
+                    <button
+                      className={`quick-filter${filters.status === "active" ? " active" : ""}`}
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          status: prev.status === "active" ? "all" : "active",
+                        }))
+                      }
+                    >
+                      Active
+                    </button>
+                    <button
+                      className={`quick-filter${filters.status === "pending" ? " active" : ""}`}
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          status: prev.status === "pending" ? "all" : "pending",
+                        }))
+                      }
+                    >
+                      Pending
+                    </button>
+                    <button
+                      className={`quick-filter${filters.visibility === "public" ? " active" : ""}`}
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          visibility: prev.visibility === "public" ? "all" : "public",
+                        }))
+                      }
+                    >
+                      Public
+                    </button>
+                    <button
+                      className={`quick-filter${filters.frozen === "frozen" ? " active" : ""}`}
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          frozen: prev.frozen === "frozen" ? "all" : "frozen",
+                        }))
+                      }
+                    >
+                      Frozen
+                    </button>
+                    <button
+                      className={`quick-filter${filters.ipfs === "has-ipfs" ? " active" : ""}`}
+                      type="button"
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          ipfs: prev.ipfs === "has-ipfs" ? "all" : "has-ipfs",
+                        }))
+                      }
+                    >
+                      Has IPFS
+                    </button>
+                  </div>
+
+                  {/* Lookup by ID */}
+                  <div className="home-lookup">
+                    <div className="input-clear">
+                      <input
+                        value={queryId}
+                        onChange={(event) => setQueryId(readValue(event))}
+                        placeholder="ID lookup…"
+                        className="home-lookup__input"
+                      />
+                      {queryId && (
+                        <button
+                          className="input-clear__btn"
+                          type="button"
+                          onClick={() => { setQueryId(""); setQueryResult(null); }}
+                          aria-label="Clear ID"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      className="ghost-btn compact"
+                      onClick={handleLookup}
+                      disabled={queryLoading}
+                    >
+                      {queryLoading ? "…" : "Lookup"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Recent search chips */}
+                {recentSearches.length > 0 && (
+                  <div className="filter-chips">
+                    {recentSearches.map((term) => (
+                      <button
+                        key={`recent-search-${term}`}
+                        className="filter-chip"
+                        type="button"
+                        onClick={() => {
+                          setFilters((prev) => ({ ...prev, search: term }));
+                          commitRecentSearch(term);
+                          searchInputRef.current?.focus();
+                        }}
+                        title={`Search: ${term}`}
+                      >
+                        <span className="filter-chip__label">{term}</span>
+                      </button>
+                    ))}
+                    <button
+                      className="filter-chip filter-chip--clear"
+                      type="button"
+                      onClick={clearRecentSearches}
+                      title="Clear recent searches"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Lookup result */}
+              {queryResult && (
+                <div className="home-lookup-result">
                   <div className="mini-card">
                     <div className="mini-title">{queryResult.name}</div>
                     <div className="mini-meta">
@@ -5477,9 +5611,19 @@ function App() {
                       Open detail
                     </button>
                   </div>
-                )}
+                </div>
+              )}
+
+              {/* Stat row */}
+              <div className="home-stats" aria-label="Interface signals">
+                {interfaceSignals.map((item) => (
+                  <div key={item.label} className="home-stat">
+                    <strong>{item.value}</strong>
+                    <span>{item.label}</span>
+                  </div>
+                ))}
               </div>
-            </section>
+            </div>
           </>
         )}
 
@@ -6496,33 +6640,8 @@ function App() {
               </div>
             </div>
             <div className="filter-card">
+              <div className="filter-card__label">More filters</div>
               <div className="filter-grid">
-                <div className="input-clear">
-                  <input
-                    ref={searchInputRef}
-                    value={filters.search}
-                    onChange={updateFilterField("search")}
-                    onBlur={(event) => commitRecentSearch(readValue(event))}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        commitRecentSearch(
-                          (event.currentTarget as HTMLInputElement).value,
-                        );
-                      }
-                    }}
-                    placeholder="Search id, name, description, hash"
-                  />
-                  {filters.search && (
-                    <button
-                      className="input-clear__btn"
-                      type="button"
-                      onClick={() => clearFilter("search")}
-                      aria-label="Clear search"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
                 <div className="input-clear">
                   <input
                     value={filters.tags}
@@ -6540,33 +6659,6 @@ function App() {
                     </button>
                   )}
                 </div>
-                {recentSearches.length > 0 && (
-                  <div className="filter-chips">
-                    {recentSearches.map((term) => (
-                      <button
-                        key={`recent-search-${term}`}
-                        className="filter-chip"
-                        type="button"
-                        onClick={() => {
-                          setFilters((prev) => ({ ...prev, search: term }));
-                          commitRecentSearch(term);
-                          searchInputRef.current?.focus();
-                        }}
-                        title={`Search: ${term}`}
-                      >
-                        <span className="filter-chip__label">{term}</span>
-                      </button>
-                    ))}
-                    <button
-                      className="filter-chip filter-chip--clear"
-                      type="button"
-                      onClick={clearRecentSearches}
-                      title="Clear recent searches"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                )}
                 <select
                   value={filters.status}
                   onChange={updateFilterField("status")}
@@ -6618,75 +6710,6 @@ function App() {
                     </option>
                   ))}
                 </select>
-                <div className="quick-filters" aria-label="Quick filters">
-                  <button
-                    className={`quick-filter ${filters.verified === "verified" ? "active" : ""}`}
-                    type="button"
-                    onClick={() =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        verified:
-                          prev.verified === "verified" ? "all" : "verified",
-                      }))
-                    }
-                    title="Toggle verified datasets"
-                  >
-                    Verified
-                  </button>
-                  <button
-                    className={`quick-filter ${filters.status === "pending" ? "active" : ""}`}
-                    type="button"
-                    onClick={() =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        status: prev.status === "pending" ? "all" : "pending",
-                      }))
-                    }
-                    title="Toggle pending status"
-                  >
-                    Pending
-                  </button>
-                  <button
-                    className={`quick-filter ${filters.frozen === "frozen" ? "active" : ""}`}
-                    type="button"
-                    onClick={() =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        frozen: prev.frozen === "frozen" ? "all" : "frozen",
-                      }))
-                    }
-                    title="Toggle metadata frozen"
-                  >
-                    Frozen
-                  </button>
-                  <button
-                    className={`quick-filter ${filters.visibility === "public" ? "active" : ""}`}
-                    type="button"
-                    onClick={() =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        visibility:
-                          prev.visibility === "public" ? "all" : "public",
-                      }))
-                    }
-                    title="Toggle public datasets"
-                  >
-                    Public
-                  </button>
-                  <button
-                    className={`quick-filter ${filters.ipfs === "has-ipfs" ? "active" : ""}`}
-                    type="button"
-                    onClick={() =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        ipfs: prev.ipfs === "has-ipfs" ? "all" : "has-ipfs",
-                      }))
-                    }
-                    title="Toggle datasets with IPFS hashes"
-                  >
-                    Has IPFS
-                  </button>
-                </div>
                 <div className="input-clear">
                   <input
                     value={filters.owner}
