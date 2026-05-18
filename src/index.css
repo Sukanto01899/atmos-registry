@@ -857,35 +857,87 @@ textarea {
 
 /* ── Home banner ────────────────────────────────────────────── */
 .home-banner {
-  padding: 2rem 2rem 0;
+  padding: 2.75rem 2rem 0;
+  position: relative;
+  overflow: hidden;
   background:
-    linear-gradient(
-      160deg,
-      rgba(245, 159, 75, 0.09) 0%,
-      rgba(55, 209, 161, 0.07) 50%,
-      transparent 100%
-    );
+    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(245, 159, 75, 0.13) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 100% 0%, rgba(55, 209, 161, 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(18, 28, 42, 0.5) 0%, transparent 100%);
   border-bottom: 1px solid var(--border);
   margin: -2rem -2rem 0;
 }
 
+.home-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 75%);
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .home-banner::before {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+}
+
 .home-banner__top {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1.5rem;
   flex-wrap: wrap;
-  padding-bottom: 1.5rem;
+  padding-bottom: 1.75rem;
 }
 
 .home-banner__heading .eyebrow {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.home-banner__heading .eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 6px var(--accent-2);
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.75); }
+}
+
+.home-banner__subtitle {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 440px;
+  line-height: 1.55;
 }
 
 .home-banner__title {
-  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
-  line-height: 1.1;
+  font-size: clamp(1.9rem, 3.5vw, 2.9rem);
+  line-height: 1.08;
   margin: 0;
+}
+
+.home-banner__title-accent {
+  background: linear-gradient(135deg, var(--accent) 0%, #f7c36a 50%, var(--accent-2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .home-banner__ctas {
@@ -893,14 +945,17 @@ textarea {
   gap: 0.75rem;
   flex-shrink: 0;
   flex-wrap: wrap;
+  align-self: flex-start;
+  padding-top: 0.5rem;
 }
 
 /* Search bar */
 .home-search {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding-bottom: 1.25rem;
+  padding-bottom: 1.5rem;
 }
 
 .home-search__wrap {
@@ -988,18 +1043,24 @@ textarea {
 /* Stat row */
 .home-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0;
   border-top: 1px solid var(--border);
   margin: 0 -2rem;
+  position: relative;
 }
 
 .home-stat {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.9rem 1.25rem;
+  gap: 0.3rem;
+  padding: 1rem 1.4rem;
   border-right: 1px solid var(--border);
+  transition: background 0.18s ease;
+}
+
+.home-stat:hover {
+  background: rgba(245, 159, 75, 0.04);
 }
 
 .home-stat:last-child {
@@ -1007,18 +1068,22 @@ textarea {
 }
 
 .home-stat strong {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--accent);
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .home-stat span {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.09em;
   color: var(--muted);
 }
+
+.home-stat--green strong { color: var(--accent-2); }
+.home-stat--blue strong { color: var(--accent-3); }
 
 /* Filter card label */
 .filter-card__label {

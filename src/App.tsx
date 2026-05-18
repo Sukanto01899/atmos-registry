@@ -513,25 +513,30 @@ function App() {
   const interfaceSignals = useMemo(
     () => [
       {
-        label: "Active view",
-        value: activeTab === "explore" ? "Explore" : "Mine",
+        label: "Datasets",
+        value: activeDatasets.length > 0 ? activeDatasets.length.toLocaleString() : "—",
+        variant: "",
       },
       {
-        label: "Filtered results",
-        value: `${filteredDatasets.length}/${activeDatasets.length}`,
+        label: "Showing",
+        value: activeDatasets.length > 0
+          ? `${filteredDatasets.length}/${activeDatasets.length}`
+          : "—",
+        variant: "",
       },
       {
         label: "Watchlist",
         value: watchlistIds.length.toLocaleString(),
+        variant: "home-stat--green",
       },
       {
         label: "Pinned",
         value: pinnedDatasetIds.length.toLocaleString(),
+        variant: "home-stat--blue",
       },
     ],
     [
       activeDatasets.length,
-      activeTab,
       filteredDatasets.length,
       pinnedDatasetIds.length,
       watchlistIds,
@@ -5403,8 +5408,11 @@ function App() {
                 <div className="home-banner__heading">
                   <p className="eyebrow">Atmospheric data registry</p>
                   <h1 className="home-banner__title">
-                    Trusted climate signals,<br />anchored on Stacks.
+                    <span className="home-banner__title-accent">Trusted climate signals,</span><br />anchored on Stacks.
                   </h1>
+                  <p className="home-banner__subtitle">
+                    Open, verifiable atmospheric datasets registered and preserved on-chain.
+                  </p>
                 </div>
                 <div className="home-banner__ctas">
                   <button
@@ -5420,7 +5428,7 @@ function App() {
                     onClick={openRandomFilteredDataset}
                     disabled={sortedDatasets.length === 0}
                   >
-                    Random
+                    ⟳ Random
                   </button>
                 </div>
               </div>
@@ -5615,9 +5623,9 @@ function App() {
               )}
 
               {/* Stat row */}
-              <div className="home-stats" aria-label="Interface signals">
+              <div className="home-stats" aria-label="Registry stats">
                 {interfaceSignals.map((item) => (
-                  <div key={item.label} className="home-stat">
+                  <div key={item.label} className={`home-stat${item.variant ? ` ${item.variant}` : ""}`}>
                     <strong>{item.value}</strong>
                     <span>{item.label}</span>
                   </div>
