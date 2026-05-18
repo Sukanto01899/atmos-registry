@@ -5637,16 +5637,24 @@ function App() {
 
         {featureTab === "staking" && (
           <section className="section stake-section" id="staking">
-            <div className="section-header">
+            <div className="stake-section-header">
               <div>
                 <h2>Staking</h2>
                 <p>Stake ATMOS to signal stewardship and earn protocol rewards.</p>
               </div>
+              {tokenSnapshot && (
+                <div className="stake-apy-hero">
+                  <span className="stake-apy-hero__label">Current APY</span>
+                  <span className="stake-apy-hero__value">
+                    {formatPercentFromBps(tokenSnapshot.apyBps)}
+                  </span>
+                </div>
+              )}
             </div>
             <div className="stake-grid">
               <article className="stake-card stake-card--overview">
                 <div className="stake-card__header">
-                  <span className="stake-card__title">Protocol</span>
+                  <span className="stake-card__title">Protocol overview</span>
                   {tokenSnapshot && (
                     <span className="stake-card__badge">{tokenSnapshot.symbol}</span>
                   )}
@@ -5655,6 +5663,12 @@ function App() {
                   <div className="stake-stat">
                     <span>Token</span>
                     <strong>{tokenSnapshot ? tokenSnapshot.name : "—"}</strong>
+                  </div>
+                  <div className="stake-stat stake-stat--highlight">
+                    <span>APY</span>
+                    <strong>
+                      {tokenSnapshot ? formatPercentFromBps(tokenSnapshot.apyBps) : "—"}
+                    </strong>
                   </div>
                   <div className="stake-stat">
                     <span>Total supply</span>
@@ -5672,15 +5686,26 @@ function App() {
                         : "—"}
                     </strong>
                   </div>
-                  <div className="stake-stat stake-stat--highlight">
-                    <span>APY</span>
-                    <strong>
-                      {tokenSnapshot
-                        ? formatPercentFromBps(tokenSnapshot.apyBps)
-                        : "—"}
-                    </strong>
-                  </div>
                 </div>
+
+                {tokenSnapshot && tokenSnapshot.totalSupply > 0 && (
+                  <div className="stake-ratio">
+                    <div className="stake-ratio__labels">
+                      <span>Staked ratio</span>
+                      <strong>
+                        {((tokenSnapshot.totalStaked / tokenSnapshot.totalSupply) * 100).toFixed(1)}%
+                      </strong>
+                    </div>
+                    <div className="stake-ratio__bar">
+                      <div
+                        className="stake-ratio__fill"
+                        style={{
+                          width: `${Math.min(100, (tokenSnapshot.totalStaked / tokenSnapshot.totalSupply) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </article>
 
               <article className="stake-card">
@@ -5695,120 +5720,145 @@ function App() {
                     {tokenLoading ? "Refreshing…" : "Refresh"}
                   </button>
                 </div>
-                {!walletAddress && (
-                  <p className="stake-card__subtitle">
-                    Connect your wallet to stake, unstake, and claim rewards.
-                  </p>
-                )}
-                <div className="stake-metrics">
-                  <div className="stake-stat">
-                    <span>Available</span>
-                    <strong>
-                      {tokenSnapshot
-                        ? `${formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "—"}
-                    </strong>
-                  </div>
-                  <div className="stake-stat">
-                    <span>Staked</span>
-                    <strong>
-                      {tokenSnapshot
-                        ? `${formatTokenAmount(myStakeInfo.amount, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "—"}
-                    </strong>
-                  </div>
-                  <div className="stake-stat">
-                    <span>Pending reward</span>
-                    <strong>
-                      {tokenSnapshot
-                        ? `${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "—"}
-                    </strong>
-                  </div>
-                  <div className="stake-stat">
-                    <span>Total claimed</span>
-                    <strong>
-                      {tokenSnapshot
-                        ? `${formatTokenAmount(myStakeInfo.totalClaimed, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
-                        : "—"}
-                    </strong>
-                  </div>
-                </div>
 
-                <div className="stake-actions">
-                  <div className="stake-action-row">
-                    <label className="stake-label">Stake</label>
-                    <div className="stake-input-group">
-                      <input
-                        value={stakeAmount}
-                        onChange={(event) => setStakeAmount(readValue(event))}
-                        placeholder="Amount"
-                      />
+                {!walletAddress ? (
+                  <div className="stake-connect">
+                    <span className="stake-connect__icon">⬡</span>
+                    <strong>Wallet not connected</strong>
+                    <p>Connect your Stacks wallet to stake ATMOS, earn rewards, and participate in governance.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="stake-metrics">
+                      <div className="stake-stat">
+                        <span>Available</span>
+                        <strong>
+                          {tokenSnapshot
+                            ? `${formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                            : "—"}
+                        </strong>
+                      </div>
+                      <div className="stake-stat">
+                        <span>Staked</span>
+                        <strong>
+                          {tokenSnapshot
+                            ? `${formatTokenAmount(myStakeInfo.amount, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                            : "—"}
+                        </strong>
+                      </div>
+                      <div className={`stake-stat${tokenSnapshot && tokenSnapshot.pendingReward > 0 ? " stake-stat--reward" : ""}`}>
+                        <span>Pending reward</span>
+                        <strong>
+                          {tokenSnapshot
+                            ? `${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                            : "—"}
+                        </strong>
+                      </div>
+                      <div className="stake-stat">
+                        <span>Total claimed</span>
+                        <strong>
+                          {tokenSnapshot
+                            ? `${formatTokenAmount(myStakeInfo.totalClaimed, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                            : "—"}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {tokenSnapshot && (tokenSnapshot.balance + myStakeInfo.amount) > 0 && (
+                      <div className="stake-progress">
+                        <div className="stake-progress__labels">
+                          <span>Your staked portion</span>
+                          <strong>
+                            {((myStakeInfo.amount / (tokenSnapshot.balance + myStakeInfo.amount)) * 100).toFixed(1)}%
+                          </strong>
+                        </div>
+                        <div className="stake-progress__bar">
+                          <div
+                            className="stake-progress__fill"
+                            style={{
+                              width: `${Math.min(100, (myStakeInfo.amount / (tokenSnapshot.balance + myStakeInfo.amount)) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="stake-actions">
+                      <div className="stake-action-row">
+                        <label className="stake-label">Stake</label>
+                        <div className="stake-input-group">
+                          <input
+                            value={stakeAmount}
+                            onChange={(event) => setStakeAmount(readValue(event))}
+                            placeholder="Amount"
+                          />
+                          <button
+                            className="ghost-btn compact"
+                            type="button"
+                            onClick={() =>
+                              setStakeAmount(microTokenToInputValue(tokenSnapshot?.balance ?? 0))
+                            }
+                            disabled={
+                              tokenLoading || !tokenSnapshot || tokenSnapshot.balance <= 0
+                            }
+                          >
+                            Max
+                          </button>
+                          <button
+                            className="primary-btn compact"
+                            type="button"
+                            onClick={() => handleStakeAction("stake", stakeAmount)}
+                            disabled={
+                              tokenLoading || !stakeAmountValue || hasInsufficientStakeBalance
+                            }
+                          >
+                            Stake
+                          </button>
+                        </div>
+                      </div>
+                      <div className="stake-action-row">
+                        <label className="stake-label">Unstake</label>
+                        <div className="stake-input-group">
+                          <input
+                            value={unstakeAmount}
+                            onChange={(event) => setUnstakeAmount(readValue(event))}
+                            placeholder="Amount"
+                          />
+                          <button
+                            className="primary-btn compact"
+                            type="button"
+                            onClick={() => handleStakeAction("unstake", unstakeAmount)}
+                            disabled={tokenLoading || !unstakeAmountValue}
+                          >
+                            Unstake
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {hasInsufficientStakeBalance && tokenSnapshot && (
+                      <p className="stake-warning">
+                        ⚠ Exceeds available balance ({formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)}{" "}
+                        {tokenSnapshot.symbol})
+                      </p>
+                    )}
+
+                    <div className="stake-footer">
                       <button
-                        className="ghost-btn compact"
+                        className={`stake-claim-btn ${tokenSnapshot && tokenSnapshot.pendingReward > 0 ? "primary-btn" : "ghost-btn"}`}
                         type="button"
-                        onClick={() =>
-                          setStakeAmount(microTokenToInputValue(tokenSnapshot?.balance ?? 0))
-                        }
-                        disabled={
-                          !walletAddress || tokenLoading || !tokenSnapshot || tokenSnapshot.balance <= 0
-                        }
+                        onClick={handleClaimRewards}
+                        disabled={tokenLoading || !tokenSnapshot || tokenSnapshot.pendingReward === 0}
                       >
-                        Max
-                      </button>
-                      <button
-                        className="primary-btn compact"
-                        type="button"
-                        onClick={() => handleStakeAction("stake", stakeAmount)}
-                        disabled={
-                          !walletAddress || tokenLoading || !stakeAmountValue || hasInsufficientStakeBalance
-                        }
-                      >
-                        Stake
+                        {tokenSnapshot && tokenSnapshot.pendingReward > 0
+                          ? `Claim ${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                          : "No rewards to claim"}
                       </button>
                     </div>
-                  </div>
-                  <div className="stake-action-row">
-                    <label className="stake-label">Unstake</label>
-                    <div className="stake-input-group">
-                      <input
-                        value={unstakeAmount}
-                        onChange={(event) => setUnstakeAmount(readValue(event))}
-                        placeholder="Amount"
-                      />
-                      <button
-                        className="primary-btn compact"
-                        type="button"
-                        onClick={() => handleStakeAction("unstake", unstakeAmount)}
-                        disabled={!walletAddress || tokenLoading || !unstakeAmountValue}
-                      >
-                        Unstake
-                      </button>
-                    </div>
-                  </div>
-                </div>
 
-                {hasInsufficientStakeBalance && tokenSnapshot && (
-                  <p className="stake-warning">
-                    Exceeds available balance ({formatTokenAmount(tokenSnapshot.balance, tokenSnapshot.decimals)}{" "}
-                    {tokenSnapshot.symbol})
-                  </p>
+                    {stakeStatus && <p className="stake-status-msg">{stakeStatus}</p>}
+                  </>
                 )}
-
-                <div className="stake-footer">
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={handleClaimRewards}
-                    disabled={
-                      !walletAddress || tokenLoading || tokenSnapshot?.pendingReward === 0
-                    }
-                  >
-                    Claim rewards
-                  </button>
-                </div>
-
-                {stakeStatus && <p className="stake-status-msg">{stakeStatus}</p>}
               </article>
             </div>
           </section>
