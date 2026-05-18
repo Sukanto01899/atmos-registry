@@ -1,5 +1,11 @@
 import { Props } from "../type";
 
+const TONE_ICON: Record<string, string> = {
+  info: "ℹ",
+  warning: "⚠",
+  critical: "✕",
+};
+
 export function AppNotices({ notices, onDismissNotice }: Props) {
   if (notices.length === 0) return null;
 
@@ -10,6 +16,9 @@ export function AppNotices({ notices, onDismissNotice }: Props) {
           key={notice.id}
           className={`status-banner status-banner--${notice.tone}`}
         >
+          <span className="status-banner__icon" aria-hidden="true">
+            {TONE_ICON[notice.tone] ?? "ℹ"}
+          </span>
           <div className="status-banner__body">{notice.message}</div>
           {onDismissNotice && (
             <button

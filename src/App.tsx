@@ -5862,22 +5862,23 @@ function App() {
                 <input
                   value={watchlistInput}
                   onChange={(event) => setWatchlistInput(readValue(event))}
-                  placeholder="Watch dataset IDs (comma-separated)"
+                  placeholder="Watch dataset IDs (comma-separated)…"
+                  onKeyDown={(e) => { if (e.key === "Enter") applyWatchlistInput(); }}
                 />
                 <button
-                  className="ghost-btn"
+                  className="ghost-btn compact"
                   type="button"
                   onClick={applyWatchlistInput}
                 >
                   Apply
                 </button>
                 <button
-                  className="ghost-btn"
+                  className="ghost-btn compact"
                   type="button"
                   onClick={clearWatchlist}
                   disabled={watchlistIds.length === 0 && !watchlistInput}
                 >
-                  Clear watchlist
+                  Clear
                 </button>
               </div>
               <div className="alert-mutes">
@@ -5899,32 +5900,45 @@ function App() {
             </div>
             <div className="alert-list">
               {alerts.length === 0 && (
-                <div className="dataset-card">
-                  <div className="dataset-title">No alerts right now</div>
-                  <p className="dataset-description">
-                    Expand scope or unmute alert types to see more activity.
-                  </p>
+                <div className="alert-empty">
+                  <span className="alert-empty__icon">🔔</span>
+                  <strong>No alerts right now</strong>
+                  <p>Expand scope, add datasets to your watchlist, or unmute alert types to see activity.</p>
                 </div>
               )}
               {alerts.map((alert) => {
                 const isRead = readAlertIds.includes(alert.id);
+                const kindIcon: Record<string, string> = {
+                  verified: "✓",
+                  rejected: "✕",
+                  frozen: "❄",
+                  pending: "⏳",
+                };
                 return (
                   <article
                     key={alert.id}
                     className={`alert-item ${isRead ? "read" : "unread"} alert-${alert.level}`}
+                    onClick={() => markAlertRead(alert.id)}
+                    title={isRead ? undefined : "Click to mark as read"}
                   >
                     <div className="alert-item__head">
-                      <strong>{alert.title}</strong>
-                      <span>{formatChainValue(alert.timestamp)}</span>
+                      <strong>{kindIcon[alert.kind] ?? ""} {alert.title}</strong>
+                      <span className="alert-item__time">{formatChainValue(alert.timestamp)}</span>
                     </div>
                     <p>{alert.message}</p>
                     <div className="alert-item__foot">
-                      <span>Dataset #{alert.datasetId}</span>
+                      <div className="alert-item__meta">
+                        <span className={`alert-kind-pill alert-kind-pill--${alert.kind}`}>
+                          {alert.kind}
+                        </span>
+                        <span>#{alert.datasetId}</span>
+                      </div>
                       <div className="alert-item__actions">
                         <button
-                          className="ghost-btn"
+                          className="ghost-btn compact"
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             markAlertRead(alert.id);
                             setLineageTarget(alert.datasetId);
                           }}
@@ -5932,11 +5946,12 @@ function App() {
                           Open
                         </button>
                         <button
-                          className="ghost-btn"
+                          className="ghost-btn compact"
                           type="button"
-                          onClick={() =>
-                            setDismissedAlertIds((prev) => [...prev, alert.id])
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDismissedAlertIds((prev) => [...prev, alert.id]);
+                          }}
                         >
                           Dismiss
                         </button>
