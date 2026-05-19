@@ -516,6 +516,7 @@ function App() {
         label: "Datasets",
         value: activeDatasets.length > 0 ? activeDatasets.length.toLocaleString() : "—",
         variant: "",
+        icon: "◈",
       },
       {
         label: "Showing",
@@ -523,16 +524,19 @@ function App() {
           ? `${filteredDatasets.length}/${activeDatasets.length}`
           : "—",
         variant: "",
+        icon: "◉",
       },
       {
         label: "Watchlist",
         value: watchlistIds.length.toLocaleString(),
         variant: "home-stat--green",
+        icon: "★",
       },
       {
         label: "Pinned",
         value: pinnedDatasetIds.length.toLocaleString(),
         variant: "home-stat--blue",
+        icon: "⊕",
       },
     ],
     [
@@ -5413,6 +5417,11 @@ function App() {
                   <p className="home-banner__subtitle">
                     Open, verifiable atmospheric datasets registered and preserved on-chain.
                   </p>
+                  <div className="home-banner__trust">
+                    <span className="trust-badge">✓ On-chain anchored</span>
+                    <span className="trust-badge trust-badge--blue">⬡ IPFS-preserved</span>
+                    <span className="trust-badge trust-badge--muted">◎ Open protocol</span>
+                  </div>
                 </div>
                 <div className="home-banner__ctas">
                   <button
@@ -5452,7 +5461,7 @@ function App() {
                     placeholder="Search datasets by id, name, description, or hash…"
                     className="home-search__input"
                   />
-                  {filters.search && (
+                  {filters.search ? (
                     <button
                       className="input-clear__btn"
                       type="button"
@@ -5461,6 +5470,8 @@ function App() {
                     >
                       ×
                     </button>
+                  ) : (
+                    <kbd className="home-search__kbd">/</kbd>
                   )}
                 </div>
 
@@ -5626,6 +5637,7 @@ function App() {
               <div className="home-stats" aria-label="Registry stats">
                 {interfaceSignals.map((item) => (
                   <div key={item.label} className={`home-stat${item.variant ? ` ${item.variant}` : ""}`}>
+                    <span className="home-stat__icon" aria-hidden="true">{item.icon}</span>
                     <strong>{item.value}</strong>
                     <span>{item.label}</span>
                   </div>
