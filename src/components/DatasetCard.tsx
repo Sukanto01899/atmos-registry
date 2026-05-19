@@ -191,6 +191,7 @@ export function DatasetCard({
   return (
     <article
       className={`dataset-card ${previewOpen ? "preview-open" : ""}`}
+      data-status={dataset.status}
     >
       <div className="dataset-header">
         <div>
@@ -231,7 +232,14 @@ export function DatasetCard({
         <span className={`status-pill ${statusClass}`}>{dataset.status}</span>
       </div>
       <div className="dataset-rank">
-        Rank #{rank} | Quality {qualityScore}/100
+        <span className="dataset-rank__rank">#{rank}</span>
+        <span className="dataset-rank__bar">
+          <span
+            className="dataset-rank__fill"
+            style={{ width: `${Math.min(100, qualityScore)}%` }}
+          />
+        </span>
+        <span className="dataset-rank__score">{qualityScore}/100</span>
       </div>
       {isStewardStaked && stewardshipSignal && (
         <div className="dataset-rank dataset-rank--stake">
@@ -328,162 +336,165 @@ export function DatasetCard({
         <span>Collection date: {dataset.collectionDate}</span>
         <span>Record height: {dataset.createdAt}</span>
         <span className="hash">IPFS: {dataset.ipfsHash || "n/a"}</span>
-        {onCopySummary && (
+        <div className="dataset-foot__copies">
+          {onCopySummary && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopySummary}
+            >
+              Copy summary
+            </button>
+          )}
+          {onCopyCitation && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopyCitation}
+            >
+              Copy citation
+            </button>
+          )}
+          {onCopyDatasetJson && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopyDatasetJson}
+            >
+              Copy JSON
+            </button>
+          )}
+          {onCloneToRegister && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCloneToRegister}
+            >
+              Clone to register
+            </button>
+          )}
           <button
             className="ghost-btn dataset-foot__action dataset-foot__action--compare"
             type="button"
-            onClick={onCopySummary}
+            onClick={onCopyId}
           >
-            Copy summary
+            Copy ID
           </button>
-        )}
-        {onCopyCitation && (
           <button
             className="ghost-btn dataset-foot__action dataset-foot__action--compare"
             type="button"
-            onClick={onCopyCitation}
+            onClick={onCopyOwner}
           >
-            Copy citation
+            Copy owner
           </button>
-        )}
-        {onCopyDatasetJson && (
+          {onLoadOwnerDatasets && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onLoadOwnerDatasets}
+            >
+              Load owner datasets
+            </button>
+          )}
+          {onFilterOwner && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onFilterOwner}
+            >
+              Filter owner
+            </button>
+          )}
+          {onOpenOwnerExplorer && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onOpenOwnerExplorer}
+            >
+              Open owner
+            </button>
+          )}
+          {onCopyOwnerExplorerUrl && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopyOwnerExplorerUrl}
+            >
+              Copy owner URL
+            </button>
+          )}
+          {onCopyCoords && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopyCoords}
+            >
+              Copy coords
+            </button>
+          )}
+          {onOpenMap && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onOpenMap}
+            >
+              Open map
+            </button>
+          )}
+          {onCopyMapUrl && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopyMapUrl}
+            >
+              Copy map URL
+            </button>
+          )}
           <button
             className="ghost-btn dataset-foot__action dataset-foot__action--compare"
             type="button"
-            onClick={onCopyDatasetJson}
+            onClick={onCopyIpfs}
           >
-            Copy JSON
+            Copy IPFS
           </button>
-        )}
-        {onCloneToRegister && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onCloneToRegister}
-          >
-            Clone to register
-          </button>
-        )}
-        <button
-          className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-          type="button"
-          onClick={onCopyId}
-        >
-          Copy ID
-        </button>
-        <button
-          className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-          type="button"
-          onClick={onCopyOwner}
-        >
-          Copy owner
-        </button>
-        {onLoadOwnerDatasets && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onLoadOwnerDatasets}
-          >
-            Load owner datasets
-          </button>
-        )}
-        {onFilterOwner && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onFilterOwner}
-          >
-            Filter owner
-          </button>
-        )}
-        {onOpenOwnerExplorer && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onOpenOwnerExplorer}
-          >
-            Open owner
-          </button>
-        )}
-        {onCopyOwnerExplorerUrl && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onCopyOwnerExplorerUrl}
-          >
-            Copy owner URL
-          </button>
-        )}
-        {onCopyCoords && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onCopyCoords}
-          >
-            Copy coords
-          </button>
-        )}
-        {onOpenMap && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onOpenMap}
-          >
-            Open map
-          </button>
-        )}
-        {onCopyMapUrl && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onCopyMapUrl}
-          >
-            Copy map URL
-          </button>
-        )}
-        <button
-          className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-          type="button"
-          onClick={onCopyIpfs}
-        >
-          Copy IPFS
-        </button>
-        {dataset.ipfsHash?.trim() && onCopyIpfsGatewayUrl && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onCopyIpfsGatewayUrl}
-          >
-            Copy IPFS URL
-          </button>
-        )}
-        {onCopyLink && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onCopyLink}
-          >
-            Copy link
-          </button>
-        )}
-        {dataset.ipfsHash?.trim() && onOpenIpfs && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onOpenIpfs}
-          >
-            Open IPFS
-          </button>
-        )}
-        {dataset.ipfsHash?.trim() && onCheckIpfs && (
-          <button
-            className="ghost-btn dataset-foot__action dataset-foot__action--compare"
-            type="button"
-            onClick={onCheckIpfs}
-          >
-            Check IPFS
-          </button>
-        )}
+          {dataset.ipfsHash?.trim() && onCopyIpfsGatewayUrl && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopyIpfsGatewayUrl}
+            >
+              Copy IPFS URL
+            </button>
+          )}
+          {onCopyLink && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCopyLink}
+            >
+              Copy link
+            </button>
+          )}
+          {dataset.ipfsHash?.trim() && onOpenIpfs && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onOpenIpfs}
+            >
+              Open IPFS
+            </button>
+          )}
+          {dataset.ipfsHash?.trim() && onCheckIpfs && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onCheckIpfs}
+            >
+              Check IPFS
+            </button>
+          )}
+        </div>
+        <div className="dataset-foot__sep" aria-hidden="true" />
         <button
           className="ghost-btn dataset-foot__action"
           type="button"
