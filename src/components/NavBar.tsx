@@ -140,7 +140,7 @@ export function NavBar({
       {/* Left sidebar */}
       <aside className={`sidebar${sidebarOpen ? " sidebar--open" : ""}`}>
         <div className="sidebar__brand">
-          <div className="logo-orb">A</div>
+          <div className="logo-orb"><span aria-hidden="true">◈</span></div>
           <div className="sidebar__brand-text">
             <div className="brand-title">Atmos</div>
             <div className="brand-subtitle">Registry</div>
@@ -178,13 +178,18 @@ export function NavBar({
         </nav>
 
         <div className="sidebar__footer">
-          <span className="network-badge">{networkLabel}</span>
-          <ThemeToggle />
+          <div className="sidebar__footer-meta">
+            <span className="network-badge">{networkLabel}</span>
+            <ThemeToggle />
+          </div>
           {walletAddress ? (
             <div className="sidebar__wallet">
-              <span className="sidebar__wallet-addr" title={walletAddress}>
-                {shortenAddress(walletAddress)}
-              </span>
+              <div className="sidebar__wallet-head">
+                <span className="sidebar__wallet-dot" aria-label="Connected" />
+                <span className="sidebar__wallet-addr" title={walletAddress}>
+                  {shortenAddress(walletAddress)}
+                </span>
+              </div>
               <div className="sidebar__wallet-actions">
                 <button
                   className="ghost-btn compact"
@@ -206,7 +211,7 @@ export function NavBar({
                   type="button"
                   onClick={onDisconnectWallet}
                 >
-                  Out
+                  Disconnect
                 </button>
               </div>
             </div>
@@ -243,10 +248,11 @@ export function NavBar({
 
         <div className="topbar__actions">
           <button
-            className="ghost-btn"
+            className={`ghost-btn topbar__sync${loading ? " loading" : ""}`}
             onClick={onSyncMainnet}
             disabled={loading}
           >
+            <span className="topbar__sync-icon" aria-hidden="true">↻</span>
             {loading ? "Syncing…" : "Sync"}
           </button>
           <button
@@ -254,7 +260,8 @@ export function NavBar({
             type="button"
             onClick={onToggleAlerts}
           >
-            Alerts
+            <span aria-hidden="true">◎</span>
+            <span className="topbar__action-label">Alerts</span>
             <span className={`alert-count${unreadAlertCount > 0 ? " active" : ""}`}>
               {unreadAlertCount}
             </span>
@@ -264,34 +271,58 @@ export function NavBar({
             type="button"
             onClick={onToggleTxCenter}
           >
-            Tx
+            <span aria-hidden="true">⊡</span>
+            <span className="topbar__action-label">Tx</span>
             <span className={`alert-count${pendingTxCount > 0 ? " active" : ""}`}>
               {pendingTxCount}
             </span>
           </button>
           <button
-            className="ghost-btn"
+            className="ghost-btn topbar__cmd"
             type="button"
             onClick={onOpenCommandPalette}
+            title="Command palette"
           >
-            Command
+            <kbd aria-hidden="true">⌘K</kbd>
           </button>
           <button
-            className="ghost-btn"
+            className="ghost-btn topbar__icon-btn"
             type="button"
             onClick={onOpenShortcuts}
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts"
           >
-            Shortcuts
+            ?
           </button>
+
+          {walletAddress ? (
+            <button
+              className="topbar__wallet-chip"
+              type="button"
+              onClick={copyWalletAddress}
+              title={copied ? "Copied!" : walletAddress}
+            >
+              <span className="topbar__wallet-dot" aria-hidden="true" />
+              <span>{copied ? "Copied!" : shortenAddress(walletAddress)}</span>
+            </button>
+          ) : (
+            <button
+              className="primary-btn compact topbar__connect"
+              type="button"
+              onClick={onConnectWallet}
+            >
+              Connect
+            </button>
+          )}
 
           {/* More menu */}
           <div className="topbar__menu">
             <button
-              className="ghost-btn"
+              className="ghost-btn topbar__more"
               type="button"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
-              More
+              ···
             </button>
             {menuOpen && (
               <div className="nav__dropdown">
