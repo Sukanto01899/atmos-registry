@@ -6351,6 +6351,22 @@ function App() {
                 </button>
               </div>
             )}
+            <div className="datasets-tab-bar">
+              <button
+                className={`datasets-tab${activeTab === "explore" ? " active" : ""}`}
+                type="button"
+                onClick={() => setActiveTab("explore")}
+              >
+                Explore
+              </button>
+              <button
+                className={`datasets-tab${activeTab === "mine" ? " active" : ""}`}
+                type="button"
+                onClick={() => setActiveTab("mine")}
+              >
+                My Datasets
+              </button>
+            </div>
             <div className="section-header">
               <div>
                 <h2>
