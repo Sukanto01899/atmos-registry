@@ -51,6 +51,16 @@ import {
   safeIsSignedIn,
   unwrapResponseOk,
 } from "./lib";
+import {
+  buildSwapCall,
+  fetchPoolState,
+  fetchQuoteXForY,
+  fetchQuoteYForX,
+  type PoolContract,
+  type PoolState,
+  type QuoteResult,
+  type TokenRef,
+} from "clardex-sdk";
 import { AppNotices } from "./components/AppNotices";
 import { CommandPalette } from "./components/CommandPalette";
 import { DatasetCard } from "./components/DatasetCard";
@@ -181,7 +191,7 @@ function App() {
   const txStatusByIdRef = useRef<Map<string, string>>(new Map());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [featureTab, setFeatureTab] = useState<
-    "datasets" | "add-dataset" | "staking" | "alerts" | "audit" | "versions"
+    "datasets" | "add-dataset" | "staking" | "alerts" | "audit" | "versions" | "clardex"
   >(() => {
     if (typeof window === "undefined") return "datasets";
     const stored = window.localStorage.getItem(FEATURE_TAB_KEY);
@@ -191,7 +201,8 @@ function App() {
       stored === "staking" ||
       stored === "alerts" ||
       stored === "audit" ||
-      stored === "versions"
+      stored === "versions" ||
+      stored === "clardex"
     ) {
       return stored;
     }
@@ -269,6 +280,29 @@ function App() {
     null,
   );
   const [tokenLoading, setTokenLoading] = useState(false);
+
+  // ── Clardex DEX state ─────────────────────────────────────
+  const [clardexPool, setClardexPool] = useState<PoolContract>({
+    address: "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR",
+    name: "dex-pool-v5",
+  });
+  const [clardexPoolState, setClardexPoolState] = useState<PoolState | null>(null);
+  const [clardexPoolLoading, setClardexPoolLoading] = useState(false);
+  const [clardexPoolError, setClardexPoolError] = useState("");
+  const [clardexQuote, setClardexQuote] = useState<QuoteResult | null>(null);
+  const [clardexQuoteLoading, setClardexQuoteLoading] = useState(false);
+  const [clardexQuoteError, setClardexQuoteError] = useState("");
+  const [clardexAmountIn, setClardexAmountIn] = useState("1");
+  const [clardexDirection, setClardexDirection] = useState<"x-to-y" | "y-to-x">("x-to-y");
+  const [clardexTokenX, setClardexTokenX] = useState<TokenRef>({ type: "stx" });
+  const [clardexTokenY, setClardexTokenY] = useState<TokenRef>({
+    type: "sip10",
+    contract: "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.atmos-token-v4",
+  });
+  const [clardexMinOut, setClardexMinOut] = useState("0");
+  const [clardexSwapStatus, setClardexSwapStatus] = useState("");
+  const [clardexSwapLoading, setClardexSwapLoading] = useState(false);
+
   const [stakeAmount, setStakeAmount] = useState("10");
   const [unstakeAmount, setUnstakeAmount] = useState("10");
   const [stakeStatus, setStakeStatus] = useState("");
@@ -4016,6 +4050,94 @@ function App() {
     }
   };
 
+  // ── Clardex handlers ─────────────────────────────────────
+  const loadClardexPoolState = async () => {
+    setClardexPoolLoading(true);
+    setClardexPoolError("");
+    try {
+      const state = await fetchPoolState(network, clardexPool, senderAddress);
+      setClardexPoolState(state);
+    } catch {
+      setClardexPoolError("Failed to fetch pool state. Check the pool address.");
+    } finally {
+      setClardexPoolLoading(false);
+    }
+  };
+
+  const fetchClardexQuote = async () => {
+    const amount = parseFloat(clardexAmountIn);
+    if (!clardexAmountIn || isNaN(amount) || amount <= 0) {
+      setClardexQuoteError("Enter a valid amount.");
+      return;
+    }
+    setClardexQuoteLoading(true);
+    setClardexQuoteError("");
+    setClardexQuote(null);
+    try {
+      const quote =
+        clardexDirection === "x-to-y"
+          ? await fetchQuoteXForY(network, clardexPool, amount, senderAddress)
+          : await fetchQuoteYForX(network, clardexPool, amount, senderAddress);
+      setClardexQuote(quote);
+    } catch {
+      setClardexQuoteError("Quote fetch failed. The pool may not be initialized.");
+    } finally {
+      setClardexQuoteLoading(false);
+    }
+  };
+
+  const handleClardexSwap = async () => {
+    if (!walletAddress) {
+      setClardexSwapStatus("Connect your wallet to swap.");
+      return;
+    }
+    const amount = parseFloat(clardexAmountIn);
+    const minOut = parseFloat(clardexMinOut);
+    if (isNaN(amount) || amount <= 0) {
+      setClardexSwapStatus("Enter a valid amount.");
+      return;
+    }
+    setClardexSwapLoading(true);
+    setClardexSwapStatus("Opening wallet for swap approval…");
+    try {
+      const contractCall = buildSwapCall({
+        pool: clardexPool,
+        tokenX: clardexTokenX,
+        tokenY: clardexTokenY,
+        amountIn: amount,
+        minOut: isNaN(minOut) ? 0 : minOut,
+        recipient: walletAddress,
+        deadline: Math.floor(Date.now() / 1000) + 600,
+        direction: clardexDirection,
+      });
+      const uiReady = await ensureConnectUi();
+      if (!uiReady) throw new Error("Wallet UI failed to load.");
+      const result = await request(
+        { defaultProviders: getConnectProviders() },
+        "stx_callContract",
+        {
+          address: walletAddress as any,
+          network: "mainnet",
+          contract: `${contractCall.contractAddress}.${contractCall.contractName}` as any,
+          functionName: contractCall.functionName,
+          functionArgs: contractCall.functionArgs,
+          postConditionMode: "allow",
+        },
+      );
+      if (!result.txid) throw new Error("No txid returned.");
+      setClardexSwapStatus(`Swap submitted. Tx: ${result.txid}`);
+    } catch (error: any) {
+      const msg = String(error?.message ?? "");
+      if (msg.toLowerCase().includes("cancel")) {
+        setClardexSwapStatus("Swap cancelled.");
+      } else {
+        setClardexSwapStatus(`Swap failed: ${msg || "Unknown error"}`);
+      }
+    } finally {
+      setClardexSwapLoading(false);
+    }
+  };
+
   useEffect(() => {
     const hydrateSession = async () => {
       await ensureConnectUi();
@@ -4840,6 +4962,10 @@ function App() {
           }
           if (action === "versions") {
             setFeatureTab("versions");
+            return;
+          }
+          if (action === "clardex") {
+            setFeatureTab("clardex");
           }
         }}
         loading={loading}
@@ -7542,6 +7668,214 @@ function App() {
                   onTogglePin={() => togglePinnedDataset(dataset.id)}
                 />
               ))}
+            </div>
+          </section>
+        )}
+
+        {featureTab === "clardex" && (
+          <section className="section clardex-section" id="clardex">
+            <div className="section-header">
+              <div>
+                <h2>Clardex DEX</h2>
+                <p>Swap tokens and inspect pool state on Clardex liquidity pools.</p>
+              </div>
+            </div>
+
+            {/* Pool config */}
+            <div className="clardex-grid">
+              {/* Pool state card */}
+              <article className="clardex-card">
+                <div className="clardex-card__header">
+                  <span className="clardex-card__title">Pool state</span>
+                  <button
+                    className="ghost-btn compact"
+                    type="button"
+                    onClick={loadClardexPoolState}
+                    disabled={clardexPoolLoading}
+                  >
+                    {clardexPoolLoading ? "Fetching…" : "Fetch"}
+                  </button>
+                </div>
+                <div className="field-grid">
+                  <div className="field-group">
+                    <label>Pool address</label>
+                    <input
+                      value={clardexPool.address}
+                      onChange={(e) =>
+                        setClardexPool((p) => ({ ...p, address: e.currentTarget.value.trim() }))
+                      }
+                      placeholder="SP…"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label>Pool contract name</label>
+                    <input
+                      value={clardexPool.name}
+                      onChange={(e) =>
+                        setClardexPool((p) => ({ ...p, name: e.currentTarget.value.trim() }))
+                      }
+                      placeholder="dex-pool-v5"
+                    />
+                  </div>
+                </div>
+                {clardexPoolError && (
+                  <p className="clardex-error">{clardexPoolError}</p>
+                )}
+                {clardexPoolState && (
+                  <div className="clardex-metrics">
+                    <div className="clardex-metric">
+                      <span>Reserve X</span>
+                      <strong>{clardexPoolState.reserveX.toLocaleString()}</strong>
+                    </div>
+                    <div className="clardex-metric">
+                      <span>Reserve Y</span>
+                      <strong>{clardexPoolState.reserveY.toLocaleString()}</strong>
+                    </div>
+                    <div className="clardex-metric">
+                      <span>Total shares</span>
+                      <strong>{clardexPoolState.totalShares.toLocaleString()}</strong>
+                    </div>
+                    <div className="clardex-metric">
+                      <span>Price (X/Y)</span>
+                      <strong>
+                        {clardexPoolState.reserveY > 0
+                          ? (clardexPoolState.reserveX / clardexPoolState.reserveY).toFixed(6)
+                          : "—"}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+              </article>
+
+              {/* Swap quote card */}
+              <article className="clardex-card">
+                <div className="clardex-card__header">
+                  <span className="clardex-card__title">Swap quote</span>
+                  <button
+                    className="ghost-btn compact"
+                    type="button"
+                    onClick={fetchClardexQuote}
+                    disabled={clardexQuoteLoading}
+                  >
+                    {clardexQuoteLoading ? "Quoting…" : "Get quote"}
+                  </button>
+                </div>
+                <div className="field-grid">
+                  <div className="field-group">
+                    <label>Amount in</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={clardexAmountIn}
+                      onChange={(e) => setClardexAmountIn(e.currentTarget.value)}
+                      placeholder="1"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label>Direction</label>
+                    <select
+                      value={clardexDirection}
+                      onChange={(e) =>
+                        setClardexDirection(e.currentTarget.value as "x-to-y" | "y-to-x")
+                      }
+                    >
+                      <option value="x-to-y">X → Y</option>
+                      <option value="y-to-x">Y → X</option>
+                    </select>
+                  </div>
+                </div>
+                {clardexQuoteError && (
+                  <p className="clardex-error">{clardexQuoteError}</p>
+                )}
+                {clardexQuote && (
+                  <div className="clardex-metrics">
+                    <div className="clardex-metric clardex-metric--green">
+                      <span>Amount out</span>
+                      <strong>{clardexQuote.amountOut.toLocaleString()}</strong>
+                    </div>
+                    <div className="clardex-metric">
+                      <span>Fee</span>
+                      <strong>{clardexQuote.fee.toLocaleString()}</strong>
+                    </div>
+                  </div>
+                )}
+              </article>
+
+              {/* Swap execution card */}
+              <article className="clardex-card">
+                <div className="clardex-card__header">
+                  <span className="clardex-card__title">Execute swap</span>
+                </div>
+                {!walletAddress ? (
+                  <div className="stake-connect">
+                    <span className="stake-connect__icon">⟺</span>
+                    <strong>Wallet not connected</strong>
+                    <p>Connect your Stacks wallet to execute swaps.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="field-grid">
+                      <div className="field-group">
+                        <label>Token X</label>
+                        <select
+                          value={clardexTokenX.type === "stx" ? "stx" : (clardexTokenX as any).contract}
+                          onChange={(e) => {
+                            const val = e.currentTarget.value;
+                            setClardexTokenX(val === "stx" ? { type: "stx" } : { type: "sip10", contract: val });
+                          }}
+                        >
+                          <option value="stx">STX</option>
+                          <option value={`${CONTRACT_ADDRESS}.${TOKEN_CONTRACT_NAME}`}>
+                            ATMOS ({TOKEN_CONTRACT_NAME})
+                          </option>
+                        </select>
+                      </div>
+                      <div className="field-group">
+                        <label>Token Y</label>
+                        <select
+                          value={clardexTokenY.type === "stx" ? "stx" : (clardexTokenY as any).contract}
+                          onChange={(e) => {
+                            const val = e.currentTarget.value;
+                            setClardexTokenY(val === "stx" ? { type: "stx" } : { type: "sip10", contract: val });
+                          }}
+                        >
+                          <option value={`${CONTRACT_ADDRESS}.${TOKEN_CONTRACT_NAME}`}>
+                            ATMOS ({TOKEN_CONTRACT_NAME})
+                          </option>
+                          <option value="stx">STX</option>
+                        </select>
+                      </div>
+                      <div className="field-group">
+                        <label>Min out (slippage guard)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={clardexMinOut}
+                          onChange={(e) => setClardexMinOut(e.currentTarget.value)}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="stake-actions">
+                      <button
+                        className="primary-btn"
+                        type="button"
+                        onClick={handleClardexSwap}
+                        disabled={clardexSwapLoading}
+                      >
+                        {clardexSwapLoading ? "Swapping…" : "Swap"}
+                      </button>
+                    </div>
+                    {clardexSwapStatus && (
+                      <p className={`clardex-status${clardexSwapStatus.startsWith("Swap submitted") ? " clardex-status--ok" : ""}`}>
+                        {clardexSwapStatus}
+                      </p>
+                    )}
+                  </>
+                )}
+              </article>
             </div>
           </section>
         )}

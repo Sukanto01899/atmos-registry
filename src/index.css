@@ -4908,3 +4908,95 @@ textarea:focus {
     justify-content: center;
   }
 }
+
+/* ── Clardex DEX section ─────────────────────────────────── */
+.clardex-section {
+  margin-top: 2rem;
+}
+
+.clardex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.4rem;
+}
+
+.clardex-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.clardex-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.clardex-card__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.clardex-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.clardex-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(17, 25, 34, 0.55);
+}
+
+:root[data-theme="light"] .clardex-metric {
+  background: var(--card-strong);
+}
+
+.clardex-metric span {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+}
+
+.clardex-metric strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  word-break: break-all;
+}
+
+.clardex-metric--green strong {
+  color: var(--accent-2);
+}
+
+.clardex-error {
+  color: #f87171;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.clardex-status {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0;
+  word-break: break-all;
+}
+
+.clardex-status--ok {
+  color: var(--accent-2);
+}

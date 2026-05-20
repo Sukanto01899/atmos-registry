@@ -5,7 +5,8 @@ type Props = {
     | "staking"
     | "alerts"
     | "audit"
-    | "versions";
+    | "versions"
+    | "clardex";
   onFeatureTabChange: (
     tab:
       | "datasets"
@@ -13,7 +14,8 @@ type Props = {
       | "staking"
       | "alerts"
       | "audit"
-      | "versions",
+      | "versions"
+      | "clardex",
   ) => void;
   onMenuAction: (
     action:
@@ -22,7 +24,8 @@ type Props = {
       | "staking"
       | "alerts"
       | "audit"
-      | "versions",
+      | "versions"
+      | "clardex",
   ) => void;
   loading: boolean;
   onSyncMainnet: () => void;
@@ -56,6 +59,7 @@ const NAV_ICONS: Record<string, string> = {
   alerts: "◎",
   audit: "▦",
   versions: "⊞",
+  clardex: "⟺",
 };
 
 export function NavBar({
@@ -89,6 +93,7 @@ export function NavBar({
     { id: "alerts", label: "Alerts" },
     { id: "audit", label: "Audit" },
     { id: "versions", label: "Versions" },
+    { id: "clardex", label: "Clardex" },
   ] as const;
 
   useEffect(() => {
