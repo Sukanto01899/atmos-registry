@@ -2,7 +2,7 @@
 
 :root {
   color-scheme: dark;
-  --nav-offset: 3.5rem;
+  --nav-offset: 4rem;
   --sidebar-w: 240px;
   --bg: #0b1015;
   --bg-soft: #0f1721;
@@ -463,22 +463,25 @@ textarea {
   height: var(--nav-offset);
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0 1.25rem;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
   background:
-    linear-gradient(90deg, rgba(245, 159, 75, 0.05) 0%, transparent 28%),
-    rgba(11, 16, 21, 0.9);
+    linear-gradient(90deg, rgba(245, 159, 75, 0.04) 0%, transparent 30%),
+    rgba(10, 15, 20, 0.93);
   border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 var(--border), 0 4px 24px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(20px);
   z-index: 10;
 }
 
 :root[data-theme="light"] .topbar {
   background:
-    linear-gradient(90deg, rgba(245, 159, 75, 0.06) 0%, transparent 28%),
-    rgba(246, 248, 251, 0.94);
+    linear-gradient(90deg, rgba(245, 159, 75, 0.05) 0%, transparent 30%),
+    rgba(246, 248, 251, 0.96);
+  box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(11, 16, 21, 0.08);
 }
 
+/* Burger (mobile) */
 .topbar__burger {
   display: none;
   align-items: center;
@@ -486,11 +489,17 @@ textarea {
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(22, 31, 43, 0.7);
-  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(22, 31, 43, 0.6);
+  border-radius: 10px;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.topbar__burger:hover {
+  background: rgba(245, 159, 75, 0.08);
+  border-color: rgba(245, 159, 75, 0.2);
 }
 
 :root[data-theme="light"] .topbar__burger {
@@ -498,9 +507,13 @@ textarea {
   border-color: var(--border);
 }
 
+/* Page title */
 .topbar__page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: "Fraunces", serif;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--text);
   flex: 1;
@@ -510,22 +523,102 @@ textarea {
   text-overflow: ellipsis;
 }
 
+.topbar__page-icon {
+  font-size: 0.95rem;
+  opacity: 0.55;
+  font-style: normal;
+  flex-shrink: 0;
+}
+
+/* Actions row */
 .topbar__actions {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.3rem;
   flex-wrap: nowrap;
   margin-left: auto;
+}
+
+.topbar__divider {
+  width: 1px;
+  height: 1.15rem;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 0.2rem;
+}
+
+/* Generic square icon button */
+.topbar__action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 31, 43, 0.45);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.topbar__action-btn:hover {
+  background: rgba(245, 159, 75, 0.08);
+  border-color: rgba(245, 159, 75, 0.22);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .topbar__action-btn {
+  background: rgba(238, 242, 247, 0.7);
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .topbar__action-btn:hover {
+  background: rgba(245, 159, 75, 0.08);
+  border-color: rgba(245, 159, 75, 0.25);
+  color: var(--text);
+}
+
+/* Floating badge on icon buttons */
+.topbar__float-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.2rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #0b1015;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--bg);
+  line-height: 1;
+}
+
+.topbar__float-badge--green {
+  background: var(--accent-2);
 }
 
 .topbar__menu {
   position: relative;
 }
 
+/* Sync */
 .topbar__sync {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.82rem;
 }
 
 .topbar__sync-icon {
@@ -542,62 +635,73 @@ textarea {
   to { transform: rotate(360deg); }
 }
 
-.topbar__action-label {
-  display: inline;
-}
-
+/* ⌘K command button */
 .topbar__cmd {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.38rem 0.65rem;
+  gap: 0.35rem;
+  padding: 0.38rem 0.7rem;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 31, 43, 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.topbar__cmd:hover {
+  background: rgba(245, 159, 75, 0.08);
+  border-color: rgba(245, 159, 75, 0.22);
+  color: var(--text);
+}
+
+:root[data-theme="light"] .topbar__cmd {
+  background: rgba(238, 242, 247, 0.7);
+  border-color: var(--border);
 }
 
 .topbar__cmd kbd {
   font-family: inherit;
-  font-size: 0.78rem;
-  opacity: 0.85;
+  font-size: 0.76rem;
+  opacity: 0.9;
   letter-spacing: 0.02em;
   pointer-events: none;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.1rem 0.3rem;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.topbar__icon-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  font-weight: 700;
-  border-radius: 50%;
+:root[data-theme="light"] .topbar__cmd kbd {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
 }
 
-.topbar__more {
-  letter-spacing: 0.1em;
-  padding: 0.4rem 0.65rem;
-  font-size: 1rem;
-  line-height: 1;
-}
-
+/* Wallet chip */
 .topbar__wallet-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.32rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid rgba(55, 209, 161, 0.28);
-  background: rgba(55, 209, 161, 0.06);
+  gap: 0.45rem;
+  padding: 0.38rem 0.85rem;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(55, 209, 161, 0.3);
+  background: rgba(55, 209, 161, 0.07);
   color: var(--accent-2);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .topbar__wallet-chip:hover {
   background: rgba(55, 209, 161, 0.12);
-  border-color: rgba(55, 209, 161, 0.5);
+  border-color: rgba(55, 209, 161, 0.55);
+  box-shadow: 0 0 12px rgba(55, 209, 161, 0.12);
 }
 
 .topbar__wallet-dot {
@@ -612,7 +716,13 @@ textarea {
 
 .topbar__connect {
   font-size: 0.82rem;
-  padding: 0.38rem 0.85rem;
+  padding: 0.38rem 0.9rem;
+  height: 34px;
+}
+
+.topbar__action-label {
+  display: inline;
+  font-size: 0.82rem;
 }
 
 .app-notices {
@@ -3122,32 +3232,6 @@ textarea:focus {
   box-shadow: 0 20px 44px rgba(32, 201, 151, 0.18);
 }
 
-.alert-bell {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.alert-count {
-  min-width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 999px;
-  display: inline-grid;
-  place-items: center;
-  font-size: 0.7rem;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  transition: all 0.2s ease;
-}
-
-.alert-count.active {
-  border-color: rgba(245, 138, 61, 0.55);
-  color: var(--accent);
-  background: rgba(245, 138, 61, 0.18);
-  animation: badge-pulse 2s ease-in-out infinite;
-}
-
 @keyframes badge-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(245, 138, 61, 0); }
   50% { box-shadow: 0 0 0 4px rgba(245, 138, 61, 0.18); }
@@ -5063,7 +5147,9 @@ textarea:focus {
   }
 
   /* Hide less-used topbar actions on very small screens */
-  .topbar__actions .ghost-btn:not(.alert-bell) {
+  .topbar__divider,
+  .topbar__cmd,
+  .topbar__action-label {
     display: none;
   }
 

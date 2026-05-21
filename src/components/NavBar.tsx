@@ -84,6 +84,7 @@ export function NavBar({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
 
   const featureTabs = [
@@ -105,6 +106,17 @@ export function NavBar({
       if (copyTimeoutRef.current) window.clearTimeout(copyTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const copyWalletAddress = async () => {
     if (!walletAddress) return;
@@ -256,6 +268,7 @@ export function NavBar({
 
       {/* Top bar */}
       <header className="topbar">
+        {/* Mobile burger */}
         <button
           className="topbar__burger"
           type="button"
@@ -269,59 +282,82 @@ export function NavBar({
           </span>
         </button>
 
+        {/* Page title */}
         <div className="topbar__page-title">
+          <em className="topbar__page-icon" aria-hidden="true">
+            {NAV_ICONS[featureTab] ?? "⌂"}
+          </em>
           {featureTabs.find((t) => t.id === featureTab)?.label ?? "Home"}
         </div>
 
         <div className="topbar__actions">
+          {/* Sync */}
           <button
             className={`ghost-btn topbar__sync${loading ? " loading" : ""}`}
             onClick={onSyncMainnet}
             disabled={loading}
+            title="Sync on-chain data"
           >
             <span className="topbar__sync-icon" aria-hidden="true">↻</span>
-            {loading ? "Syncing…" : "Sync"}
+            <span className="topbar__action-label">{loading ? "Syncing…" : "Sync"}</span>
           </button>
+
+          <span className="topbar__divider" aria-hidden="true" />
+
+          {/* Alerts */}
           <button
-            className="ghost-btn alert-bell"
+            className="topbar__action-btn"
             type="button"
             onClick={onToggleAlerts}
+            title="Alerts"
+            aria-label={`Alerts${unreadAlertCount > 0 ? ` (${unreadAlertCount} unread)` : ""}`}
           >
-            <span aria-hidden="true">◎</span>
-            <span className="topbar__action-label">Alerts</span>
-            <span className={`alert-count${unreadAlertCount > 0 ? " active" : ""}`}>
-              {unreadAlertCount}
-            </span>
+            <span aria-hidden="true">◬</span>
+            {unreadAlertCount > 0 && (
+              <span className="topbar__float-badge">{unreadAlertCount}</span>
+            )}
           </button>
+
+          {/* Tx center */}
           <button
-            className="ghost-btn alert-bell"
+            className="topbar__action-btn"
             type="button"
             onClick={onToggleTxCenter}
+            title="Transaction center"
+            aria-label={`Transactions${pendingTxCount > 0 ? ` (${pendingTxCount} pending)` : ""}`}
           >
             <span aria-hidden="true">⊡</span>
-            <span className="topbar__action-label">Tx</span>
-            <span className={`alert-count${pendingTxCount > 0 ? " active" : ""}`}>
-              {pendingTxCount}
-            </span>
+            {pendingTxCount > 0 && (
+              <span className="topbar__float-badge topbar__float-badge--green">{pendingTxCount}</span>
+            )}
           </button>
+
+          <span className="topbar__divider" aria-hidden="true" />
+
+          {/* Command palette */}
           <button
-            className="ghost-btn topbar__cmd"
+            className="topbar__cmd"
             type="button"
             onClick={onOpenCommandPalette}
-            title="Command palette"
+            title="Open command palette"
           >
             <kbd aria-hidden="true">⌘K</kbd>
           </button>
+
+          {/* Keyboard shortcuts */}
           <button
-            className="ghost-btn topbar__icon-btn"
+            className="topbar__action-btn"
             type="button"
             onClick={onOpenShortcuts}
             aria-label="Keyboard shortcuts"
             title="Keyboard shortcuts"
           >
-            ?
+            <span aria-hidden="true" style={{ fontSize: "0.82rem", fontWeight: 700 }}>?</span>
           </button>
 
+          <span className="topbar__divider" aria-hidden="true" />
+
+          {/* Wallet */}
           {walletAddress ? (
             <button
               className="topbar__wallet-chip"
@@ -338,68 +374,46 @@ export function NavBar({
               type="button"
               onClick={onConnectWallet}
             >
-              Connect
+              Connect wallet
             </button>
           )}
 
           {/* More menu */}
-          <div className="topbar__menu">
+          <div className="topbar__menu" ref={menuRef}>
             <button
-              className="ghost-btn topbar__more"
+              className="topbar__action-btn"
               type="button"
               onClick={() => setMenuOpen((prev) => !prev)}
+              title="More options"
+              aria-label="More options"
             >
-              ···
+              <span aria-hidden="true" style={{ letterSpacing: "0.08em", fontSize: "0.7rem" }}>···</span>
             </button>
             {menuOpen && (
               <div className="nav__dropdown">
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onMenuAction("home"); }}
-                >
-                  Home
+                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("home"); }}>
+                  ⌂ Home
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onOpenContractExplorer(); }}
-                >
-                  Contract explorer
+                <button type="button" onClick={() => { setMenuOpen(false); onOpenContractExplorer(); }}>
+                  ⬡ Contract explorer
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onCopyContractExplorerUrl(); }}
-                >
-                  Copy contract URL
+                <button type="button" onClick={() => { setMenuOpen(false); onCopyContractExplorerUrl(); }}>
+                  ⎘ Copy contract URL
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onMenuAction("add-dataset"); }}
-                >
-                  Add dataset
+                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("add-dataset"); }}>
+                  ⊕ Add dataset
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onMenuAction("staking"); }}
-                >
-                  Staking
+                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("staking"); }}>
+                  ◈ Staking
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onMenuAction("alerts"); }}
-                >
-                  Alerts
+                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("alerts"); }}>
+                  ◬ Alerts
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onMenuAction("audit"); }}
-                >
-                  Audit
+                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("audit"); }}>
+                  ▦ Audit
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setMenuOpen(false); onMenuAction("versions"); }}
-                >
-                  Versions
+                <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("versions"); }}>
+                  ⊞ Versions
                 </button>
               </div>
             )}
