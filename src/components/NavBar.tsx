@@ -54,12 +54,12 @@ const shortenAddress = (value: string) => {
 
 const NAV_ICONS: Record<string, string> = {
   datasets: "⌂",
-  "add-dataset": "+",
+  "add-dataset": "⊕",
   staking: "◈",
-  alerts: "◎",
+  alerts: "◬",
   audit: "▦",
   versions: "⊞",
-  clardex: "⟺",
+  clardex: "⇄",
 };
 
 export function NavBar({
@@ -95,6 +95,10 @@ export function NavBar({
     { id: "versions", label: "Versions" },
     { id: "clardex", label: "Clardex" },
   ] as const;
+
+  const primaryIds = new Set<string>(["datasets", "add-dataset"]);
+  const primaryTabs = featureTabs.filter((t) => primaryIds.has(t.id));
+  const toolTabs = featureTabs.filter((t) => !primaryIds.has(t.id));
 
   useEffect(() => {
     return () => {
@@ -144,6 +148,7 @@ export function NavBar({
 
       {/* Left sidebar */}
       <aside className={`sidebar${sidebarOpen ? " sidebar--open" : ""}`}>
+        {/* Brand */}
         <div className="sidebar__brand">
           <div className="logo-orb"><span aria-hidden="true">◈</span></div>
           <div className="sidebar__brand-text">
@@ -160,15 +165,26 @@ export function NavBar({
           </button>
         </div>
 
+        {/* Nav */}
         <nav className="sidebar__nav">
-          {featureTabs.map((tab) => (
+          {primaryTabs.map((tab) => (
             <button
               key={tab.id}
               className={`sidebar__item${featureTab === tab.id ? " active" : ""}`}
-              onClick={() => {
-                onFeatureTabChange(tab.id);
-                setSidebarOpen(false);
-              }}
+              onClick={() => { onFeatureTabChange(tab.id); setSidebarOpen(false); }}
+            >
+              <span className="sidebar__item-icon">{NAV_ICONS[tab.id]}</span>
+              <span className="sidebar__item-label">{tab.label}</span>
+            </button>
+          ))}
+
+          <span className="sidebar__section-label">Tools</span>
+
+          {toolTabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`sidebar__item${featureTab === tab.id ? " active" : ""}`}
+              onClick={() => { onFeatureTabChange(tab.id); setSidebarOpen(false); }}
             >
               <span className="sidebar__item-icon">{NAV_ICONS[tab.id]}</span>
               <span className="sidebar__item-label">{tab.label}</span>
@@ -182,11 +198,15 @@ export function NavBar({
           ))}
         </nav>
 
+        {/* Footer */}
         <div className="sidebar__footer">
           <div className="sidebar__footer-meta">
-            <span className="network-badge">{networkLabel}</span>
+            {!walletAddress && (
+              <span className="network-badge">{networkLabel}</span>
+            )}
             <ThemeToggle />
           </div>
+
           {walletAddress ? (
             <div className="sidebar__wallet">
               <div className="sidebar__wallet-head">
@@ -194,6 +214,7 @@ export function NavBar({
                 <span className="sidebar__wallet-addr" title={walletAddress}>
                   {shortenAddress(walletAddress)}
                 </span>
+                <span className="sidebar__wallet-network">{networkLabel}</span>
               </div>
               <div className="sidebar__wallet-actions">
                 <button
@@ -202,14 +223,15 @@ export function NavBar({
                   onClick={copyWalletAddress}
                   title={copied ? "Copied!" : "Copy address"}
                 >
-                  {copied ? "Copied" : "Copy"}
+                  {copied ? "✓ Copied" : "Copy"}
                 </button>
                 <button
                   className="ghost-btn compact"
                   type="button"
                   onClick={openWalletExplorer}
+                  title="View on Hiro Explorer"
                 >
-                  Open
+                  Explorer
                 </button>
                 <button
                   className="ghost-btn compact"
@@ -222,8 +244,8 @@ export function NavBar({
             </div>
           ) : (
             <button
-              className="primary-btn"
-              style={{ width: "100%" }}
+              className="primary-btn sidebar__connect"
+              type="button"
               onClick={onConnectWallet}
             >
               Connect Wallet
