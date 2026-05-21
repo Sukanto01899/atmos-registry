@@ -1037,7 +1037,7 @@ textarea {
 
 /* ── Home banner ────────────────────────────────────────────── */
 .home-banner {
-  padding: 3.5rem 2rem 0;
+  padding: 4rem 2rem 0;
   position: relative;
   overflow: hidden;
   background:
@@ -1070,17 +1070,26 @@ textarea {
 .home-banner__top {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 2rem;
-  flex-wrap: wrap;
-  padding-bottom: 2rem;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.75rem;
+  padding-bottom: 2.5rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.home-banner__heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .home-banner__heading .eyebrow {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   font-size: 0.73rem;
 }
@@ -1102,18 +1111,19 @@ textarea {
 }
 
 .home-banner__subtitle {
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
   color: var(--muted);
-  font-size: 1rem;
-  max-width: 500px;
-  line-height: 1.6;
+  font-size: 1.05rem;
+  max-width: 580px;
+  line-height: 1.65;
+  text-align: center;
 }
 
 .home-banner__trust {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin-top: 1.25rem;
+  justify-content: center;
 }
 
 .trust-badge {
@@ -1148,11 +1158,17 @@ textarea {
   color: var(--muted);
 }
 
+.trust-badge--orange {
+  border-color: rgba(245, 159, 75, 0.3);
+  background: rgba(245, 159, 75, 0.07);
+  color: var(--accent);
+}
+
 .home-banner__title {
-  font-size: clamp(2.3rem, 4.2vw, 3.5rem);
-  line-height: 1.06;
+  font-size: clamp(2.6rem, 4.8vw, 4rem);
+  line-height: 1.04;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .home-banner__title-accent {
@@ -1172,10 +1188,8 @@ textarea {
 .home-banner__ctas {
   display: flex;
   gap: 0.75rem;
-  flex-shrink: 0;
   flex-wrap: wrap;
-  align-self: flex-start;
-  padding-top: 0.25rem;
+  justify-content: center;
 }
 
 /* Search bar */

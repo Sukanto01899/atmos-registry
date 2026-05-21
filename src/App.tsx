@@ -5536,16 +5536,17 @@ function App() {
             <div className="home-banner" id="home">
               <div className="home-banner__top">
                 <div className="home-banner__heading">
-                  <p className="eyebrow">Atmospheric data registry</p>
+                  <p className="eyebrow">Live registry · Stacks blockchain</p>
                   <h1 className="home-banner__title">
-                    <span className="home-banner__title-accent">Trusted climate signals,</span><br />anchored on Stacks.
+                    <span className="home-banner__title-accent">Climate data</span><br />open and on-chain.
                   </h1>
                   <p className="home-banner__subtitle">
-                    Open, verifiable atmospheric datasets registered and preserved on-chain.
+                    Atmospheric datasets anchored with cryptographic proofs — explore, verify, and contribute to a transparent climate data commons.
                   </p>
                   <div className="home-banner__trust">
-                    <span className="trust-badge">✓ On-chain anchored</span>
+                    <span className="trust-badge">✓ Cryptographically verified</span>
                     <span className="trust-badge trust-badge--blue">⬡ IPFS-preserved</span>
+                    <span className="trust-badge trust-badge--orange">⛓ Stacks blockchain</span>
                     <span className="trust-badge trust-badge--muted">◎ Open protocol</span>
                   </div>
                 </div>
@@ -5555,7 +5556,7 @@ function App() {
                     onClick={loadLatest}
                     disabled={loading}
                   >
-                    {loading ? "Fetching…" : "Refresh on-chain data"}
+                    {loading ? "Fetching…" : "↻ Refresh data"}
                   </button>
                   <button
                     className="ghost-btn"
@@ -5563,7 +5564,7 @@ function App() {
                     onClick={openRandomFilteredDataset}
                     disabled={sortedDatasets.length === 0}
                   >
-                    ⟳ Random
+                    ⟳ Explore random
                   </button>
                 </div>
               </div>
