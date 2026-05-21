@@ -7900,11 +7900,12 @@ function App() {
                 </button>
               </div>
             )}
-            <div className="section-header register-section-header">
-              <div>
-                <h2>Register a dataset</h2>
-                <p>Submit a new dataset to the Atmos mainnet registry.</p>
-              </div>
+            <div className="register-banner">
+              <p className="eyebrow">ATMOS registry · Stacks mainnet</p>
+              <h2>Register a dataset</h2>
+              <p className="register-banner__subtitle">
+                Submit atmospheric data to the on-chain registry. All metadata is stored permanently and cryptographically anchored.
+              </p>
             </div>
             <form
               className="form-grid form-grid--register"
@@ -7917,265 +7918,282 @@ function App() {
                 <div className="form-header">
                   <h3>Dataset details</h3>
                   <p className="form-help">
-                    Required fields are marked with an asterisk (*). The data
-                    you enter will be stored on-chain.
+                    Fields marked <span className="field-required">*</span> are required and will be stored on-chain.
                   </p>
                 </div>
-                <div className="field-grid">
-                  <label className="field-label" htmlFor="dataset-name">
-                    Name <span className="field-required">*</span>
-                  </label>
-                  <input
-                    id="dataset-name"
-                    value={registerForm.name}
-                    onChange={updateRegisterField("name")}
-                    maxLength={REGISTER_FIELD_LIMITS.name}
-                    onBlur={() =>
-                      setRegisterTouched((prev) => ({ ...prev, name: true }))
-                    }
-                    placeholder="Dataset name"
-                  />
-                  {registerValidation.issues.name &&
-                    (registerTouched.name || registerSubmitAttempted) && (
-                    <span className="field-hint field-hint--error">
-                      {registerValidation.issues.name}
-                    </span>
-                  )}
-                  {!registerValidation.issues.name &&
-                    registerValidation.ok.name &&
-                    (registerTouched.name || registerSubmitAttempted) && (
-                      <span className="field-hint field-hint--ok">
-                        Looks good.
-                      </span>
-                    )}
 
-                  <label className="field-label" htmlFor="dataset-type">
-                    Data type <span className="field-required">*</span>
-                  </label>
-                  <input
-                    id="dataset-type"
-                    value={registerForm.dataType}
-                    onChange={updateRegisterField("dataType")}
-                    maxLength={REGISTER_FIELD_LIMITS.dataType}
-                    onBlur={() =>
-                      setRegisterTouched((prev) => ({ ...prev, dataType: true }))
-                    }
-                    placeholder="Data type (e.g. imagery, sensor, model)"
-                  />
-                  {registerValidation.issues.dataType &&
-                    (registerTouched.dataType || registerSubmitAttempted) && (
-                    <span className="field-hint field-hint--error">
-                      {registerValidation.issues.dataType}
-                    </span>
-                  )}
-                  {!registerValidation.issues.dataType &&
-                    registerValidation.ok.dataType &&
-                    (registerTouched.dataType || registerSubmitAttempted) && (
-                      <span className="field-hint field-hint--ok">
-                        Looks good.
-                      </span>
-                    )}
-
-                  <label className="field-label" htmlFor="dataset-description">
-                    Description <span className="field-required">*</span>
-                  </label>
-                  <textarea
-                    id="dataset-description"
-                    value={registerForm.description}
-                    onChange={updateRegisterField("description")}
-                    maxLength={REGISTER_FIELD_LIMITS.description}
-                    onBlur={() =>
-                      setRegisterTouched((prev) => ({
-                        ...prev,
-                        description: true,
-                      }))
-                    }
-                    placeholder="Short description"
-                    rows={4}
-                  />
-                  {registerValidation.issues.description &&
-                    (registerTouched.description ||
-                      registerSubmitAttempted) && (
-                    <span className="field-hint field-hint--error">
-                      {registerValidation.issues.description}
-                    </span>
-                  )}
-                  {!registerValidation.issues.description &&
-                    registerValidation.ok.description &&
-                    (registerTouched.description ||
-                      registerSubmitAttempted) && (
-                      <span className="field-hint field-hint--ok">
-                        Looks good.
-                      </span>
-                    )}
-
-                  <div className="field-row">
-                    <div>
-                      <label className="field-label" htmlFor="collection-date">
-                        Collection date
-                      </label>
-                      <input
-                        id="collection-date"
-                        value={registerForm.collectionDate}
-                        onChange={updateRegisterField("collectionDate")}
-                        onBlur={() =>
-                          setRegisterTouched((prev) => ({
-                            ...prev,
-                            collectionDate: true,
-                          }))
-                        }
-                        placeholder="Unix timestamp or block height"
-                      />
-                      {registerValidation.issues.collectionDate &&
-                        (registerTouched.collectionDate ||
-                          registerSubmitAttempted) && (
-                        <span className="field-hint field-hint--error">
-                          {registerValidation.issues.collectionDate}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <label className="field-label" htmlFor="ipfs-hash">
-                        IPFS hash
-                      </label>
-                      <input
-                        id="ipfs-hash"
-                        value={registerForm.ipfsHash}
-                        onChange={updateRegisterField("ipfsHash")}
-                        onBlur={() =>
-                          setRegisterTouched((prev) => ({
-                            ...prev,
-                            ipfsHash: true,
-                          }))
-                        }
-                        maxLength={REGISTER_FIELD_LIMITS.ipfsHash}
-                        placeholder="Optional (Qm... or bafy...)"
-                      />
-                      {registerValidation.issues.ipfsHash &&
-                        (registerTouched.ipfsHash ||
-                          registerSubmitAttempted) && (
-                        <span className="field-hint field-hint--error">
-                          {registerValidation.issues.ipfsHash}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="field-row">
-                    <div>
-                      <label className="field-label" htmlFor="altitude-min">
-                        Altitude min (m)
-                      </label>
-                      <input
-                        id="altitude-min"
-                        value={registerForm.altitudeMin}
-                        onChange={updateRegisterField("altitudeMin")}
-                        onBlur={() =>
-                          setRegisterTouched((prev) => ({
-                            ...prev,
-                            altitudeMin: true,
-                          }))
-                        }
-                        placeholder="e.g. 0"
-                      />
-                      {registerValidation.issues.altitudeMin &&
-                        (registerTouched.altitudeMin ||
-                          registerSubmitAttempted) && (
-                        <span className="field-hint field-hint--error">
-                          {registerValidation.issues.altitudeMin}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <label className="field-label" htmlFor="altitude-max">
-                        Altitude max (m)
-                      </label>
-                      <input
-                        id="altitude-max"
-                        value={registerForm.altitudeMax}
-                        onChange={updateRegisterField("altitudeMax")}
-                        onBlur={() =>
-                          setRegisterTouched((prev) => ({
-                            ...prev,
-                            altitudeMax: true,
-                          }))
-                        }
-                        placeholder="e.g. 1200"
-                      />
-                      {registerValidation.issues.altitudeMax &&
-                        (registerTouched.altitudeMax ||
-                          registerSubmitAttempted) && (
-                        <span className="field-hint field-hint--error">
-                          {registerValidation.issues.altitudeMax}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="field-row">
-                    <div>
-                      <label className="field-label" htmlFor="latitude">
-                        Latitude (deg)
-                      </label>
-                      <input
-                        id="latitude"
-                        value={registerForm.latitude}
-                        onChange={updateRegisterField("latitude")}
-                        onBlur={() =>
-                          setRegisterTouched((prev) => ({
-                            ...prev,
-                            latitude: true,
-                          }))
-                        }
-                        placeholder="e.g. 37.7749"
-                      />
-                      {registerValidation.issues.latitude &&
-                        (registerTouched.latitude ||
-                          registerSubmitAttempted) && (
-                        <span className="field-hint field-hint--error">
-                          {registerValidation.issues.latitude}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <label className="field-label" htmlFor="longitude">
-                        Longitude (deg)
-                      </label>
-                      <input
-                        id="longitude"
-                        value={registerForm.longitude}
-                        onChange={updateRegisterField("longitude")}
-                        onBlur={() =>
-                          setRegisterTouched((prev) => ({
-                            ...prev,
-                            longitude: true,
-                          }))
-                        }
-                        placeholder="e.g. -122.4194"
-                      />
-                      {registerValidation.issues.longitude &&
-                        (registerTouched.longitude ||
-                          registerSubmitAttempted) && (
-                        <span className="field-hint field-hint--error">
-                          {registerValidation.issues.longitude}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <label className="checkbox-row">
+                {/* ── Basic information ── */}
+                <div className="form-group">
+                  <span className="form-group__label">Basic information</span>
+                  <div className="field-grid">
+                    <label className="field-label" htmlFor="dataset-name">
+                      Name <span className="field-required">*</span>
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={registerForm.isPublic}
-                      onChange={(event) =>
-                        setRegisterForm((prev) => ({
+                      id="dataset-name"
+                      value={registerForm.name}
+                      onChange={updateRegisterField("name")}
+                      maxLength={REGISTER_FIELD_LIMITS.name}
+                      onBlur={() =>
+                        setRegisterTouched((prev) => ({ ...prev, name: true }))
+                      }
+                      placeholder="Dataset name"
+                    />
+                    {registerValidation.issues.name &&
+                      (registerTouched.name || registerSubmitAttempted) && (
+                      <span className="field-hint field-hint--error">
+                        {registerValidation.issues.name}
+                      </span>
+                    )}
+                    {!registerValidation.issues.name &&
+                      registerValidation.ok.name &&
+                      (registerTouched.name || registerSubmitAttempted) && (
+                        <span className="field-hint field-hint--ok">
+                          Looks good.
+                        </span>
+                      )}
+
+                    <label className="field-label" htmlFor="dataset-type">
+                      Data type <span className="field-required">*</span>
+                    </label>
+                    <input
+                      id="dataset-type"
+                      value={registerForm.dataType}
+                      onChange={updateRegisterField("dataType")}
+                      maxLength={REGISTER_FIELD_LIMITS.dataType}
+                      onBlur={() =>
+                        setRegisterTouched((prev) => ({ ...prev, dataType: true }))
+                      }
+                      placeholder="e.g. imagery, sensor, model"
+                    />
+                    {registerValidation.issues.dataType &&
+                      (registerTouched.dataType || registerSubmitAttempted) && (
+                      <span className="field-hint field-hint--error">
+                        {registerValidation.issues.dataType}
+                      </span>
+                    )}
+                    {!registerValidation.issues.dataType &&
+                      registerValidation.ok.dataType &&
+                      (registerTouched.dataType || registerSubmitAttempted) && (
+                        <span className="field-hint field-hint--ok">
+                          Looks good.
+                        </span>
+                      )}
+
+                    <label className="field-label" htmlFor="dataset-description">
+                      Description <span className="field-required">*</span>
+                    </label>
+                    <textarea
+                      id="dataset-description"
+                      value={registerForm.description}
+                      onChange={updateRegisterField("description")}
+                      maxLength={REGISTER_FIELD_LIMITS.description}
+                      onBlur={() =>
+                        setRegisterTouched((prev) => ({
                           ...prev,
-                          isPublic: readChecked(event),
+                          description: true,
                         }))
                       }
+                      placeholder="Describe the dataset — what it measures, where, and how"
+                      rows={4}
                     />
-                    <span>Mark dataset as public</span>
-                  </label>
+                    {registerValidation.issues.description &&
+                      (registerTouched.description ||
+                        registerSubmitAttempted) && (
+                      <span className="field-hint field-hint--error">
+                        {registerValidation.issues.description}
+                      </span>
+                    )}
+                    {!registerValidation.issues.description &&
+                      registerValidation.ok.description &&
+                      (registerTouched.description ||
+                        registerSubmitAttempted) && (
+                        <span className="field-hint field-hint--ok">
+                          Looks good.
+                        </span>
+                      )}
+                  </div>
                 </div>
+
+                {/* ── Location & altitude ── */}
+                <div className="form-group">
+                  <span className="form-group__label">Location & altitude</span>
+                  <div className="field-grid">
+                    <div className="field-row">
+                      <div>
+                        <label className="field-label" htmlFor="latitude">
+                          Latitude (deg)
+                        </label>
+                        <input
+                          id="latitude"
+                          value={registerForm.latitude}
+                          onChange={updateRegisterField("latitude")}
+                          onBlur={() =>
+                            setRegisterTouched((prev) => ({
+                              ...prev,
+                              latitude: true,
+                            }))
+                          }
+                          placeholder="e.g. 37.7749"
+                        />
+                        {registerValidation.issues.latitude &&
+                          (registerTouched.latitude ||
+                            registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--error">
+                            {registerValidation.issues.latitude}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <label className="field-label" htmlFor="longitude">
+                          Longitude (deg)
+                        </label>
+                        <input
+                          id="longitude"
+                          value={registerForm.longitude}
+                          onChange={updateRegisterField("longitude")}
+                          onBlur={() =>
+                            setRegisterTouched((prev) => ({
+                              ...prev,
+                              longitude: true,
+                            }))
+                          }
+                          placeholder="e.g. -122.4194"
+                        />
+                        {registerValidation.issues.longitude &&
+                          (registerTouched.longitude ||
+                            registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--error">
+                            {registerValidation.issues.longitude}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="field-row">
+                      <div>
+                        <label className="field-label" htmlFor="altitude-min">
+                          Altitude min (m)
+                        </label>
+                        <input
+                          id="altitude-min"
+                          value={registerForm.altitudeMin}
+                          onChange={updateRegisterField("altitudeMin")}
+                          onBlur={() =>
+                            setRegisterTouched((prev) => ({
+                              ...prev,
+                              altitudeMin: true,
+                            }))
+                          }
+                          placeholder="e.g. 0"
+                        />
+                        {registerValidation.issues.altitudeMin &&
+                          (registerTouched.altitudeMin ||
+                            registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--error">
+                            {registerValidation.issues.altitudeMin}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <label className="field-label" htmlFor="altitude-max">
+                          Altitude max (m)
+                        </label>
+                        <input
+                          id="altitude-max"
+                          value={registerForm.altitudeMax}
+                          onChange={updateRegisterField("altitudeMax")}
+                          onBlur={() =>
+                            setRegisterTouched((prev) => ({
+                              ...prev,
+                              altitudeMax: true,
+                            }))
+                          }
+                          placeholder="e.g. 1200"
+                        />
+                        {registerValidation.issues.altitudeMax &&
+                          (registerTouched.altitudeMax ||
+                            registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--error">
+                            {registerValidation.issues.altitudeMax}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Storage & access ── */}
+                <div className="form-group">
+                  <span className="form-group__label">Storage & access</span>
+                  <div className="field-grid">
+                    <div className="field-row">
+                      <div>
+                        <label className="field-label" htmlFor="ipfs-hash">
+                          IPFS hash
+                        </label>
+                        <input
+                          id="ipfs-hash"
+                          value={registerForm.ipfsHash}
+                          onChange={updateRegisterField("ipfsHash")}
+                          onBlur={() =>
+                            setRegisterTouched((prev) => ({
+                              ...prev,
+                              ipfsHash: true,
+                            }))
+                          }
+                          maxLength={REGISTER_FIELD_LIMITS.ipfsHash}
+                          placeholder="Qm… or bafy… (optional)"
+                        />
+                        {registerValidation.issues.ipfsHash &&
+                          (registerTouched.ipfsHash ||
+                            registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--error">
+                            {registerValidation.issues.ipfsHash}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <label className="field-label" htmlFor="collection-date">
+                          Collection date
+                        </label>
+                        <input
+                          id="collection-date"
+                          value={registerForm.collectionDate}
+                          onChange={updateRegisterField("collectionDate")}
+                          onBlur={() =>
+                            setRegisterTouched((prev) => ({
+                              ...prev,
+                              collectionDate: true,
+                            }))
+                          }
+                          placeholder="Unix timestamp or block height"
+                        />
+                        {registerValidation.issues.collectionDate &&
+                          (registerTouched.collectionDate ||
+                            registerSubmitAttempted) && (
+                          <span className="field-hint field-hint--error">
+                            {registerValidation.issues.collectionDate}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <label className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={registerForm.isPublic}
+                        onChange={(event) =>
+                          setRegisterForm((prev) => ({
+                            ...prev,
+                            isPublic: readChecked(event),
+                          }))
+                        }
+                      />
+                      <span>Make this dataset publicly visible</span>
+                    </label>
+                  </div>
+                </div>
+
                 <div className="form-actions">
                   <div className="form-actions-row">
                     <button
@@ -8191,14 +8209,14 @@ function App() {
                         : "Submit dataset"}
                     </button>
                     <button
-                      className="ghost-btn"
+                      className="ghost-btn compact"
                       type="button"
                       onClick={clearRegisterForm}
                     >
-                      Clear form
+                      Clear
                     </button>
                     <button
-                      className="ghost-btn"
+                      className="ghost-btn compact"
                       type="button"
                       onClick={restoreRegisterDraft}
                       disabled={!registerDraftBackup}
@@ -8206,24 +8224,52 @@ function App() {
                       Restore draft
                     </button>
                     <button
-                      className="ghost-btn"
+                      className="ghost-btn compact"
                       type="button"
                       onClick={() => setFeatureTab("datasets")}
                     >
-                      Back to list
+                      ← Back
                     </button>
                   </div>
                   {txStatus && <div className="form-note">{txStatus}</div>}
                 </div>
               </div>
+
               <div className="form-card form-card--info">
-                <h3>Registry requirements</h3>
-                <ul>
-                  <li>Latitude and longitude are stored in micro-degrees.</li>
-                  <li>Altitude range must be positive and ordered.</li>
-                  <li>Metadata can be frozen later by the dataset owner.</li>
-                  <li>IPFS hash is optional but recommended.</li>
-                </ul>
+                <h3>Before you submit</h3>
+                <div className="req-list">
+                  <div className="req-item">
+                    <span className="req-item__icon">📍</span>
+                    <div>
+                      <strong>Coordinates</strong>
+                      <p>Latitude and longitude are stored in micro-degrees internally. Enter standard decimal degrees.</p>
+                    </div>
+                  </div>
+                  <div className="req-item">
+                    <span className="req-item__icon">↕</span>
+                    <div>
+                      <strong>Altitude range</strong>
+                      <p>Min must be less than max. Both values must be non-negative.</p>
+                    </div>
+                  </div>
+                  <div className="req-item">
+                    <span className="req-item__icon">⬡</span>
+                    <div>
+                      <strong>IPFS hash</strong>
+                      <p>Optional but recommended. Links the on-chain record to your raw data files for long-term preservation.</p>
+                    </div>
+                  </div>
+                  <div className="req-item">
+                    <span className="req-item__icon">🔒</span>
+                    <div>
+                      <strong>Immutability</strong>
+                      <p>Metadata can be frozen by the owner after submission. Frozen datasets cannot be modified.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="form-card__note">
+                  ⛓ Submitting requires a connected Stacks wallet. The transaction is signed client-side and broadcast to mainnet.
+                </div>
               </div>
             </form>
           </section>

@@ -4507,26 +4507,100 @@ textarea:focus {
   margin-bottom: 0.9rem;
 }
 
+/* ── Register banner ────────────────────────────────────── */
+.register-banner {
+  padding: 2.5rem 0 2rem;
+  position: relative;
+}
+
+.register-banner .eyebrow {
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.73rem;
+}
+
+.register-banner .eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  animation: pulse-dot 2.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.register-banner h2 {
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+  margin: 0 0 0.65rem;
+  letter-spacing: -0.015em;
+}
+
+.register-banner__subtitle {
+  color: var(--muted);
+  font-size: 0.98rem;
+  max-width: 520px;
+  line-height: 1.65;
+}
+
+/* ── Form card ──────────────────────────────────────────── */
 .form-header {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 600;
 }
 
 .form-help {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   color: var(--muted);
+  line-height: 1.5;
 }
 
+/* ── Form groups (sectioned fields) ────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.form-group:first-of-type {
+  padding-top: 0;
+  border-top: none;
+}
+
+.form-group__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.form-group__label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Field labels & hints ───────────────────────────────── */
 .field-label {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 600;
   margin-bottom: 0.35rem;
   display: inline-block;
@@ -4549,6 +4623,52 @@ textarea:focus {
 
 .field-hint--ok {
   color: rgba(55, 209, 161, 0.9);
+}
+
+/* ── Requirements list (info card) ─────────────────────── */
+.req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+.req-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.req-item__icon {
+  font-size: 1rem;
+  line-height: 1.45;
+  flex-shrink: 0;
+  width: 1.4rem;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.req-item strong {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.req-item p {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.form-card__note {
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(106, 166, 255, 0.06);
+  border: 1px solid rgba(106, 166, 255, 0.18);
+  font-size: 0.82rem;
+  color: var(--accent-3);
+  line-height: 1.55;
 }
 
 .dataset-view-tabs {
@@ -4584,31 +4704,29 @@ textarea:focus {
 .form-actions-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.65rem;
   align-items: center;
 }
 
 .form-card {
-  padding: 1.5rem;
-  border-radius: 8px;
+  padding: 1.75rem;
+  border-radius: 20px;
   background: rgba(17, 25, 34, 0.85);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
 }
 
 .form-card--info {
-  background: rgba(24, 33, 44, 0.8);
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(106, 166, 255, 0.06), transparent 55%),
+    rgba(17, 25, 34, 0.85);
+  border-color: rgba(106, 166, 255, 0.14);
 }
 
 .form-card--info h3 {
-  margin-bottom: 0.8rem;
-}
-
-.form-card--info ul {
-  margin: 0;
-  padding-left: 1.2rem;
-  color: var(--muted);
-  line-height: 1.6;
+  margin-bottom: 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .field-grid {
@@ -4626,14 +4744,28 @@ textarea:focus {
   gap: 0.6rem;
   font-size: 0.9rem;
   color: var(--muted);
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(24, 33, 44, 0.5);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.checkbox-row:hover {
+  border-color: rgba(245, 159, 75, 0.3);
+  background: rgba(245, 159, 75, 0.04);
 }
 
 .checkbox-row input {
   width: auto;
+  accent-color: var(--accent);
 }
 
 .form-actions {
-  margin-top: 1.2rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -4642,6 +4774,10 @@ textarea:focus {
 .form-note {
   font-size: 0.85rem;
   color: rgba(245, 138, 61, 0.85);
+  padding: 0.5rem 0.75rem;
+  background: rgba(245, 159, 75, 0.07);
+  border-radius: 8px;
+  border: 1px solid rgba(245, 159, 75, 0.18);
 }
 
 @media (max-width: 900px) {
