@@ -315,6 +315,7 @@ function App() {
     useState<RegisterFormState | null>(null);
   const [transientNotices, setTransientNotices] = useState<Notice[]>([]);
   const [contractPaused, setContractPaused] = useState<boolean | null>(null);
+  const [showBulkActions, setShowBulkActions] = useState(false);
   const stacksApiUrl = STACKS_API_BASE_URL;
   const atmosApiUrl =
     import.meta.env.VITE_ATMOS_API_URL ?? "http://127.0.0.1:4000";
@@ -6556,37 +6557,6 @@ function App() {
                     Compact
                   </button>
                 </div>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyFilterSummary}
-                >
-                  Copy filter summary
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={exportFilteredDatasets}
-                  disabled={sortedDatasets.length === 0}
-                >
-                  Export visible JSON
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={exportFilteredDatasetsCsv}
-                  disabled={sortedDatasets.length === 0}
-                >
-                  Export visible CSV
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={exportFilteredDatasetsGeoJson}
-                  disabled={sortedDatasets.length === 0}
-                >
-                  Export GeoJSON
-                </button>
               </div>
             </div>
             {insightItems.length > 0 && (
@@ -7095,21 +7065,6 @@ function App() {
                 <button
                   className="ghost-btn"
                   type="button"
-                  onClick={clearLocalCache}
-                >
-                  Clear local cache
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={exportFilteredDatasets}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Export filtered JSON
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
                   onClick={openRandomFilteredDataset}
                   disabled={filteredDatasets.length === 0}
                 >
@@ -7118,170 +7073,196 @@ function App() {
                 <button
                   className="ghost-btn"
                   type="button"
-                  onClick={copyFilterSummary}
+                  onClick={clearLocalCache}
                 >
-                  Copy summary
+                  Clear cache
                 </button>
                 <button
-                  className="ghost-btn"
+                  className={`ghost-btn${showBulkActions ? " active" : ""}`}
                   type="button"
-                  onClick={copyDatasetsApiPath}
+                  onClick={() => setShowBulkActions((prev) => !prev)}
                 >
-                  Copy API path
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleDatasetIds}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy visible IDs
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleDatasetsCsv}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy visible CSV
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleCoordsCsv}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy coords CSV
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleDatasetLinks}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy links
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleOwners}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy owners
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleDatasetNames}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy names
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleStatuses}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy statuses
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleMarkdownTable}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy markdown
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleGeoJson}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy GeoJSON
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={useVisibleAsWatchlist}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Watch visible (replace)
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={addVisibleToWatchlist}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Watch visible (add)
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={removeVisibleFromWatchlist}
-                  disabled={filteredDatasets.length === 0 || watchlistIds.length === 0}
-                >
-                  Unwatch visible
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={addVisibleToPins}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Pin visible (add)
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={useVisibleAsPins}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Pin visible (replace)
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={removeVisibleFromPins}
-                  disabled={filteredDatasets.length === 0 || pinnedDatasetIds.length === 0}
-                >
-                  Unpin visible
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyPinnedDatasetIds}
-                  disabled={pinnedDatasetIds.length === 0}
-                >
-                  Copy pinned IDs
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={clearPins}
-                  disabled={pinnedDatasetIds.length === 0}
-                >
-                  Clear pins
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={copyVisibleIpfsHashes}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Copy IPFS
-                </button>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={auditTopVisibleDataset}
-                  disabled={filteredDatasets.length === 0}
-                >
-                  Audit top result
+                  {showBulkActions ? "Hide bulk actions" : "Bulk actions"}
                 </button>
               </div>
+              {showBulkActions && (
+                <div className="filter-actions filter-bulk">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportFilteredDatasets}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Export JSON
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportFilteredDatasetsCsv}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={exportFilteredDatasetsGeoJson}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Export GeoJSON
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyFilterSummary}
+                  >
+                    Copy summary
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyDatasetsApiPath}
+                  >
+                    Copy API path
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleDatasetIds}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy IDs
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleDatasetsCsv}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy CSV
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleCoordsCsv}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy coords CSV
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleDatasetLinks}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy links
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleOwners}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy owners
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleDatasetNames}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy names
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleStatuses}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy statuses
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleMarkdownTable}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy markdown
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleGeoJson}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy GeoJSON
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyVisibleIpfsHashes}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Copy IPFS
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={useVisibleAsWatchlist}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Watch visible (replace)
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={addVisibleToWatchlist}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Watch visible (add)
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={removeVisibleFromWatchlist}
+                    disabled={filteredDatasets.length === 0 || watchlistIds.length === 0}
+                  >
+                    Unwatch visible
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={addVisibleToPins}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Pin visible (add)
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={useVisibleAsPins}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Pin visible (replace)
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={removeVisibleFromPins}
+                    disabled={filteredDatasets.length === 0 || pinnedDatasetIds.length === 0}
+                  >
+                    Unpin visible
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={auditTopVisibleDataset}
+                    disabled={filteredDatasets.length === 0}
+                  >
+                    Audit top result
+                  </button>
+                </div>
+              )}
             </div>
             <GeospatialExplorer
               datasets={geoDatasets}
