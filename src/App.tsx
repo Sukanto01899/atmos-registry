@@ -5826,6 +5826,18 @@ function App() {
                         : "—"}
                     </strong>
                   </div>
+                  <div className="stake-stat">
+                    <span>Circulating</span>
+                    <strong>
+                      {tokenSnapshot
+                        ? `${formatTokenAmount(tokenSnapshot.totalSupply - tokenSnapshot.totalStaked, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                        : "—"}
+                    </strong>
+                  </div>
+                  <div className="stake-stat">
+                    <span>Stakers</span>
+                    <strong>—</strong>
+                  </div>
                 </div>
 
                 {tokenSnapshot && tokenSnapshot.totalSupply > 0 && (
@@ -5866,6 +5878,13 @@ function App() {
                     <span className="stake-connect__icon">⬡</span>
                     <strong>Wallet not connected</strong>
                     <p>Connect your Stacks wallet to stake ATMOS, earn rewards, and participate in governance.</p>
+                    <button
+                      className="primary-btn compact"
+                      type="button"
+                      onClick={connectWallet}
+                    >
+                      Connect wallet
+                    </button>
                   </div>
                 ) : (
                   <>
@@ -5883,6 +5902,25 @@ function App() {
                         <strong>
                           {tokenSnapshot
                             ? `${formatTokenAmount(myStakeInfo.amount, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
+                            : "—"}
+                        </strong>
+                      </div>
+                      <div className="stake-stat">
+                        <span>Pool share</span>
+                        <strong>
+                          {tokenSnapshot && tokenSnapshot.totalStaked > 0
+                            ? `${((myStakeInfo.amount / tokenSnapshot.totalStaked) * 100).toFixed(3)}%`
+                            : "—"}
+                        </strong>
+                      </div>
+                      <div className="stake-stat stake-stat--highlight">
+                        <span>Est. daily reward</span>
+                        <strong>
+                          {tokenSnapshot && myStakeInfo.amount > 0
+                            ? `${formatTokenAmount(
+                                Math.floor((myStakeInfo.amount * tokenSnapshot.apyBps) / 10000 / 365),
+                                tokenSnapshot.decimals,
+                              )} ${tokenSnapshot.symbol}`
                             : "—"}
                         </strong>
                       </div>
@@ -5965,6 +6003,18 @@ function App() {
                             placeholder="Amount"
                           />
                           <button
+                            className="ghost-btn compact"
+                            type="button"
+                            onClick={() =>
+                              setUnstakeAmount(microTokenToInputValue(myStakeInfo.amount))
+                            }
+                            disabled={
+                              tokenLoading || !tokenSnapshot || myStakeInfo.amount <= 0
+                            }
+                          >
+                            Max
+                          </button>
+                          <button
                             className="primary-btn compact"
                             type="button"
                             onClick={() => handleStakeAction("unstake", unstakeAmount)}
@@ -5994,6 +6044,11 @@ function App() {
                           ? `Claim ${formatTokenAmount(tokenSnapshot.pendingReward, tokenSnapshot.decimals)} ${tokenSnapshot.symbol}`
                           : "No rewards to claim"}
                       </button>
+                      {myStakeInfo.lastClaimBlock > 0 && (
+                        <span className="stake-last-claim">
+                          Last claim: block {formatChainValue(myStakeInfo.lastClaimBlock)}
+                        </span>
+                      )}
                     </div>
 
                     {stakeStatus && <p className="stake-status-msg">{stakeStatus}</p>}

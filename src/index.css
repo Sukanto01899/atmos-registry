@@ -1920,6 +1920,12 @@ textarea:focus {
   border-top: 1px solid var(--border);
 }
 
+.stake-last-claim {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+}
+
 .stake-claim-btn {
   width: 100%;
   text-align: center;
