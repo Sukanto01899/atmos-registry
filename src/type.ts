@@ -100,6 +100,7 @@ export type SavedView = {
     watchlistOnly: boolean;
     watchlistIds: string[];
     mutedAlertKinds: string[];
+    sortMode?: SortMode;
   };
 };
 

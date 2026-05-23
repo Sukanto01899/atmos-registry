@@ -3070,6 +3070,7 @@ function App() {
         watchlistOnly,
         watchlistIds,
         mutedAlertKinds,
+        sortMode,
       },
     };
     setSavedViews((prev) => [next, ...prev].slice(0, 20));
@@ -3084,6 +3085,7 @@ function App() {
     setWatchlistOnly(view.payload.watchlistOnly);
     setWatchlistIds(view.payload.watchlistIds);
     setMutedAlertKinds(view.payload.mutedAlertKinds);
+    if (view.payload.sortMode) setSortMode(view.payload.sortMode);
     setStatusMessage(`Applied view: ${view.name}`);
   };
   const deleteSavedView = (viewId: string) => {
@@ -3594,6 +3596,7 @@ function App() {
         watchlistOnly,
         watchlistIds,
         mutedAlertKinds,
+        sortMode,
       },
     };
     setSavedViews((prev) => [next, ...prev].slice(0, 20));
@@ -3605,6 +3608,27 @@ function App() {
       return;
     }
     await copyText(window.location.href, "Share link");
+  };
+  const copySavedViewShareLink = async (view: SavedView) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Share link unavailable.");
+      return;
+    }
+    const search = buildUrlViewSearch({
+      activeTab: view.payload.activeTab,
+      filters: { ...defaultFilters, ...(view.payload.filters ?? {}) },
+      geoTimePercent: view.payload.geoTimePercent,
+      compareSelectionIds: view.payload.compareSelectionIds,
+      watchlistOnly: view.payload.watchlistOnly,
+      watchlistIds: view.payload.watchlistIds,
+      mutedAlertKinds: view.payload.mutedAlertKinds,
+      sortMode: view.payload.sortMode ?? "quality-desc",
+      lineageSelectionId: "",
+      selectedGeoDatasetId: "",
+      showDatasetDetail: false,
+    });
+    const link = `${window.location.origin}${window.location.pathname}${search}`;
+    await copyText(link, `Link for "${view.name}"`);
   };
   const buildDatasetDetailLink = (datasetId: number) => {
     if (typeof window === "undefined") {
@@ -6874,6 +6898,14 @@ function App() {
                       {view.name}
                     </button>
                     <span>{formatChainValue(view.createdAt)}</span>
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={() => copySavedViewShareLink(view)}
+                      title="Copy a shareable URL for this view"
+                    >
+                      Copy link
+                    </button>
                     <button
                       className="ghost-btn"
                       type="button"
