@@ -18,6 +18,7 @@ export const SORT_MODES = [
   "recent-asc",
   "altitude-desc",
   "status-priority",
+  "type-asc",
 ] as const;
 
 export type UrlViewState = {

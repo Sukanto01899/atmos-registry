@@ -1180,6 +1180,11 @@ function App() {
       if (sortMode === "status-priority") {
         return getStatusPriority(b.status) - getStatusPriority(a.status);
       }
+      if (sortMode === "type-asc") {
+        const cmp = a.dataType.toLowerCase().localeCompare(b.dataType.toLowerCase());
+        if (cmp !== 0) return cmp;
+        return getQualityScore(b) - getQualityScore(a);
+      }
       return getQualityScore(b) - getQualityScore(a);
     });
     return next;
@@ -4618,6 +4623,24 @@ function App() {
       },
     },
     {
+      id: "sort-type-asc",
+      label: "Sort by Data Type (A–Z)",
+      detail: "Group datasets alphabetically by data type",
+      group: "Data",
+      run: () => {
+        setSortMode("type-asc");
+      },
+    },
+    {
+      id: "sort-quality-desc",
+      label: "Sort by Quality Score",
+      detail: "Order datasets by quality score, highest first",
+      group: "Data",
+      run: () => {
+        setSortMode("quality-desc");
+      },
+    },
+    {
       id: "copy-visible-dataset-links",
       label: "Copy Visible Dataset Links",
       detail: "Copy share links for all visible datasets",
@@ -7134,6 +7157,7 @@ function App() {
                       Highest altitude first
                     </option>
                     <option value="status-priority">Status priority</option>
+                    <option value="type-asc">Data type (A–Z)</option>
                   </select>
                 </div>
                 <button
