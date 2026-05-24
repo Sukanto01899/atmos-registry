@@ -1,3 +1,5 @@
+type AlertLevel = "critical" | "warning" | "info";
+
 type Props = {
   featureTab:
     | "datasets"
@@ -30,6 +32,7 @@ type Props = {
   loading: boolean;
   onSyncMainnet: () => void;
   unreadAlertCount: number;
+  unreadAlertLevel?: AlertLevel;
   onToggleAlerts: () => void;
   pendingTxCount: number;
   onToggleTxCenter: () => void;
@@ -69,6 +72,7 @@ export function NavBar({
   loading,
   onSyncMainnet,
   unreadAlertCount,
+  unreadAlertLevel,
   onToggleAlerts,
   pendingTxCount,
   onToggleTxCenter,
@@ -201,7 +205,11 @@ export function NavBar({
               <span className="sidebar__item-icon">{NAV_ICONS[tab.id]}</span>
               <span className="sidebar__item-label">{tab.label}</span>
               {tab.id === "alerts" && unreadAlertCount > 0 && (
-                <span className="sidebar__badge">{unreadAlertCount}</span>
+                <span
+                  className={`sidebar__badge sidebar__badge--alert-${unreadAlertLevel ?? "info"}`}
+                >
+                  {unreadAlertCount}
+                </span>
               )}
               {tab.id === "staking" && pendingTxCount > 0 && (
                 <span className="sidebar__badge">{pendingTxCount}</span>
@@ -314,7 +322,11 @@ export function NavBar({
           >
             <span aria-hidden="true">◬</span>
             {unreadAlertCount > 0 && (
-              <span className="topbar__float-badge">{unreadAlertCount}</span>
+              <span
+                className={`topbar__float-badge topbar__float-badge--alert-${unreadAlertLevel ?? "info"}`}
+              >
+                {unreadAlertCount}
+              </span>
             )}
           </button>
 
@@ -408,6 +420,13 @@ export function NavBar({
                 </button>
                 <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("alerts"); }}>
                   ◬ Alerts
+                  {unreadAlertCount > 0 && (
+                    <span
+                      className={`nav__dropdown-badge nav__dropdown-badge--alert-${unreadAlertLevel ?? "info"}`}
+                    >
+                      {unreadAlertCount}
+                    </span>
+                  )}
                 </button>
                 <button type="button" onClick={() => { setMenuOpen(false); onMenuAction("audit"); }}>
                   ▦ Audit

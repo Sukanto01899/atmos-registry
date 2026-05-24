@@ -1508,6 +1508,13 @@ function App() {
     () => alerts.filter((alert) => !readAlertIds.includes(alert.id)).length,
     [alerts, readAlertIds],
   );
+  const topAlertLevel = useMemo((): "critical" | "warning" | "info" | undefined => {
+    const unread = alerts.filter((alert) => !readAlertIds.includes(alert.id));
+    if (unread.length === 0) return undefined;
+    if (unread.some((a) => a.level === "critical")) return "critical";
+    if (unread.some((a) => a.level === "warning")) return "warning";
+    return "info";
+  }, [alerts, readAlertIds]);
   const lineageOptions = useMemo(() => {
     const deduped = new Map<number, Dataset>();
     [queryResult, ...latestDatasets, ...myDatasets].forEach((dataset) => {
@@ -4996,6 +5003,7 @@ function App() {
         loading={loading}
         onSyncMainnet={loadLatest}
         unreadAlertCount={unreadAlertCount}
+        unreadAlertLevel={topAlertLevel}
         onToggleAlerts={() => setFeatureTab("alerts")}
         pendingTxCount={txCenter.pendingCount}
         onToggleTxCenter={() => setShowTxCenter((prev) => !prev)}
