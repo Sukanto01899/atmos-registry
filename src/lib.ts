@@ -254,6 +254,38 @@ export const mapDatasetToVersionStatus = (dataset: Dataset): VersionStatus => {
 };
 
 export const nowUnix = () => Math.floor(Date.now() / 1000);
+
+// Stacks mainnet launched on January 14, 2021 (~unix 1610633600).
+// Each Stacks block anchors to a Bitcoin block at ~600 s intervals.
+// These constants let us estimate a wall-clock time from a block height.
+const STACKS_GENESIS_UNIX = 1_610_633_600;
+const STACKS_BLOCK_SECONDS = 600;
+
+/**
+ * Returns a compact human-readable relative time string for a unix timestamp
+ * (seconds), e.g. "just now", "4h ago", "12d ago", "3mo ago", "2y ago".
+ */
+export const relativeTimeAgo = (unixSeconds: number): string => {
+  const diff = nowUnix() - unixSeconds;
+  if (diff < 60) return "just now";
+  if (diff < 3_600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86_400) return `${Math.floor(diff / 3_600)}h ago`;
+  if (diff < 86_400 * 30) return `${Math.floor(diff / 86_400)}d ago`;
+  if (diff < 86_400 * 365) return `${Math.floor(diff / (86_400 * 30))}mo ago`;
+  return `${Math.floor(diff / (86_400 * 365))}y ago`;
+};
+
+/**
+ * Converts a `createdAt` value (either a unix timestamp when > 1 billion, or
+ * a Stacks block height) into a relative-age string.  Block-height estimates
+ * are prefixed with "~" to signal they are approximate.
+ */
+export const createdAtAge = (createdAt: number): string => {
+  if (!createdAt) return "";
+  if (createdAt > 1_000_000_000) return relativeTimeAgo(createdAt);
+  const estimated = STACKS_GENESIS_UNIX + createdAt * STACKS_BLOCK_SECONDS;
+  return `~${relativeTimeAgo(estimated)}`;
+};
 export const MICRO_TOKEN = 1_000_000;
 
 export const formatTokenAmount = (value: number, decimals = 6) =>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createdAtAge } from "../lib";
 import type { Dataset, DatasetCardProps } from "../type";
 
 const previewSeeds = (seed: number, index: number) =>
@@ -227,6 +228,18 @@ export function DatasetCard({
               <span className="tag tag--staked">Steward staked</span>
             )}
             {notePreview && <span className="tag tag--note">Private note</span>}
+            {dataset.createdAt > 0 && (
+              <span
+                className="tag tag--age"
+                title={
+                  dataset.createdAt > 1_000_000_000
+                    ? `Registered ${new Date(dataset.createdAt * 1000).toLocaleString()}`
+                    : `Registered at block ${dataset.createdAt} (age is approximate)`
+                }
+              >
+                {createdAtAge(dataset.createdAt)}
+              </span>
+            )}
           </div>
         </div>
         <span className={`status-pill ${statusClass}`}>{dataset.status}</span>
@@ -334,7 +347,12 @@ export function DatasetCard({
       </div>
       <div className="dataset-foot">
         <span>Collection date: {dataset.collectionDate}</span>
-        <span>Record height: {dataset.createdAt}</span>
+        <span title={`Block height: ${dataset.createdAt}`}>
+          Record height: {dataset.createdAt}
+          {dataset.createdAt > 0 && (
+            <> · <span className="dataset-foot__age">{createdAtAge(dataset.createdAt)}</span></>
+          )}
+        </span>
         <span className="hash">IPFS: {dataset.ipfsHash || "n/a"}</span>
         <div className="dataset-foot__copies">
           {onCopySummary && (
