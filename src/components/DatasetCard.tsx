@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createdAtAge } from "../lib";
+import { createdAtAge, getQualityBreakdown } from "../lib";
 import type { Dataset, DatasetCardProps } from "../type";
 
 const previewSeeds = (seed: number, index: number) =>
@@ -187,6 +187,7 @@ export function DatasetCard({
     [dataset, formatCoord],
   );
   const completeness = useMemo(() => getCompleteness(dataset), [dataset]);
+  const breakdown = useMemo(() => getQualityBreakdown(dataset), [dataset]);
   const previewId = `dataset-preview-${dataset.id}`;
 
   return (
@@ -252,7 +253,32 @@ export function DatasetCard({
             style={{ width: `${Math.min(100, qualityScore)}%` }}
           />
         </span>
-        <span className="dataset-rank__score">{qualityScore}/100</span>
+        <span className="dataset-rank__score-wrap">
+          <span className="dataset-rank__score" tabIndex={0}>
+            {qualityScore}/100
+          </span>
+          <div className="dataset-rank__breakdown" role="tooltip">
+            <ul className="dataset-rank__breakdown-list">
+              {breakdown.map(({ label, points, earned }) => (
+                <li
+                  key={label}
+                  className={`dataset-rank__breakdown-row ${earned ? "dataset-rank__breakdown-row--earned" : "dataset-rank__breakdown-row--missing"}`}
+                >
+                  <span className="dataset-rank__breakdown-icon">
+                    {earned ? "✓" : "✗"}
+                  </span>
+                  <span className="dataset-rank__breakdown-label">{label}</span>
+                  <span className="dataset-rank__breakdown-pts">
+                    {earned ? `+${points}` : `+0 / ${points}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="dataset-rank__breakdown-total">
+              Total: <strong>{qualityScore}</strong> / 100
+            </div>
+          </div>
+        </span>
       </div>
       {isStewardStaked && stewardshipSignal && (
         <div className="dataset-rank dataset-rank--stake">

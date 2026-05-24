@@ -4377,6 +4377,106 @@ textarea:focus {
   color: rgba(245, 138, 61, 0.75);
 }
 
+.dataset-rank__score-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dataset-rank__score-wrap > .dataset-rank__score {
+  cursor: default;
+  border-bottom: 1px dashed rgba(245, 138, 61, 0.45);
+  outline: none;
+}
+
+.dataset-rank__breakdown {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  min-width: 200px;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 138, 61, 0.3);
+  background: var(--card, #1a1d27);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dataset-rank__score-wrap:hover .dataset-rank__breakdown,
+.dataset-rank__score-wrap:focus-within .dataset-rank__breakdown {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.dataset-rank__breakdown-list {
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.dataset-rank__breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+}
+
+.dataset-rank__breakdown-icon {
+  width: 0.9rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.dataset-rank__breakdown-row--earned .dataset-rank__breakdown-icon {
+  color: var(--accent-2, #20c997);
+}
+
+.dataset-rank__breakdown-row--missing .dataset-rank__breakdown-icon {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.dataset-rank__breakdown-label {
+  flex: 1;
+  color: var(--text, #e0e0e0);
+}
+
+.dataset-rank__breakdown-row--missing .dataset-rank__breakdown-label {
+  color: var(--muted, rgba(255, 255, 255, 0.45));
+}
+
+.dataset-rank__breakdown-pts {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+}
+
+.dataset-rank__breakdown-row--earned .dataset-rank__breakdown-pts {
+  color: rgba(245, 138, 61, 0.9);
+}
+
+.dataset-rank__breakdown-row--missing .dataset-rank__breakdown-pts {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.dataset-rank__breakdown-total {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.35rem;
+  font-size: 0.72rem;
+  text-align: right;
+  color: var(--muted, rgba(255, 255, 255, 0.45));
+}
+
+.dataset-rank__breakdown-total strong {
+  color: rgba(245, 138, 61, 0.9);
+}
+
 .dataset-rank--stake {
   margin-left: 0.5rem;
   border-color: rgba(90, 160, 255, 0.35);

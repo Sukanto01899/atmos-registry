@@ -231,6 +231,15 @@ export const getQualityScore = (dataset: Dataset) =>
   (dataset.metadataFrozen ? 15 : 0) +
   (dataset.isPublic ? 10 : 0);
 
+/** Each component that contributes to the quality score, in descending weight. */
+export const getQualityBreakdown = (dataset: Dataset) =>
+  [
+    { label: "Verified on-chain", points: 45, earned: dataset.verified },
+    { label: "IPFS hash linked", points: 30, earned: Boolean(dataset.ipfsHash?.trim()) },
+    { label: "Metadata frozen", points: 15, earned: dataset.metadataFrozen },
+    { label: "Publicly listed", points: 10, earned: dataset.isPublic },
+  ] as const;
+
 export const getStatusPriority = (status: string) => {
   if (status === "verified") return 4;
   if (status === "pending") return 3;
