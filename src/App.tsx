@@ -1177,6 +1177,9 @@ function App() {
       if (sortMode === "altitude-desc") {
         return b.altitudeMax - a.altitudeMax;
       }
+      if (sortMode === "altitude-range-asc") {
+        return (a.altitudeMax - a.altitudeMin) - (b.altitudeMax - b.altitudeMin);
+      }
       if (sortMode === "status-priority") {
         return getStatusPriority(b.status) - getStatusPriority(a.status);
       }
@@ -4655,6 +4658,15 @@ function App() {
       },
     },
     {
+      id: "sort-altitude-range-asc",
+      label: "Sort by Altitude Range (narrowest first)",
+      detail: "Surface datasets with the most precise altitude span first",
+      group: "Data",
+      run: () => {
+        setSortMode("altitude-range-asc");
+      },
+    },
+    {
       id: "sort-type-asc",
       label: "Sort by Data Type (A–Z)",
       detail: "Group datasets alphabetically by data type",
@@ -7202,6 +7214,9 @@ function App() {
                     <option value="recent-asc">Oldest collection first</option>
                     <option value="altitude-desc">
                       Highest altitude first
+                    </option>
+                    <option value="altitude-range-asc">
+                      Narrowest altitude range first
                     </option>
                     <option value="status-priority">Status priority</option>
                     <option value="type-asc">Data type (A–Z)</option>

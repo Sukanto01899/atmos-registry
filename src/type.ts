@@ -59,6 +59,7 @@ export type SortMode =
   | "recent-desc"
   | "recent-asc"
   | "altitude-desc"
+  | "altitude-range-asc"
   | "status-priority"
   | "type-asc";
 
