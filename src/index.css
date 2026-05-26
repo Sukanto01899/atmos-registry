@@ -5054,6 +5054,12 @@ textarea:focus {
   color: var(--text);
 }
 
+.copy-csv-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .form-actions-row {
   display: flex;
   flex-wrap: wrap;

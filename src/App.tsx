@@ -2230,6 +2230,38 @@ function App() {
       `Exported ${filteredDatasets.length} filtered datasets (CSV).`,
     );
   };
+  const copyFilteredCsv = async () => {
+    if (!filteredDatasets.length) {
+      setStatusMessage("No filtered datasets to copy.");
+      return;
+    }
+    const escapeCsv = (value: unknown) => {
+      const raw = value === null || value === undefined ? "" : String(value);
+      const needsQuotes = /[",\n\r]/.test(raw);
+      const escaped = raw.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+    const header = "id,name,dataType,latitude,longitude,qualityScore";
+    const rows = sortedDatasets.map((dataset) =>
+      [
+        dataset.id,
+        dataset.name,
+        dataset.dataType,
+        (dataset.latitude / 1_000_000).toFixed(6),
+        (dataset.longitude / 1_000_000).toFixed(6),
+        getQualityScore(dataset),
+      ]
+        .map(escapeCsv)
+        .join(","),
+    );
+    const csv = [header, ...rows].join("\n");
+    try {
+      await navigator.clipboard.writeText(csv);
+      setStatusMessage(`Copied ${filteredDatasets.length} rows as CSV.`);
+    } catch {
+      setStatusMessage("Clipboard write failed — check browser permissions.");
+    }
+  };
   const exportFilteredDatasetsGeoJson = () => {
     if (!filteredDatasets.length || typeof window === "undefined") {
       setStatusMessage("No filtered datasets to export.");
@@ -6673,6 +6705,15 @@ function App() {
                     Compact
                   </button>
                 </div>
+                <button
+                  className="dataset-view-btn copy-csv-btn"
+                  type="button"
+                  disabled={filteredDatasets.length === 0}
+                  onClick={copyFilteredCsv}
+                  title="Copy filtered list as CSV (id, name, dataType, lat, lng, qualityScore)"
+                >
+                  ⎘ Copy CSV
+                </button>
               </div>
             </div>
             {insightItems.length > 0 && (
