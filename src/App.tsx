@@ -6596,6 +6596,9 @@ function App() {
                 onClick={() => setActiveTab("explore")}
               >
                 Explore
+                {latestDatasets.length > 0 && (
+                  <span className="tab-count">{latestDatasets.length}</span>
+                )}
               </button>
               <button
                 className={`datasets-tab${activeTab === "mine" ? " active" : ""}`}
@@ -6603,6 +6606,9 @@ function App() {
                 onClick={() => setActiveTab("mine")}
               >
                 My Datasets
+                {myDatasets.length > 0 && (
+                  <span className="tab-count">{myDatasets.length}</span>
+                )}
               </button>
             </div>
             <div className="section-header">
