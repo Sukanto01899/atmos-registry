@@ -4451,6 +4451,19 @@ textarea:focus {
   line-height: 1.55;
 }
 
+.search-highlight {
+  background: rgba(245, 159, 75, 0.25);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 0.1em;
+  font-style: inherit;
+  font-weight: 600;
+}
+
+:root[data-theme="light"] .search-highlight {
+  background: rgba(245, 130, 32, 0.18);
+}
+
 .dataset-rank {
   margin-top: 0.65rem;
   display: inline-flex;

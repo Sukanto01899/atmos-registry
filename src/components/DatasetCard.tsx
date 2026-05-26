@@ -2,6 +2,17 @@ import { useMemo, useState } from "react";
 import { createdAtAge, getQualityBreakdown } from "../lib";
 import type { Dataset, DatasetCardProps } from "../type";
 
+const highlightText = (text: string, query: string) => {
+  const q = query.trim();
+  if (!q) return text;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? <mark key={i} className="search-highlight">{part}</mark> : part,
+  );
+};
+
 const previewSeeds = (seed: number, index: number) =>
   Math.abs((seed * (index + 3) * 37 + index * 71) % 100);
 
@@ -152,6 +163,7 @@ export function DatasetCard({
   notePreview,
   stewardshipSignal,
   isStewardStaked,
+  searchQuery,
   compareActive,
   watchActive,
   pinActive,
@@ -197,7 +209,7 @@ export function DatasetCard({
     >
       <div className="dataset-header">
         <div>
-          <div className="dataset-title">{dataset.name}</div>
+          <div className="dataset-title">{highlightText(dataset.name, searchQuery ?? "")}</div>
           <div className="dataset-tags">
             <span className="tag">{dataset.dataType}</span>
             <span
@@ -285,7 +297,7 @@ export function DatasetCard({
           {stewardshipSignal}
         </div>
       )}
-      <p className="dataset-description">{dataset.description}</p>
+      <p className="dataset-description">{highlightText(dataset.description, searchQuery ?? "")}</p>
       {notePreview && (
         <div className="dataset-note-preview" title={notePreview}>
           <span>Private note</span>

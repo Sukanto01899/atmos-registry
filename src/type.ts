@@ -185,6 +185,7 @@ export type DatasetCardProps = {
   notePreview?: string;
   stewardshipSignal?: string;
   isStewardStaked: boolean;
+  searchQuery?: string;
   compareActive: boolean;
   watchActive: boolean;
   pinActive: boolean;

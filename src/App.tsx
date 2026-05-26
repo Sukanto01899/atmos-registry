@@ -7742,6 +7742,7 @@ function App() {
                   notePreview={(datasetNotes[String(dataset.id)] ?? "")
                     .trim()
                     .slice(0, 120)}
+                  searchQuery={filters.search.trim()}
                   onCopySummary={() => copyDatasetSummary(dataset)}
                   onCopyCitation={() => copyDatasetCitation(dataset)}
                   onCopyDatasetJson={() =>
