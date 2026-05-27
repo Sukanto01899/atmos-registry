@@ -31,6 +31,7 @@ import {
   formatCoord,
   formatPercentFromBps,
   formatTokenAmount,
+  getCompletenessScore,
   getConnectProviders,
   getQualityScore,
   getStatusClass,
@@ -1186,6 +1187,11 @@ function App() {
       if (sortMode === "type-asc") {
         const cmp = a.dataType.toLowerCase().localeCompare(b.dataType.toLowerCase());
         if (cmp !== 0) return cmp;
+        return getQualityScore(b) - getQualityScore(a);
+      }
+      if (sortMode === "completeness-desc") {
+        const diff = getCompletenessScore(b) - getCompletenessScore(a);
+        if (diff !== 0) return diff;
         return getQualityScore(b) - getQualityScore(a);
       }
       return getQualityScore(b) - getQualityScore(a);
@@ -4685,6 +4691,15 @@ function App() {
       },
     },
     {
+      id: "sort-completeness-desc",
+      label: "Sort by Completeness",
+      detail: "Surface datasets with the most metadata fields filled in first",
+      group: "Data",
+      run: () => {
+        setSortMode("completeness-desc");
+      },
+    },
+    {
       id: "copy-visible-dataset-links",
       label: "Copy Visible Dataset Links",
       detail: "Copy share links for all visible datasets",
@@ -7220,6 +7235,7 @@ function App() {
                     </option>
                     <option value="status-priority">Status priority</option>
                     <option value="type-asc">Data type (A–Z)</option>
+                    <option value="completeness-desc">Completeness (high to low)</option>
                   </select>
                 </div>
                 <button

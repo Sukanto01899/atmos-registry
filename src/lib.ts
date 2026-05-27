@@ -20,6 +20,7 @@ export const SORT_MODES = [
   "altitude-range-asc",
   "status-priority",
   "type-asc",
+  "completeness-desc",
 ] as const;
 
 export type UrlViewState = {
@@ -241,6 +242,26 @@ export const getQualityBreakdown = (dataset: Dataset) =>
     { label: "Metadata frozen", points: 15, earned: dataset.metadataFrozen },
     { label: "Publicly listed", points: 10, earned: dataset.isPublic },
   ] as const;
+
+/**
+ * Counts how many of the six core metadata fields are populated.
+ * Fields: description, dataType, collectionDate, coordinates, altitude range, IPFS hash.
+ * Max score: 6.
+ */
+export const getCompletenessScore = (dataset: Dataset): number => {
+  let score = 0;
+  if (dataset.description?.trim()) score += 1;
+  if (dataset.dataType?.trim()) score += 1;
+  if (dataset.collectionDate > 0) score += 1;
+  if (dataset.latitude !== 0 && dataset.longitude !== 0) score += 1;
+  if (
+    Number.isFinite(dataset.altitudeMin) &&
+    Number.isFinite(dataset.altitudeMax) &&
+    dataset.altitudeMax >= dataset.altitudeMin
+  ) score += 1;
+  if (dataset.ipfsHash?.trim()) score += 1;
+  return score;
+};
 
 export const getStatusPriority = (status: string) => {
   if (status === "verified") return 4;
