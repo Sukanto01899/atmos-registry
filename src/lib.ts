@@ -297,6 +297,27 @@ export const createdAtAge = (createdAt: number): string => {
   const estimated = STACKS_GENESIS_UNIX + createdAt * STACKS_BLOCK_SECONDS;
   return `~${relativeTimeAgo(estimated)}`;
 };
+
+/** Normalises a `createdAt` value to a unix timestamp in seconds. */
+const createdAtUnix = (createdAt: number): number => {
+  if (createdAt > 1_000_000_000) return createdAt;
+  return STACKS_GENESIS_UNIX + createdAt * STACKS_BLOCK_SECONDS;
+};
+
+/**
+ * Returns a CSS modifier class for the age badge based on how old the dataset
+ * is (estimated from block height when no unix timestamp is available):
+ *   "tag--age-fresh"  → < 3 months  (green)
+ *   "tag--age-stale"  → 3–12 months (amber)
+ *   "tag--age-old"    → > 12 months (red)
+ */
+export const getAgeColorClass = (createdAt: number): string => {
+  if (!createdAt) return "";
+  const ageSeconds = nowUnix() - createdAtUnix(createdAt);
+  if (ageSeconds < 86_400 * 90) return "tag--age-fresh";
+  if (ageSeconds < 86_400 * 365) return "tag--age-stale";
+  return "tag--age-old";
+};
 export const MICRO_TOKEN = 1_000_000;
 
 export const formatTokenAmount = (value: number, decimals = 6) =>
