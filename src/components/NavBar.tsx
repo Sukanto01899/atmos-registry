@@ -44,6 +44,7 @@ type Props = {
   onDisconnectWallet: () => void;
   onOpenContractExplorer: () => void;
   onCopyContractExplorerUrl: () => void;
+  datasetCount: number;
 };
 
 import { useEffect, useRef, useState } from "react";
@@ -84,6 +85,7 @@ export function NavBar({
   onDisconnectWallet,
   onOpenContractExplorer,
   onCopyContractExplorerUrl,
+  datasetCount,
 }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -191,6 +193,14 @@ export function NavBar({
             >
               <span className="sidebar__item-icon">{NAV_ICONS[tab.id]}</span>
               <span className="sidebar__item-label">{tab.label}</span>
+              {tab.id === "datasets" && datasetCount > 0 && (
+                <span
+                  className="sidebar__item-count"
+                  title={`${datasetCount} datasets loaded`}
+                >
+                  {datasetCount}
+                </span>
+              )}
             </button>
           ))}
 

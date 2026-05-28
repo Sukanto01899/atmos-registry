@@ -5112,6 +5112,7 @@ function App() {
         onDisconnectWallet={disconnectWallet}
         onOpenContractExplorer={openContractInExplorer}
         onCopyContractExplorerUrl={copyContractExplorerUrl}
+        datasetCount={latestDatasets.length}
       />
       <div className="dashboard-body">
       <AppNotices

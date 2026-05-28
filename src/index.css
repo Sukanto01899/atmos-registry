@@ -364,6 +364,22 @@ textarea {
   flex-shrink: 0;
 }
 
+/* Dataset count next to Home nav item */
+.sidebar__item-count {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--muted);
+  opacity: 0.7;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.sidebar__item.active .sidebar__item-count {
+  opacity: 1;
+  color: var(--accent);
+}
+
 /* Footer */
 .sidebar__footer {
   flex-shrink: 0;
