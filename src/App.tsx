@@ -7213,6 +7213,15 @@ function App() {
                 <span>
                   Showing {filteredDatasets.length} of {activeDatasets.length}
                 </span>
+                <button
+                  className="ghost-btn filter-actions__copy-ids"
+                  type="button"
+                  onClick={copyVisibleDatasetIds}
+                  disabled={filteredDatasets.length === 0}
+                  title="Copy all filtered dataset IDs as a comma-separated list"
+                >
+                  Copy IDs ({filteredDatasets.length})
+                </button>
                 <div className="filter-sort">
                   <label htmlFor="dataset-sort">Sort by</label>
                   <select

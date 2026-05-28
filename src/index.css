@@ -2806,6 +2806,22 @@ textarea:focus {
   font-size: 0.85rem;
 }
 
+.filter-actions__copy-ids {
+  font-size: 0.78rem;
+  padding: 0.18rem 0.6rem;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+
+.filter-actions__copy-ids:not(:disabled):hover {
+  opacity: 1;
+}
+
+.filter-actions__copy-ids:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .filter-bulk {
   margin-top: 0;
   padding-top: 0.6rem;
