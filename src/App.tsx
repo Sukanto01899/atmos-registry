@@ -249,6 +249,7 @@ function App() {
   const [storyStepIndex, setStoryStepIndex] = useState(0);
   const [storyPlaying, setStoryPlaying] = useState(false);
   const [filters, setFilters] = useState<DatasetFilters>(defaultFilters);
+  const [dismissedNoIpfsNotice, setDismissedNoIpfsNotice] = useState(false);
   const [datasetDensity, setDatasetDensity] = useState<
     "comfortable" | "compact"
   >(() => {
@@ -5039,8 +5040,23 @@ function App() {
     if (walletMessage) {
       notices.push({ id: "wallet", tone: "info", message: walletMessage });
     }
+    if (!dismissedNoIpfsNotice && latestDatasets.length >= 5) {
+      const publicDatasets = latestDatasets.filter((d) => d.isPublic);
+      if (publicDatasets.length >= 5) {
+        const missingIpfs = publicDatasets.filter((d) => !d.ipfsHash?.trim()).length;
+        const ratio = missingIpfs / publicDatasets.length;
+        if (ratio > 0.3) {
+          const pct = Math.round(ratio * 100);
+          notices.push({
+            id: "no-ipfs-warning",
+            tone: "warning",
+            message: `${pct}% of public datasets (${missingIpfs}/${publicDatasets.length}) have no IPFS hash. Linking data to IPFS improves discoverability and quality scores.`,
+          });
+        }
+      }
+    }
     return [...notices, ...transientNotices];
-  }, [transientNotices, walletMessage, contractPaused]);
+  }, [transientNotices, walletMessage, contractPaused, latestDatasets, dismissedNoIpfsNotice]);
 
   return (
     <div className="app">
@@ -5104,6 +5120,10 @@ function App() {
           if (noticeId === "contract-paused") return;
           if (noticeId === "wallet") {
             setWalletMessage("");
+            return;
+          }
+          if (noticeId === "no-ipfs-warning") {
+            setDismissedNoIpfsNotice(true);
             return;
           }
           setTransientNotices((prev) =>
