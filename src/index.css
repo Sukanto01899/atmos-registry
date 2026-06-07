@@ -2194,6 +2194,120 @@ textarea:focus {
   border-left-color: rgba(255, 90, 90, 0.75);
 }
 
+/* ── Toast stack ──────────────────────────────────────────── */
+.toast-stack {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(360px, calc(100vw - 2.5rem));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: rgba(15, 23, 33, 0.96);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+  color: var(--text);
+  pointer-events: auto;
+  animation: toast-in 0.24s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+
+:root[data-theme="light"] .toast {
+  background: rgba(255, 255, 255, 0.97);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.toast__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+  background: rgba(245, 159, 75, 0.16);
+  color: var(--accent);
+}
+
+.toast__body {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.toast__close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  border-radius: 8px;
+  opacity: 0.55;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.toast__close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.toast--success {
+  border-left-color: var(--accent-2);
+}
+
+.toast--success .toast__icon {
+  background: rgba(55, 209, 161, 0.16);
+  color: var(--accent-2);
+}
+
+.toast--info {
+  border-left-color: var(--accent-3);
+}
+
+.toast--info .toast__icon {
+  background: rgba(106, 166, 255, 0.16);
+  color: var(--accent-3);
+}
+
+.toast--critical {
+  border-left-color: rgba(255, 90, 90, 0.85);
+}
+
+.toast--critical .toast__icon {
+  background: rgba(255, 90, 90, 0.18);
+  color: #ff8a8a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
 .lineage-section {
   margin-top: 0.8rem;
 }

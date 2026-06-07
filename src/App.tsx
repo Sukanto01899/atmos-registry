@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -68,6 +69,7 @@ import { DatasetCard } from "./components/DatasetCard";
 import { GeospatialExplorer } from "./components/GeospatialExplorer";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
 import { NavBar } from "./components/NavBar";
+import { ToastStack, inferToastVariant, type ToastItem } from "./components/Toast";
 import { TxCenter } from "./components/TxCenter";
 import { useTxCenter } from "./useTxCenter";
 import {
@@ -219,6 +221,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [queryLoading, setQueryLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const toastIdRef = useRef(0);
   const [walletMessage, setWalletMessage] = useState("");
   const [txStatus, setTxStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
@@ -4460,12 +4464,20 @@ function App() {
     [],
   );
 
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+  // Bridge every status message into a floating toast, then clear the source so
+  // identical consecutive messages still re-trigger. Keeps the newest 4 visible.
   useEffect(() => {
-    if (!statusMessage) return undefined;
-    const timeout = window.setTimeout(() => {
-      setStatusMessage("");
-    }, 6500);
-    return () => window.clearTimeout(timeout);
+    if (!statusMessage) return;
+    const id = (toastIdRef.current += 1);
+    const variant = inferToastVariant(statusMessage);
+    setToasts((prev) => [
+      ...prev.slice(-3),
+      { id, message: statusMessage, variant },
+    ]);
+    setStatusMessage("");
   }, [statusMessage]);
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -6663,23 +6675,6 @@ function App() {
 
         {featureTab === "datasets" && (
           <section className="section" id="dataset-list">
-            {statusMessage && (
-              <div
-                className="status-banner"
-                role="status"
-                title="Status message"
-              >
-                <div className="status-banner__body">{statusMessage}</div>
-                <button
-                  className="status-banner__close"
-                  type="button"
-                  aria-label="Dismiss status"
-                  onClick={() => setStatusMessage("")}
-                >
-                  ×
-                </button>
-              </div>
-            )}
             <div className="datasets-tab-bar">
               <button
                 className={`datasets-tab${activeTab === "explore" ? " active" : ""}`}
@@ -8103,23 +8098,6 @@ function App() {
 
         {featureTab === "add-dataset" && (
           <section className="section" id="register-dataset">
-            {statusMessage && (
-              <div
-                className="status-banner"
-                role="status"
-                title="Status message"
-              >
-                <div className="status-banner__body">{statusMessage}</div>
-                <button
-                  className="status-banner__close"
-                  type="button"
-                  aria-label="Dismiss status"
-                  onClick={() => setStatusMessage("")}
-                >
-                  ×
-                </button>
-              </div>
-            )}
             <div className="register-banner">
               <p className="eyebrow">ATMOS registry · Stacks mainnet</p>
               <h2>Register a dataset</h2>
@@ -8507,6 +8485,7 @@ function App() {
       )}
       </div>{/* dashboard-body */}
       </div>{/* dashboard */}
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
