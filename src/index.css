@@ -4291,6 +4291,42 @@ textarea:focus {
   width: 45%;
 }
 
+/* Reusable shimmer primitive — drop on any block to show a loading placeholder */
+.skeleton {
+  display: inline-block;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.12) 45%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+:root[data-theme="light"] .skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(11, 16, 21, 0.05) 0%,
+    rgba(11, 16, 21, 0.11) 45%,
+    rgba(11, 16, 21, 0.05) 100%
+  );
+  background-size: 200% 100%;
+}
+
+.skeleton--stat {
+  width: 3.2rem;
+  height: 1.45rem;
+  vertical-align: -0.2rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 .dataset-header {
   display: flex;
   justify-content: space-between;

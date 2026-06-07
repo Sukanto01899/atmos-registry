@@ -554,6 +554,7 @@ function App() {
         value: activeDatasets.length > 0 ? activeDatasets.length.toLocaleString() : "—",
         variant: "",
         icon: "◈",
+        pending: loading && activeDatasets.length === 0,
       },
       {
         label: "Showing",
@@ -562,23 +563,27 @@ function App() {
           : "—",
         variant: "",
         icon: "◉",
+        pending: loading && activeDatasets.length === 0,
       },
       {
         label: "Watchlist",
         value: watchlistIds.length.toLocaleString(),
         variant: "home-stat--green",
         icon: "★",
+        pending: false,
       },
       {
         label: "Pinned",
         value: pinnedDatasetIds.length.toLocaleString(),
         variant: "home-stat--blue",
         icon: "⊕",
+        pending: false,
       },
     ],
     [
       activeDatasets.length,
       filteredDatasets.length,
+      loading,
       pinnedDatasetIds.length,
       watchlistIds,
     ],
@@ -5901,7 +5906,13 @@ function App() {
                 {interfaceSignals.map((item) => (
                   <div key={item.label} className={`home-stat${item.variant ? ` ${item.variant}` : ""}`}>
                     <span className="home-stat__icon" aria-hidden="true">{item.icon}</span>
-                    <strong>{item.value}</strong>
+                    <strong>
+                      {item.pending ? (
+                        <span className="skeleton skeleton--stat" aria-label="Loading" />
+                      ) : (
+                        item.value
+                      )}
+                    </strong>
                     <span>{item.label}</span>
                   </div>
                 ))}
