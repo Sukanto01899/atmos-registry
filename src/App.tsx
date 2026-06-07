@@ -65,6 +65,7 @@ import {
 } from "clardex-sdk";
 import { AppNotices } from "./components/AppNotices";
 import { CommandPalette } from "./components/CommandPalette";
+import { CopyButton } from "./components/CopyButton";
 import { DatasetCard } from "./components/DatasetCard";
 import { GeospatialExplorer } from "./components/GeospatialExplorer";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
@@ -5224,7 +5225,12 @@ function App() {
                 <div className="detail-meta-grid">
                   <div>
                     <span>Owner</span>
-                    <strong>{lineageDataset.owner}</strong>
+                    <strong className="detail-meta__value">
+                      <span className="detail-meta__text">
+                        {lineageDataset.owner}
+                      </span>
+                      <CopyButton value={lineageDataset.owner} label="owner" />
+                    </strong>
                   </div>
                   <div>
                     <span>Location</span>
@@ -5254,7 +5260,17 @@ function App() {
                   </div>
                   <div>
                     <span>IPFS</span>
-                    <strong>{lineageDataset.ipfsHash || "n/a"}</strong>
+                    <strong className="detail-meta__value">
+                      <span className="detail-meta__text">
+                        {lineageDataset.ipfsHash || "n/a"}
+                      </span>
+                      {lineageDataset.ipfsHash && (
+                        <CopyButton
+                          value={lineageDataset.ipfsHash}
+                          label="IPFS hash"
+                        />
+                      )}
+                    </strong>
                   </div>
                 </div>
                 <div className="detail-actions">
