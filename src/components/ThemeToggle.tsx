@@ -46,13 +46,16 @@ export function ThemeToggle() {
 
   return (
     <button
-      className="ghost-btn"
+      className={`ghost-btn theme-toggle theme-toggle--${theme}`}
       type="button"
       onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      title={`Theme: ${theme}`}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
     >
-      {theme === "dark" ? "Dark" : "Light"}
+      <span className="theme-toggle__icons" aria-hidden="true">
+        <span className="theme-toggle__icon theme-toggle__icon--sun">☀</span>
+        <span className="theme-toggle__icon theme-toggle__icon--moon">☾</span>
+      </span>
     </button>
   );
 }
