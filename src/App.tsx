@@ -66,6 +66,7 @@ import {
 import { AppNotices } from "./components/AppNotices";
 import { CommandPalette } from "./components/CommandPalette";
 import { CopyButton } from "./components/CopyButton";
+import { CountUp } from "./components/CountUp";
 import { DatasetCard } from "./components/DatasetCard";
 import { GeospatialExplorer } from "./components/GeospatialExplorer";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
@@ -557,6 +558,7 @@ function App() {
       {
         label: "Datasets",
         value: activeDatasets.length > 0 ? activeDatasets.length.toLocaleString() : "—",
+        count: activeDatasets.length > 0 ? activeDatasets.length : null,
         variant: "",
         icon: "◈",
         pending: loading && activeDatasets.length === 0,
@@ -566,6 +568,7 @@ function App() {
         value: activeDatasets.length > 0
           ? `${filteredDatasets.length}/${activeDatasets.length}`
           : "—",
+        count: null,
         variant: "",
         icon: "◉",
         pending: loading && activeDatasets.length === 0,
@@ -573,6 +576,7 @@ function App() {
       {
         label: "Watchlist",
         value: watchlistIds.length.toLocaleString(),
+        count: watchlistIds.length,
         variant: "home-stat--green",
         icon: "★",
         pending: false,
@@ -580,6 +584,7 @@ function App() {
       {
         label: "Pinned",
         value: pinnedDatasetIds.length.toLocaleString(),
+        count: pinnedDatasetIds.length,
         variant: "home-stat--blue",
         icon: "⊕",
         pending: false,
@@ -5937,6 +5942,8 @@ function App() {
                     <strong>
                       {item.pending ? (
                         <span className="skeleton skeleton--stat" aria-label="Loading" />
+                      ) : item.count !== null ? (
+                        <CountUp value={item.count} />
                       ) : (
                         item.value
                       )}
