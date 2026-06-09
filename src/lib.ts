@@ -326,6 +326,20 @@ const createdAtUnix = (createdAt: number): number => {
 };
 
 /**
+ * Returns a short calendar-date label for a `createdAt` value, e.g.
+ * "Mar 9, 2025".  For block heights this is estimated from the block time, so
+ * callers should present it as approximate.
+ */
+export const createdAtDateLabel = (createdAt: number): string => {
+  if (!createdAt) return "";
+  return new Date(createdAtUnix(createdAt) * 1000).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+/**
  * Returns a CSS modifier class for the age badge based on how old the dataset
  * is (estimated from block height when no unix timestamp is available):
  *   "tag--age-fresh"  → < 3 months  (green)

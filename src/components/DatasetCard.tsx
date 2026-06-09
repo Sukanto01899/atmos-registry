@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createdAtAge, getAgeColorClass, getQualityBreakdown } from "../lib";
+import { createdAtAge, createdAtDateLabel, getAgeColorClass, getQualityBreakdown } from "../lib";
 import type { Dataset, DatasetCardProps } from "../type";
 
 const highlightText = (text: string, query: string) => {
@@ -247,7 +247,7 @@ export function DatasetCard({
                 title={
                   dataset.createdAt > 1_000_000_000
                     ? `Registered ${new Date(dataset.createdAt * 1000).toLocaleString()}`
-                    : `Registered at block ${dataset.createdAt} (age is approximate)`
+                    : `Registered ~${createdAtDateLabel(dataset.createdAt)} · block ${dataset.createdAt} (estimated from block height)`
                 }
               >
                 {createdAtAge(dataset.createdAt)}
