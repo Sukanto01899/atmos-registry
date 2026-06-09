@@ -192,6 +192,9 @@ function App() {
   const hasHydratedPinnedDatasetsRef = useRef(false);
   const hasHydratedWatchlistRef = useRef(false);
   const autoLoadedOwnerRef = useRef<string>("");
+  const baseTitleRef = useRef<string>(
+    typeof document !== "undefined" ? document.title : "Atmos Registry",
+  );
   const exploreAbortRef = useRef<AbortController | null>(null);
   const exploreFetchTimerRef = useRef<number | null>(null);
   const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
@@ -556,6 +559,21 @@ function App() {
       return true;
     });
   }, [activeDatasets, datasetNotes, filters, pinnedDatasetIds]);
+  const filteredQualitySummary = useMemo(() => {
+    if (!filteredDatasets.length) {
+      return { avgQuality: 0, verifiedPct: 0, hasData: false };
+    }
+    const totalQuality = filteredDatasets.reduce(
+      (sum, dataset) => sum + getQualityScore(dataset),
+      0,
+    );
+    const verified = filteredDatasets.filter((dataset) => dataset.verified).length;
+    return {
+      avgQuality: Math.round(totalQuality / filteredDatasets.length),
+      verifiedPct: Math.round((verified / filteredDatasets.length) * 100),
+      hasData: true,
+    };
+  }, [filteredDatasets]);
   const interfaceSignals = useMemo(
     () => [
       {
@@ -592,10 +610,31 @@ function App() {
         icon: "⊕",
         pending: false,
       },
+      {
+        label: "Avg quality",
+        value: filteredQualitySummary.hasData
+          ? `${filteredQualitySummary.avgQuality}/100`
+          : "—",
+        count: null,
+        variant: "",
+        icon: "✦",
+        pending: loading && activeDatasets.length === 0,
+      },
+      {
+        label: "Verified",
+        value: filteredQualitySummary.hasData
+          ? `${filteredQualitySummary.verifiedPct}%`
+          : "—",
+        count: null,
+        variant: "home-stat--green",
+        icon: "✓",
+        pending: loading && activeDatasets.length === 0,
+      },
     ],
     [
       activeDatasets.length,
       filteredDatasets.length,
+      filteredQualitySummary,
       loading,
       pinnedDatasetIds.length,
       watchlistIds,
@@ -3737,6 +3776,23 @@ function App() {
     }
     await copyText(window.location.href, "Share link");
   };
+  const shareCurrentView = async () => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Share link unavailable.");
+      return;
+    }
+    const url = window.location.href;
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title: document.title, url });
+        setStatusMessage("Shared current view.");
+        return;
+      } catch {
+        // User dismissed the share sheet, or it failed — fall back to copying.
+      }
+    }
+    await copyText(url, "Share link");
+  };
   const copySavedViewShareLink = async (view: SavedView) => {
     if (typeof window === "undefined") {
       setStatusMessage("Share link unavailable.");
@@ -4345,6 +4401,14 @@ function App() {
     setOwnerInput(walletAddress);
     loadOwnerDatasets(walletAddress);
   }, [activeTab, walletAddress, ownerAddress]);
+  // Surface in-flight transactions in the browser tab title so users tracking a
+  // confirmation in a background tab get a glanceable "(2) Atmos Registry".
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const base = baseTitleRef.current || "Atmos Registry";
+    document.title =
+      txCenter.pendingCount > 0 ? `(${txCenter.pendingCount}) ${base}` : base;
+  }, [txCenter.pendingCount]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const urlState = parseUrlViewState(window.location.search);
@@ -7119,6 +7183,16 @@ function App() {
                 >
                   Copy share link
                 </button>
+                {typeof navigator !== "undefined" &&
+                  typeof navigator.share === "function" && (
+                    <button
+                      className="ghost-btn"
+                      type="button"
+                      onClick={shareCurrentView}
+                    >
+                      Share
+                    </button>
+                  )}
               </div>
               <div className="saved-view-list">
                 {savedViews.length === 0 && (

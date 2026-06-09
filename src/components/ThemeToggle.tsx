@@ -16,6 +16,17 @@ const applyTheme = (theme: ThemeMode) => {
   document.documentElement.dataset.theme = theme;
 };
 
+// On a first visit (no stored choice), follow the operating system's
+// light/dark preference instead of always defaulting to dark.
+const getSystemTheme = (): ThemeMode => {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return "dark";
+  }
+  return window.matchMedia("(prefers-color-scheme: light)").matches
+    ? "light"
+    : "dark";
+};
+
 export function ThemeToggle() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
     return (
@@ -24,7 +35,7 @@ export function ThemeToggle() {
       (document.documentElement.dataset.theme === "dark" ||
         document.documentElement.dataset.theme === "light")
         ? (document.documentElement.dataset.theme as ThemeMode)
-        : "dark")
+        : getSystemTheme())
     );
   });
 
