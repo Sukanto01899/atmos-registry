@@ -111,6 +111,7 @@ const REGISTER_DRAFT_BACKUP_KEY = "atmos-register-draft-backup";
 const RECENT_COMMANDS_KEY = "atmos-command-recent";
 const RECENT_DATASETS_KEY = "atmos-dataset-recent";
 const PINNED_DATASETS_KEY = "atmos-dataset-pins";
+const WATCHLIST_DATASETS_KEY = "atmos-dataset-watchlist";
 const RECENT_SEARCHES_KEY = "atmos-search-recent";
 const DATASET_DENSITY_KEY = "atmos-dataset-density";
 const FEATURE_TAB_KEY = "atmos-feature-tab";
@@ -189,6 +190,7 @@ function App() {
   const hasHydratedTxStatusesRef = useRef(false);
   const hasHydratedDatasetNotesRef = useRef(false);
   const hasHydratedPinnedDatasetsRef = useRef(false);
+  const hasHydratedWatchlistRef = useRef(false);
   const exploreAbortRef = useRef<AbortController | null>(null);
   const exploreFetchTimerRef = useRef<number | null>(null);
   const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
@@ -874,6 +876,33 @@ function App() {
     if (typeof window === "undefined") {
       return;
     }
+    const rawWatchlist = window.localStorage.getItem(WATCHLIST_DATASETS_KEY);
+    if (!rawWatchlist) {
+      hasHydratedWatchlistRef.current = true;
+      return;
+    }
+    try {
+      const parsed = JSON.parse(rawWatchlist) as string[];
+      if (Array.isArray(parsed)) {
+        const next = Array.from(
+          new Set(
+            parsed.filter((item) => typeof item === "string" && /^\d+$/.test(item)),
+          ),
+        );
+        setWatchlistIds(next);
+        setWatchlistInput(next.join(", "));
+      }
+    } catch {
+      window.localStorage.removeItem(WATCHLIST_DATASETS_KEY);
+    } finally {
+      hasHydratedWatchlistRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
     const rawNotes = window.localStorage.getItem(DATASET_NOTES_KEY);
     if (!rawNotes) {
       hasHydratedDatasetNotesRef.current = true;
@@ -957,6 +986,22 @@ function App() {
       JSON.stringify(pinnedDatasetIds.slice(0, 50)),
     );
   }, [pinnedDatasetIds]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!hasHydratedWatchlistRef.current) {
+      return;
+    }
+    if (watchlistIds.length === 0) {
+      window.localStorage.removeItem(WATCHLIST_DATASETS_KEY);
+      return;
+    }
+    window.localStorage.setItem(
+      WATCHLIST_DATASETS_KEY,
+      JSON.stringify(watchlistIds.slice(0, 200)),
+    );
+  }, [watchlistIds]);
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -3489,6 +3534,7 @@ function App() {
       window.localStorage.removeItem(RECENT_COMMANDS_KEY);
       window.localStorage.removeItem(RECENT_DATASETS_KEY);
       window.localStorage.removeItem(PINNED_DATASETS_KEY);
+      window.localStorage.removeItem(WATCHLIST_DATASETS_KEY);
       window.localStorage.removeItem(DATASET_NOTES_KEY);
       window.localStorage.removeItem(SAVED_VIEWS_KEY);
       window.localStorage.removeItem(DATASET_DENSITY_KEY);
