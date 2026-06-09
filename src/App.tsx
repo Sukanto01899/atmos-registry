@@ -191,6 +191,7 @@ function App() {
   const hasHydratedDatasetNotesRef = useRef(false);
   const hasHydratedPinnedDatasetsRef = useRef(false);
   const hasHydratedWatchlistRef = useRef(false);
+  const autoLoadedOwnerRef = useRef<string>("");
   const exploreAbortRef = useRef<AbortController | null>(null);
   const exploreFetchTimerRef = useRef<number | null>(null);
   const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
@@ -3901,6 +3902,10 @@ function App() {
     disconnectConnect();
     userSession.signUserOut(window.location.origin);
     setWalletAddress("");
+    setMyDatasets([]);
+    setOwnerInput("");
+    setOwnerAddress("");
+    autoLoadedOwnerRef.current = "";
     setWalletMessage("Wallet disconnected.");
     loadTokenSnapshot(CONTRACT_ADDRESS);
   };
@@ -4326,6 +4331,20 @@ function App() {
   useEffect(() => {
     loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS);
   }, [walletAddress]);
+  // On the "Mine" tab, load the connected wallet's datasets automatically the
+  // first time we have an address, so the user doesn't have to click "Use
+  // wallet". Lazy (only when the tab is active) to avoid a contract read at
+  // startup, and skipped once the user has chosen any address manually.
+  useEffect(() => {
+    if (activeTab !== "mine") return;
+    if (!walletAddress) return;
+    if (ownerAddress.trim()) return;
+    if (autoLoadedOwnerRef.current === walletAddress) return;
+    autoLoadedOwnerRef.current = walletAddress;
+    setOwnerAddress(walletAddress);
+    setOwnerInput(walletAddress);
+    loadOwnerDatasets(walletAddress);
+  }, [activeTab, walletAddress, ownerAddress]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const urlState = parseUrlViewState(window.location.search);
