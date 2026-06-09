@@ -2207,6 +2207,8 @@ function App() {
         altitudeMax: dataset.altitudeMax,
         latitude: dataset.latitude,
         longitude: dataset.longitude,
+        latitudeDeg: dataset.latitude / 1_000_000,
+        longitudeDeg: dataset.longitude / 1_000_000,
         ipfsHash: dataset.ipfsHash,
       })),
     };
@@ -2254,6 +2256,8 @@ function App() {
       "altitudeMax",
       "latitude",
       "longitude",
+      "latitudeDeg",
+      "longitudeDeg",
       "ipfsHash",
     ] as const;
 
@@ -2278,6 +2282,8 @@ function App() {
           dataset.altitudeMax,
           dataset.latitude,
           dataset.longitude,
+          (dataset.latitude / 1_000_000).toFixed(6),
+          (dataset.longitude / 1_000_000).toFixed(6),
           dataset.ipfsHash ?? "",
         ]
           .map(escapeCsv)
@@ -2414,6 +2420,8 @@ function App() {
         altitudeMax: dataset.altitudeMax,
         latitude: dataset.latitude,
         longitude: dataset.longitude,
+        latitudeDeg: dataset.latitude / 1_000_000,
+        longitudeDeg: dataset.longitude / 1_000_000,
         ipfsHash: dataset.ipfsHash,
       })),
     };
@@ -2461,6 +2469,8 @@ function App() {
       "altitudeMax",
       "latitude",
       "longitude",
+      "latitudeDeg",
+      "longitudeDeg",
       "ipfsHash",
     ] as const;
 
@@ -2485,6 +2495,8 @@ function App() {
           dataset.altitudeMax,
           dataset.latitude,
           dataset.longitude,
+          (dataset.latitude / 1_000_000).toFixed(6),
+          (dataset.longitude / 1_000_000).toFixed(6),
           dataset.ipfsHash ?? "",
         ]
           .map(escapeCsv)
@@ -3749,17 +3761,21 @@ function App() {
     if (typeof window === "undefined") {
       return "";
     }
+    // A dataset share link points at one dataset only. We intentionally drop the
+    // current filters, watchlist, and compare selection so the link is clean and
+    // doesn't leak the sharer's working state. Full-view sharing has its own
+    // "Copy share link" button (copyShareLink).
     const nextSearch = buildUrlViewSearch({
-      activeTab,
-      filters,
-      geoTimePercent,
-      compareSelectionIds,
-      watchlistOnly,
-      watchlistIds,
-      mutedAlertKinds,
-      sortMode,
+      activeTab: "explore",
+      filters: defaultFilters,
+      geoTimePercent: 100,
+      compareSelectionIds: [],
+      watchlistOnly: false,
+      watchlistIds: [],
+      mutedAlertKinds: [],
+      sortMode: "quality-desc",
       lineageSelectionId: String(datasetId),
-      selectedGeoDatasetId,
+      selectedGeoDatasetId: "",
       showDatasetDetail: true,
     });
     return `${window.location.origin}${window.location.pathname}${nextSearch}${window.location.hash}`;
