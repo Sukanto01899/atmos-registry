@@ -2109,6 +2109,16 @@ function App() {
     setLineageSelectionId(String(datasetId));
     setShowDatasetDetail(true);
   };
+  const openRandomDataset = () => {
+    const pool = sortedDatasets.length ? sortedDatasets : filteredDatasets;
+    if (!pool.length) {
+      setStatusMessage("No datasets to pick from.");
+      return;
+    }
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    openDatasetDetail(pick.id);
+    setStatusMessage(`Surfaced #${pick.id} — ${pick.name}.`);
+  };
   const setGeoTarget = (datasetId: number) => {
     setSelectedGeoDatasetId(String(datasetId));
     setLineageTarget(datasetId);
@@ -6982,6 +6992,15 @@ function App() {
                   title="Copy a plaintext digest of the current filtered view"
                 >
                   ⎘ Copy summary
+                </button>
+                <button
+                  className="dataset-view-btn copy-csv-btn"
+                  type="button"
+                  disabled={filteredDatasets.length === 0}
+                  onClick={openRandomDataset}
+                  title="Open a random dataset from the current filtered view"
+                >
+                  ⚄ Surprise me
                 </button>
               </div>
             </div>
