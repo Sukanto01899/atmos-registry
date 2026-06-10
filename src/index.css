@@ -2782,6 +2782,12 @@ textarea:focus {
   gap: 0.8rem;
 }
 
+.saved-view-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .saved-view-create {
   margin-top: 0.75rem;
   display: grid;

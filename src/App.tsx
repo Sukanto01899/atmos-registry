@@ -7026,17 +7026,30 @@ function App() {
             <div className="saved-view-card">
               <div className="saved-view-head">
                 <div>
-                  <h3>Recently viewed</h3>
+                  <h3>
+                    Recently viewed
+                    {recentDatasets.length > 0 ? ` (${recentDatasets.length})` : ""}
+                  </h3>
                   <p>Quickly reopen datasets you inspected in this browser.</p>
                 </div>
-                <button
-                  className="ghost-btn"
-                  type="button"
-                  onClick={clearAllDatasetNotes}
-                  disabled={Object.keys(datasetNotes).length === 0}
-                >
-                  Clear all notes
-                </button>
+                <div className="saved-view-head-actions">
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => setRecentDatasetIds([])}
+                    disabled={recentDatasets.length === 0}
+                  >
+                    Clear recent
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={clearAllDatasetNotes}
+                    disabled={Object.keys(datasetNotes).length === 0}
+                  >
+                    Clear all notes
+                  </button>
+                </div>
               </div>
               <div className="saved-view-list">
                 {recentDatasets.length === 0 && (
@@ -7067,15 +7080,6 @@ function App() {
                     </button>
                   </div>
                 ))}
-                {recentDatasets.length > 1 && (
-                  <button
-                    className="ghost-btn"
-                    type="button"
-                    onClick={() => setRecentDatasetIds([])}
-                  >
-                    Clear recent
-                  </button>
-                )}
               </div>
             </div>
             <div className="saved-view-card">
