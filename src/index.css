@@ -4492,6 +4492,19 @@ textarea:focus {
   margin-top: 0.35rem;
 }
 
+.empty-filter-resets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.empty-filter-reset {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+}
+
 .dataset-card--skeleton {
   position: relative;
   overflow: hidden;

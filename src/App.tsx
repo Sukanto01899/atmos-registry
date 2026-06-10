@@ -8025,8 +8025,25 @@ function App() {
                   <div className="empty-orbit" aria-hidden="true" />
                   <div className="dataset-title">No datasets match filters</div>
                   <p className="dataset-description">
-                    Try broadening your filter criteria or reset all filters.
+                    {filterChips.length > 0
+                      ? "Clear one of the active filters below, or reset them all."
+                      : "Try broadening your filter criteria or reset all filters."}
                   </p>
+                  {filterChips.length > 0 && (
+                    <div className="empty-filter-resets">
+                      {filterChips.map((chip) => (
+                        <button
+                          key={chip.id}
+                          className="ghost-btn empty-filter-reset"
+                          type="button"
+                          onClick={() => clearFilter(chip.key)}
+                          title={`Clear ${chip.label}`}
+                        >
+                          ✕ {chip.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div className="empty-actions">
                     <button
                       className="ghost-btn"
