@@ -2378,6 +2378,44 @@ function App() {
       setStatusMessage("Clipboard write failed — check browser permissions.");
     }
   };
+  const copyFilteredSummary = async () => {
+    if (!filteredDatasets.length) {
+      setStatusMessage("No filtered datasets to summarize.");
+      return;
+    }
+    const total = filteredDatasets.length;
+    const verified = filteredDatasets.filter((dataset) => dataset.verified).length;
+    const frozen = filteredDatasets.filter(
+      (dataset) => dataset.metadataFrozen,
+    ).length;
+    const publicCount = filteredDatasets.filter(
+      (dataset) => dataset.isPublic,
+    ).length;
+    const typeCounts = new Map<string, number>();
+    for (const dataset of filteredDatasets) {
+      const type = (dataset.dataType || "untyped").trim() || "untyped";
+      typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
+    }
+    const topTypes = [...typeCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([type]) => type)
+      .join(", ");
+    const summary = [
+      `${total} dataset${total === 1 ? "" : "s"}`,
+      `${verified} verified`,
+      `${frozen} frozen`,
+      `${publicCount} public`,
+      `types: ${topTypes}`,
+      `avg quality ${filteredQualitySummary.avgQuality}/100`,
+    ].join(" · ");
+    try {
+      await navigator.clipboard.writeText(summary);
+      setStatusMessage(`Copied summary of ${total} datasets.`);
+    } catch {
+      setStatusMessage("Clipboard write failed — check browser permissions.");
+    }
+  };
   const exportFilteredDatasetsGeoJson = () => {
     if (!filteredDatasets.length || typeof window === "undefined") {
       setStatusMessage("No filtered datasets to export.");
@@ -6935,6 +6973,15 @@ function App() {
                   title="Copy filtered list as CSV (id, name, dataType, lat, lng, qualityScore)"
                 >
                   ⎘ Copy CSV
+                </button>
+                <button
+                  className="dataset-view-btn copy-csv-btn"
+                  type="button"
+                  disabled={filteredDatasets.length === 0}
+                  onClick={copyFilteredSummary}
+                  title="Copy a plaintext digest of the current filtered view"
+                >
+                  ⎘ Copy summary
                 </button>
               </div>
             </div>
