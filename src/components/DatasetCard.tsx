@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createdAtAge, createdAtDateLabel, getAgeColorClass, getQualityBreakdown } from "../lib";
+import { createdAtAge, createdAtDateLabel, getAgeColorClass, getQualityBreakdown, relativeTimeAgo } from "../lib";
 import type { Dataset, DatasetCardProps } from "../type";
 
 const highlightText = (text: string, query: string) => {
@@ -183,6 +183,7 @@ export function DatasetCard({
   onOpenIpfs,
   onCheckIpfs,
   ipfsHealth,
+  ipfsCheckedAt,
   onCopyOwnerExplorerUrl,
   onOpenOwnerExplorer,
   onOpenMap,
@@ -223,9 +224,23 @@ export function DatasetCard({
             {dataset.ipfsHash?.trim() && (
               <span
                 className={`tag tag--ipfs tag--ipfs-${ipfsHealth ?? "unchecked"}`}
-                title="IPFS gateway reachability (last check in this browser)"
+                title={
+                  ipfsCheckedAt && ipfsCheckedAt > 0
+                    ? `IPFS gateway reachability · checked ${new Date(
+                        ipfsCheckedAt * 1000,
+                      ).toLocaleString()}`
+                    : "IPFS gateway reachability (last check in this browser)"
+                }
               >
                 IPFS: {(ipfsHealth ?? "unchecked").toUpperCase()}
+                {ipfsCheckedAt && ipfsCheckedAt > 0 &&
+                ipfsHealth !== "checking" &&
+                ipfsHealth !== "unchecked" ? (
+                  <span className="tag-ipfs-checked">
+                    {" "}
+                    · {relativeTimeAgo(ipfsCheckedAt)}
+                  </span>
+                ) : null}
               </span>
             )}
             <span

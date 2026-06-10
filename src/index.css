@@ -4687,6 +4687,11 @@ textarea:focus {
   color: rgba(255, 107, 107, 0.95);
 }
 
+.tag-ipfs-checked {
+  opacity: 0.7;
+  font-weight: 400;
+}
+
 .tag--age {
   border-color: rgba(140, 163, 194, 0.22);
   background: transparent;

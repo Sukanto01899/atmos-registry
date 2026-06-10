@@ -3557,6 +3557,11 @@ function App() {
     if (!cid) return "unchecked" as const;
     return ipfsHealthByCid[cid]?.status ?? ("unchecked" as const);
   };
+  const getIpfsCheckedAt = (pointer: string) => {
+    const cid = normalizeIpfsCid(pointer);
+    if (!cid) return 0;
+    return ipfsHealthByCid[cid]?.checkedAt ?? 0;
+  };
   const checkIpfsGateway = async (pointer: string) => {
     if (typeof window === "undefined") {
       setStatusMessage("IPFS check unavailable.");
@@ -8135,6 +8140,7 @@ function App() {
                   onOpenIpfs={() => openIpfsGateway(dataset.ipfsHash || "")}
                   onCheckIpfs={() => checkIpfsGateway(dataset.ipfsHash || "")}
                   ipfsHealth={getIpfsHealth(dataset.ipfsHash || "")}
+                  ipfsCheckedAt={getIpfsCheckedAt(dataset.ipfsHash || "")}
                   onOpenOwnerExplorer={() => openOwnerInExplorer(dataset.owner)}
                   onCopyOwnerExplorerUrl={() =>
                     copyStacksExplorerUrl(
