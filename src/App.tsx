@@ -15,6 +15,7 @@ import {
 } from "@stacks/connect";
 import {
   boolCV,
+  cvToHex,
   cvToJSON,
   fetchCallReadOnlyFunction,
   intCV,
@@ -2748,6 +2749,15 @@ function App() {
     ].filter(Boolean);
 
     await copyText(lines.join("\n"), `Dataset #${dataset.id} markdown`);
+  };
+  const copyDatasetReadCurl = async (dataset: Dataset) => {
+    const url = `${STACKS_API_BASE_URL}/v2/contracts/call-read/${CONTRACT_ADDRESS}/${CONTRACT_NAME}/get-dataset`;
+    const body = JSON.stringify({
+      sender: CONTRACT_ADDRESS,
+      arguments: [cvToHex(uintCV(dataset.id))],
+    });
+    const command = `curl -s -X POST "${url}" -H "Content-Type: application/json" -d '${body}'`;
+    await copyText(command, `Dataset #${dataset.id} cURL`);
   };
   const openRandomFilteredDataset = () => {
     if (!sortedDatasets.length) {
@@ -5579,6 +5589,14 @@ function App() {
                     onClick={openContractInExplorer}
                   >
                     Open contract
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => copyDatasetReadCurl(lineageDataset)}
+                    title="Copy a runnable curl command that reads this dataset from the contract via the Stacks API"
+                  >
+                    Copy cURL
                   </button>
                   <button
                     className="ghost-btn"
