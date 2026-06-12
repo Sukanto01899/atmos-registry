@@ -5177,6 +5177,16 @@ textarea:focus {
   color: rgba(0, 0, 0, 0.38);
 }
 
+.detail-meta__age {
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+  font-weight: 400;
+}
+
+:root[data-theme="light"] .detail-meta__age {
+  color: rgba(0, 0, 0, 0.38);
+}
+
 .dataset-refresh {
   grid-column: 1 / -1;
   display: flex;

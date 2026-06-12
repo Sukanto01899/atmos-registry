@@ -43,6 +43,9 @@ import {
   getVersionStatusClass,
   mapDatasetToVersionStatus,
   nowUnix,
+  createdAtAge,
+  createdAtDateLabel,
+  getAgeColorClass,
   parseStakeInfo,
   parseTuple,
   parseUInt,
@@ -5421,6 +5424,18 @@ function App() {
               {lineageDataset.metadataFrozen && (
                 <span className="tag tag--frozen">Frozen metadata</span>
               )}
+              {lineageDataset.createdAt > 0 && (
+                <span
+                  className={`tag tag--age ${getAgeColorClass(lineageDataset.createdAt)}`}
+                  title={
+                    lineageDataset.createdAt > 1_000_000_000
+                      ? `Registered ${new Date(lineageDataset.createdAt * 1000).toLocaleString()}`
+                      : `Registered ~${createdAtDateLabel(lineageDataset.createdAt)} · block ${lineageDataset.createdAt} (estimated from block height)`
+                  }
+                >
+                  {createdAtAge(lineageDataset.createdAt)}
+                </span>
+              )}
             </div>
             <div className="detail-grid">
               <article className="detail-card">
@@ -5459,6 +5474,12 @@ function App() {
                     <span>Recorded</span>
                     <strong>
                       {formatChainValue(lineageDataset.createdAt)}
+                      {lineageDataset.createdAt > 0 && (
+                        <span className="detail-meta__age">
+                          {" "}
+                          · {createdAtAge(lineageDataset.createdAt)}
+                        </span>
+                      )}
                     </strong>
                   </div>
                   <div>
