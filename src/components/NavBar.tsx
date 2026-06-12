@@ -40,6 +40,7 @@ type Props = {
   onOpenShortcuts: () => void;
   networkLabel: string;
   walletAddress: string;
+  stxBalance?: string;
   onConnectWallet: () => void;
   onDisconnectWallet: () => void;
   onOpenContractExplorer: () => void;
@@ -81,6 +82,7 @@ export function NavBar({
   onOpenShortcuts,
   networkLabel,
   walletAddress,
+  stxBalance,
   onConnectWallet,
   onDisconnectWallet,
   onOpenContractExplorer,
@@ -246,6 +248,11 @@ export function NavBar({
                 </span>
                 <span className="sidebar__wallet-network">{networkLabel}</span>
               </div>
+              {stxBalance && (
+                <div className="sidebar__wallet-balance" title="STX balance">
+                  {stxBalance}
+                </div>
+              )}
               <div className="sidebar__wallet-actions">
                 <button
                   className="ghost-btn compact"
@@ -385,10 +392,19 @@ export function NavBar({
               className="topbar__wallet-chip"
               type="button"
               onClick={copyWalletAddress}
-              title={copied ? "Copied!" : walletAddress}
+              title={
+                copied
+                  ? "Copied!"
+                  : stxBalance
+                    ? `${walletAddress} · ${stxBalance}`
+                    : walletAddress
+              }
             >
               <span className="topbar__wallet-dot" aria-hidden="true" />
               <span>{copied ? "Copied!" : shortenAddress(walletAddress)}</span>
+              {stxBalance && !copied && (
+                <span className="topbar__wallet-balance">{stxBalance}</span>
+              )}
             </button>
           ) : (
             <button

@@ -451,6 +451,13 @@ textarea {
   flex-shrink: 0;
 }
 
+.sidebar__wallet-balance {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  margin-top: 0.3rem;
+}
+
 .sidebar__wallet-actions {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -794,6 +801,14 @@ textarea {
   box-shadow: 0 0 6px var(--accent-2);
   animation: pulse-dot 2.4s ease-in-out infinite;
   flex-shrink: 0;
+}
+
+.topbar__wallet-balance {
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.75;
+  padding-left: 0.45rem;
+  border-left: 1px solid rgba(55, 209, 161, 0.3);
 }
 
 .topbar__connect {

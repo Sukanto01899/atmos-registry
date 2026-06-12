@@ -238,6 +238,7 @@ function App() {
   const [walletMessage, setWalletMessage] = useState("");
   const [txStatus, setTxStatus] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [stxBalanceMicro, setStxBalanceMicro] = useState<number | null>(null);
   const [lineageSelectionId, setLineageSelectionId] = useState("");
   const [geoTimePercent, setGeoTimePercent] = useState(100);
   const [selectedGeoDatasetId, setSelectedGeoDatasetId] = useState("");
@@ -4474,6 +4475,28 @@ function App() {
   useEffect(() => {
     loadTokenSnapshot(walletAddress || CONTRACT_ADDRESS);
   }, [walletAddress]);
+  useEffect(() => {
+    if (!walletAddress) {
+      setStxBalanceMicro(null);
+      return;
+    }
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const response = await fetch(
+          `${STACKS_API_BASE_URL}/extended/v1/address/${encodeURIComponent(walletAddress)}/balances`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) return;
+        const json = (await response.json()) as { stx?: { balance?: string } };
+        const micro = Number(json.stx?.balance ?? "");
+        setStxBalanceMicro(Number.isFinite(micro) ? micro : null);
+      } catch {
+        // leave the balance hidden when the API is unreachable
+      }
+    })();
+    return () => controller.abort();
+  }, [walletAddress]);
   // On the "Mine" tab, load the connected wallet's datasets automatically the
   // first time we have an address, so the user doesn't have to click "Use
   // wallet". Lazy (only when the tab is active) to avoid a contract read at
@@ -5363,6 +5386,11 @@ function App() {
         onOpenCommandPalette={() => setShowCommandPalette(true)}
         onOpenShortcuts={() => setShowKeyboardShortcuts(true)}
         walletAddress={walletAddress}
+        stxBalance={
+          stxBalanceMicro === null
+            ? ""
+            : `${formatTokenAmount(stxBalanceMicro)} STX`
+        }
         onConnectWallet={connectWallet}
         onDisconnectWallet={disconnectWallet}
         onOpenContractExplorer={openContractInExplorer}
