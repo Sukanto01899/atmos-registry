@@ -5735,6 +5735,14 @@ function App() {
                   <button
                     className="ghost-btn"
                     type="button"
+                    onClick={() => window.print()}
+                    title="Print this dataset's details (action buttons are hidden in the printout)"
+                  >
+                    Print
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
                     onClick={() =>
                       copyText(
                         `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`,

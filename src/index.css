@@ -5924,3 +5924,51 @@ textarea:focus {
 .clardex-status--ok {
   color: var(--accent-2);
 }
+
+@media print {
+  /* Show only the dataset detail drawer when it is open */
+  body * {
+    visibility: hidden;
+  }
+
+  .detail-overlay,
+  .detail-overlay * {
+    visibility: visible;
+  }
+
+  .detail-overlay {
+    position: absolute;
+    inset: 0;
+    display: block;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+
+  .detail-modal,
+  .detail-modal * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  .detail-modal {
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    animation: none;
+    background: #fff !important;
+  }
+
+  .detail-modal button,
+  .detail-modal input,
+  .detail-modal textarea,
+  .detail-modal select,
+  .detail-actions {
+    display: none !important;
+  }
+}
