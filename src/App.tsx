@@ -202,6 +202,7 @@ function App() {
   const exploreAbortRef = useRef<AbortController | null>(null);
   const exploreFetchTimerRef = useRef<number | null>(null);
   const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
+  const backupImportInputRef = useRef<HTMLInputElement | null>(null);
   const copyToastTimeoutRef = useRef<number | null>(null);
   const txStatusByIdRef = useRef<Map<string, string>>(new Map());
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -3504,6 +3505,110 @@ function App() {
       setStatusMessage(`Imported ${normalized.length} saved view(s).`);
     } catch {
       setStatusMessage("Failed to import saved views.");
+    }
+  };
+  const exportLocalDataBackup = () => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Export unavailable.");
+      return;
+    }
+    const payload = {
+      version: 1,
+      exportedAt: nowUnix(),
+      app: "atmos",
+      kind: "local-data-backup",
+      pinnedDatasetIds,
+      watchlistIds,
+      datasetNotes,
+      savedViews,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-backup-${Date.now()}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(
+      "Exported backup (pins, watchlist, notes, saved views).",
+    );
+  };
+  const importLocalDataBackup = async (file: File) => {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as any;
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        parsed.kind !== "local-data-backup"
+      ) {
+        setStatusMessage("Invalid backup file.");
+        return;
+      }
+
+      const numericIds = (value: unknown) =>
+        Array.isArray(value)
+          ? Array.from(
+              new Set(
+                value.filter(
+                  (item) => typeof item === "string" && /^\d+$/.test(item),
+                ),
+              ),
+            )
+          : null;
+
+      const pins = numericIds(parsed.pinnedDatasetIds);
+      const watch = numericIds(parsed.watchlistIds);
+
+      let notes: Record<string, string> | null = null;
+      if (
+        parsed.datasetNotes &&
+        typeof parsed.datasetNotes === "object" &&
+        !Array.isArray(parsed.datasetNotes)
+      ) {
+        const next: Record<string, string> = {};
+        Object.entries(parsed.datasetNotes).forEach(([key, value]) => {
+          if (!/^\d+$/.test(key)) return;
+          if (typeof value !== "string" || !value.trim()) return;
+          next[key] = value;
+        });
+        notes = next;
+      }
+
+      const views = normalizeSavedViewsImport(parsed.savedViews);
+
+      if (!pins && !watch && !notes && !views) {
+        setStatusMessage("Backup file contains no restorable data.");
+        return;
+      }
+
+      const summary: string[] = [];
+      if (pins) {
+        setPinnedDatasetIds(pins);
+        summary.push(`${pins.length} pins`);
+      }
+      if (watch) {
+        setWatchlistIds(watch);
+        setWatchlistInput(watch.join(", "));
+        summary.push(`${watch.length} watched`);
+      }
+      if (notes) {
+        setDatasetNotes(notes);
+        summary.push(`${Object.keys(notes).length} notes`);
+      }
+      if (views) {
+        setSavedViews(
+          views.sort((a, b) => b.createdAt - a.createdAt).slice(0, 20),
+        );
+        summary.push(`${views.length} saved views`);
+      }
+      setStatusMessage(`Restored backup: ${summary.join(", ")}.`);
+    } catch {
+      setStatusMessage("Failed to restore backup.");
     }
   };
   const copyText = async (value: string, label: string) => {
@@ -7345,6 +7450,34 @@ function App() {
                   disabled={savedViews.length === 0}
                 >
                   Export
+                </button>
+                <input
+                  ref={backupImportInputRef}
+                  type="file"
+                  accept="application/json"
+                  style={{ display: "none" }}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    if (!file) return;
+                    importLocalDataBackup(file);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={exportLocalDataBackup}
+                  title="Download pins, watchlist, notes, and saved views as one JSON file"
+                >
+                  Backup all
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => backupImportInputRef.current?.click()}
+                  title="Restore pins, watchlist, notes, and saved views from a backup file (replaces current data)"
+                >
+                  Restore all
                 </button>
                 <button
                   className="ghost-btn"
