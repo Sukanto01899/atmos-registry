@@ -2720,7 +2720,7 @@ function App() {
       `Dataset #${dataset.id} GeoJSON feature`,
     );
   };
-  const copyDatasetMarkdown = async (dataset: Dataset) => {
+  const buildDatasetMarkdown = (dataset: Dataset) => {
     const detailLink = buildDatasetDetailLink(dataset.id);
     const osmLink = buildMapUrlAt(dataset.latitude, dataset.longitude);
     const googleLink = buildGoogleMapsUrlAt(dataset.latitude, dataset.longitude);
@@ -2748,7 +2748,28 @@ function App() {
       ipfsLink ? `- IPFS gateway: ${ipfsLink}` : "",
     ].filter(Boolean);
 
-    await copyText(lines.join("\n"), `Dataset #${dataset.id} markdown`);
+    return lines.join("\n");
+  };
+  const copyDatasetMarkdown = async (dataset: Dataset) => {
+    await copyText(buildDatasetMarkdown(dataset), `Dataset #${dataset.id} markdown`);
+  };
+  const exportSingleDatasetMarkdown = (dataset: Dataset) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Export unavailable.");
+      return;
+    }
+    const blob = new Blob([`${buildDatasetMarkdown(dataset)}\n`], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `atmos-dataset-${dataset.id}.md`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatusMessage(`Exported dataset #${dataset.id} (Markdown).`);
   };
   const copyDatasetReadCurl = async (dataset: Dataset) => {
     const url = `${STACKS_API_BASE_URL}/v2/contracts/call-read/${CONTRACT_ADDRESS}/${CONTRACT_NAME}/get-dataset`;
@@ -5570,6 +5591,13 @@ function App() {
                     onClick={() => exportSingleDatasetJson(lineageDataset)}
                   >
                     Export JSON
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={() => exportSingleDatasetMarkdown(lineageDataset)}
+                  >
+                    Export markdown
                   </button>
                   <button
                     className="ghost-btn"
