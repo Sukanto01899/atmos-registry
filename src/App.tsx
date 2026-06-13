@@ -55,8 +55,10 @@ import {
   readChecked,
   readValue,
   safeIsSignedIn,
+  sdkMetadataToDataset,
   unwrapResponseOk,
 } from "./lib";
+import { getSdkClient } from "./sdk";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -2001,6 +2003,13 @@ function App() {
     setStatusMessage("");
     setLoading(true);
     try {
+      const sdk = getSdkClient();
+      if (sdk) {
+        const items = await sdk.findByOwner(address);
+        setMyDatasets(items.map(sdkMetadataToDataset));
+        return;
+      }
+      // Fallback: fetch IDs on-chain then hydrate each dataset individually.
       const response = await fetchCallReadOnlyFunction({
         contractAddress: CONTRACT_ADDRESS,
         contractName: CONTRACT_NAME,

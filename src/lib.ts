@@ -10,6 +10,7 @@ import {
   serializePayloadBytes,
   type ClarityValue,
 } from "@stacks/transactions";
+import type { DatasetMetadata } from "../atmos-sdk/src";
 import { Dataset, DatasetFilters, SortMode, VersionStatus } from "./type";
 
 export const SORT_MODES = [
@@ -209,6 +210,28 @@ export const parseTuple = (tuple: any, id: number): Dataset | null => {
     status: getString("status"),
   };
 };
+
+export const sdkMetadataToDataset = (meta: DatasetMetadata): Dataset => ({
+  id: Number(meta.id ?? 0),
+  name: meta.name,
+  description: meta.description,
+  dataType: meta.dataType,
+  tags: meta.tags,
+  collectionDate: meta.collectionDate,
+  altitudeMin: meta.altitudeMin,
+  altitudeMax: meta.altitudeMax,
+  latitude: meta.latitude,
+  longitude: meta.longitude,
+  ipfsHash: meta.ipfsHash ?? "",
+  isPublic: meta.isPublic,
+  metadataFrozen: meta.metadataFrozen ?? false,
+  verified: meta.verified ?? false,
+  verifiedBy: "",
+  verifiedAt: 0,
+  createdAt: meta.createdAt ?? 0,
+  owner: meta.owner ?? "",
+  status: meta.status ?? "",
+});
 
 export const formatCoord = (value: number) => (value / 1_000_000).toFixed(3);
 
