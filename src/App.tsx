@@ -289,6 +289,8 @@ function App() {
       }
     >
   >({});
+  const ipfsHealthRef = useRef(ipfsHealthByCid);
+  ipfsHealthRef.current = ipfsHealthByCid;
   const [versionStore, setVersionStore] = useState<
     Record<number, VersionRecord[]>
   >({});
@@ -1090,6 +1092,32 @@ function App() {
     }
     window.localStorage.setItem(IPFS_HEALTH_KEY, JSON.stringify(ipfsHealthByCid));
   }, [ipfsHealthByCid]);
+  useEffect(() => {
+    const sdk = getSdkClient();
+    if (!sdk) return;
+
+    const allDatasets = [...latestDatasets, ...myDatasets, ...(queryResult ? [queryResult] : [])];
+    const hashes = [...new Set(allDatasets.map((d) => d.ipfsHash?.trim() ?? "").filter(Boolean))];
+    const unchecked = hashes.filter((h) => {
+      const cid = h.startsWith("ipfs://") ? h.slice(7).split(/[?#]/)[0].trim() : h.split(/[?#]/)[0].trim();
+      return cid && !ipfsHealthRef.current[cid];
+    });
+    if (unchecked.length === 0) return;
+
+    let cancelled = false;
+    sdk.checkIpfsBatch(unchecked).then((batchResult) => {
+      if (cancelled) return;
+      const ts = nowUnix();
+      setIpfsHealthByCid((prev) => {
+        const next = { ...prev };
+        batchResult.forEach((status, cid) => {
+          if (!next[cid]) next[cid] = { status, checkedAt: ts };
+        });
+        return next;
+      });
+    });
+    return () => { cancelled = true; };
+  }, [latestDatasets, myDatasets, queryResult]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(FEATURE_TAB_KEY, featureTab);
