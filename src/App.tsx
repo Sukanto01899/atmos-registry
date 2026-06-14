@@ -3730,7 +3730,8 @@ function App() {
       setStatusMessage("Share link unavailable.");
       return;
     }
-    await copyText(window.location.href, "Share link");
+    const label = hasActiveFilters ? "Filter link" : "Share link";
+    await copyText(window.location.href, label);
   };
   const shareCurrentView = async () => {
     if (typeof window === "undefined") {
@@ -7545,6 +7546,15 @@ function App() {
                   disabled={!hasActiveFilters}
                 >
                   Reset filters
+                </button>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={copyShareLink}
+                  title="Copy a link to the current tab, filters, and sort — paste it to land anyone in this exact view"
+                  disabled={!hasActiveFilters}
+                >
+                  Copy filter link
                 </button>
                 <button
                   className={`ghost-btn ${filters.pinnedOnly ? "active" : ""}`}
