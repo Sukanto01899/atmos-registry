@@ -59,6 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
+import { exportDatasets } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -2123,17 +2124,10 @@ function App() {
           }`,
       ),
     ];
-    const blob = new Blob([lines.join("\n")], {
-      type: "text/plain;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-audit-dataset-${lineageDataset.id}.txt`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    triggerDownload(
+      new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" }),
+      `atmos-audit-dataset-${lineageDataset.id}.txt`,
+    );
   };
 
   const setLineageTarget = (datasetId: number) => {
@@ -2178,97 +2172,37 @@ function App() {
       return [...prev, id];
     });
   };
-  const exportComparison = () => {
-    if (!compareDatasets.length || typeof window === "undefined") return;
-    const payload = {
-      generatedAt: new Date().toISOString(),
-      compared: compareDatasets.map((dataset) => ({
-        id: dataset.id,
-        name: dataset.name,
-        status: dataset.status,
-        visibility: dataset.isPublic ? "Public" : "Private",
-        collectionDate: dataset.collectionDate,
-        altitudeMin: dataset.altitudeMin,
-        altitudeMax: dataset.altitudeMax,
-        latitude: dataset.latitude,
-        longitude: dataset.longitude,
-        owner: dataset.owner,
-        ipfsHash: dataset.ipfsHash,
-      })),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json;charset=utf-8",
-    });
+  // Dataset.id is number while DatasetMetadata.id is string; cast for serialization only.
+  const asExportable = (datasets: Dataset[]) => datasets as unknown as import("../atmos-sdk/src").DatasetMetadata[];
+  const triggerDownload = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "atmos-dataset-comparison.json";
+    anchor.download = filename;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const exportComparison = () => {
+    if (!compareDatasets.length || typeof window === "undefined") return;
+    triggerDownload(
+      exportDatasets(asExportable(compareDatasets), "json", { meta: { kind: "comparison" } }),
+      "atmos-dataset-comparison.json",
+    );
   };
   const exportComparisonCsv = () => {
     if (!compareDatasets.length || typeof window === "undefined") {
       setStatusMessage("No comparison datasets to export.");
       return;
     }
-
-    const escapeCsv = (value: unknown) => {
-      const raw = value === null || value === undefined ? "" : String(value);
-      const needsQuotes = /[",\n\r]/.test(raw);
-      const escaped = raw.replace(/"/g, '""');
-      return needsQuotes ? `"${escaped}"` : escaped;
-    };
-
-    const columns = [
-      "id",
-      "name",
-      "status",
-      "visibility",
-      "collectionDate",
-      "createdAt",
-      "altitudeMin",
-      "altitudeMax",
-      "latitude",
-      "longitude",
-      "owner",
-      "ipfsHash",
-    ];
-
-    const lines = [
-      columns.join(","),
-      ...compareDatasets.map((dataset) =>
-        [
-          dataset.id,
-          dataset.name,
-          dataset.status,
-          dataset.isPublic ? "Public" : "Private",
-          dataset.collectionDate,
-          dataset.createdAt,
-          dataset.altitudeMin,
-          dataset.altitudeMax,
-          dataset.latitude,
-          dataset.longitude,
-          dataset.owner,
-          dataset.ipfsHash ?? "",
-        ]
-          .map(escapeCsv)
-          .join(","),
-      ),
-    ];
-
-    const blob = new Blob([`\uFEFF${lines.join("\n")}`], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-dataset-comparison-${Date.now()}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    triggerDownload(
+      exportDatasets(asExportable(compareDatasets), "csv", {
+        csv: { columns: ["id", "name", "status", "isPublic", "collectionDate", "createdAt", "altitudeMin", "altitudeMax", "latitude", "longitude", "owner", "ipfsHash"] },
+      }),
+      `atmos-dataset-comparison-${Date.now()}.csv`,
+    );
     setStatusMessage(`Exported ${compareDatasets.length} datasets (CSV).`);
   };
   const exportFilteredDatasets = () => {
@@ -2276,46 +2210,12 @@ function App() {
       setStatusMessage("No filtered datasets to export.");
       return;
     }
-    const payload = {
-      generatedAt: new Date().toISOString(),
-      activeTab,
-      totalVisible: filteredDatasets.length,
-      sortMode,
-      filters,
-      datasets: sortedDatasets.map((dataset) => ({
-        id: dataset.id,
-        name: dataset.name,
-        description: dataset.description,
-        dataType: dataset.dataType,
-        status: dataset.status,
-        owner: dataset.owner,
-        isPublic: dataset.isPublic,
-        metadataFrozen: dataset.metadataFrozen,
-        verified: dataset.verified,
-        verifiedBy: dataset.verifiedBy,
-        verifiedAt: dataset.verifiedAt,
-        collectionDate: dataset.collectionDate,
-        createdAt: dataset.createdAt,
-        altitudeMin: dataset.altitudeMin,
-        altitudeMax: dataset.altitudeMax,
-        latitude: dataset.latitude,
-        longitude: dataset.longitude,
-        latitudeDeg: dataset.latitude / 1_000_000,
-        longitudeDeg: dataset.longitude / 1_000_000,
-        ipfsHash: dataset.ipfsHash,
-      })),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-filtered-${activeTab}-${Date.now()}.json`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    triggerDownload(
+      exportDatasets(asExportable(sortedDatasets), "json", {
+        meta: { activeTab, totalVisible: filteredDatasets.length, sortMode, filters },
+      }),
+      `atmos-filtered-${activeTab}-${Date.now()}.json`,
+    );
     setStatusMessage(`Exported ${filteredDatasets.length} filtered datasets.`);
   };
   const exportFilteredDatasetsCsv = () => {
@@ -2323,81 +2223,13 @@ function App() {
       setStatusMessage("No filtered datasets to export.");
       return;
     }
-
-    const escapeCsv = (value: unknown) => {
-      const raw = value === null || value === undefined ? "" : String(value);
-      const needsQuotes = /[",\n\r]/.test(raw);
-      const escaped = raw.replace(/"/g, '""');
-      return needsQuotes ? `"${escaped}"` : escaped;
-    };
-
-    const columns = [
-      "id",
-      "name",
-      "description",
-      "dataType",
-      "status",
-      "owner",
-      "isPublic",
-      "metadataFrozen",
-      "verified",
-      "verifiedBy",
-      "verifiedAt",
-      "collectionDate",
-      "createdAt",
-      "altitudeMin",
-      "altitudeMax",
-      "latitude",
-      "longitude",
-      "latitudeDeg",
-      "longitudeDeg",
-      "ipfsHash",
-    ] as const;
-
-    const lines = [
-      columns.join(","),
-      ...sortedDatasets.map((dataset) =>
-        [
-          dataset.id,
-          dataset.name,
-          dataset.description,
-          dataset.dataType,
-          dataset.status,
-          dataset.owner,
-          dataset.isPublic,
-          dataset.metadataFrozen,
-          dataset.verified,
-          dataset.verifiedBy ?? "",
-          dataset.verifiedAt ?? "",
-          dataset.collectionDate,
-          dataset.createdAt,
-          dataset.altitudeMin,
-          dataset.altitudeMax,
-          dataset.latitude,
-          dataset.longitude,
-          (dataset.latitude / 1_000_000).toFixed(6),
-          (dataset.longitude / 1_000_000).toFixed(6),
-          dataset.ipfsHash ?? "",
-        ]
-          .map(escapeCsv)
-          .join(","),
-      ),
-    ];
-
-    const blob = new Blob([`\uFEFF${lines.join("\n")}`], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-filtered-${activeTab}-${Date.now()}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-    setStatusMessage(
-      `Exported ${filteredDatasets.length} filtered datasets (CSV).`,
+    triggerDownload(
+      exportDatasets(asExportable(sortedDatasets), "csv", {
+        csv: { columns: ["id", "name", "description", "dataType", "status", "owner", "isPublic", "metadataFrozen", "verified", "verifiedBy", "verifiedAt", "collectionDate", "createdAt", "altitudeMin", "altitudeMax", "latitude", "longitude", "ipfsHash"] },
+      }),
+      `atmos-filtered-${activeTab}-${Date.now()}.csv`,
     );
+    setStatusMessage(`Exported ${filteredDatasets.length} filtered datasets (CSV).`);
   };
   const copyFilteredCsv = async () => {
     if (!filteredDatasets.length) {
@@ -2509,64 +2341,23 @@ function App() {
       })),
     };
 
-    const blob = new Blob([JSON.stringify(featureCollection, null, 2)], {
-      type: "application/geo+json;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-filtered-${activeTab}-${Date.now()}.geojson`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-    setStatusMessage(
-      `Exported ${filteredDatasets.length} filtered datasets (GeoJSON).`,
+    triggerDownload(
+      new Blob([JSON.stringify(featureCollection, null, 2)], { type: "application/geo+json;charset=utf-8" }),
+      `atmos-filtered-${activeTab}-${Date.now()}.geojson`,
     );
+    setStatusMessage(`Exported ${filteredDatasets.length} filtered datasets (GeoJSON).`);
   };
   const exportPinnedDatasets = () => {
     if (!pinnedDatasets.length || typeof window === "undefined") {
       setStatusMessage("No pinned datasets to export.");
       return;
     }
-    const payload = {
-      generatedAt: new Date().toISOString(),
-      totalPinned: pinnedDatasets.length,
-      pinnedDatasetIds,
-      datasets: pinnedDatasets.map((dataset) => ({
-        id: dataset.id,
-        name: dataset.name,
-        description: dataset.description,
-        dataType: dataset.dataType,
-        status: dataset.status,
-        owner: dataset.owner,
-        isPublic: dataset.isPublic,
-        metadataFrozen: dataset.metadataFrozen,
-        verified: dataset.verified,
-        verifiedBy: dataset.verifiedBy,
-        verifiedAt: dataset.verifiedAt,
-        collectionDate: dataset.collectionDate,
-        createdAt: dataset.createdAt,
-        altitudeMin: dataset.altitudeMin,
-        altitudeMax: dataset.altitudeMax,
-        latitude: dataset.latitude,
-        longitude: dataset.longitude,
-        latitudeDeg: dataset.latitude / 1_000_000,
-        longitudeDeg: dataset.longitude / 1_000_000,
-        ipfsHash: dataset.ipfsHash,
-      })),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-pinned-${Date.now()}.json`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    triggerDownload(
+      exportDatasets(asExportable(pinnedDatasets), "json", {
+        meta: { totalPinned: pinnedDatasets.length, pinnedDatasetIds },
+      }),
+      `atmos-pinned-${Date.now()}.json`,
+    );
     setStatusMessage(`Exported ${pinnedDatasets.length} pinned datasets.`);
   };
   const exportPinnedDatasetsCsv = () => {
@@ -2574,78 +2365,12 @@ function App() {
       setStatusMessage("No pinned datasets to export.");
       return;
     }
-
-    const escapeCsv = (value: unknown) => {
-      const raw = value === null || value === undefined ? "" : String(value);
-      const needsQuotes = /[",\n\r]/.test(raw);
-      const escaped = raw.replace(/"/g, '""');
-      return needsQuotes ? `"${escaped}"` : escaped;
-    };
-
-    const columns = [
-      "id",
-      "name",
-      "description",
-      "dataType",
-      "status",
-      "owner",
-      "isPublic",
-      "metadataFrozen",
-      "verified",
-      "verifiedBy",
-      "verifiedAt",
-      "collectionDate",
-      "createdAt",
-      "altitudeMin",
-      "altitudeMax",
-      "latitude",
-      "longitude",
-      "latitudeDeg",
-      "longitudeDeg",
-      "ipfsHash",
-    ] as const;
-
-    const lines = [
-      columns.join(","),
-      ...pinnedDatasets.map((dataset) =>
-        [
-          dataset.id,
-          dataset.name,
-          dataset.description,
-          dataset.dataType,
-          dataset.status,
-          dataset.owner,
-          dataset.isPublic,
-          dataset.metadataFrozen,
-          dataset.verified,
-          dataset.verifiedBy ?? "",
-          dataset.verifiedAt ?? "",
-          dataset.collectionDate,
-          dataset.createdAt,
-          dataset.altitudeMin,
-          dataset.altitudeMax,
-          dataset.latitude,
-          dataset.longitude,
-          (dataset.latitude / 1_000_000).toFixed(6),
-          (dataset.longitude / 1_000_000).toFixed(6),
-          dataset.ipfsHash ?? "",
-        ]
-          .map(escapeCsv)
-          .join(","),
-      ),
-    ];
-
-    const blob = new Blob([`\uFEFF${lines.join("\n")}`], {
-      type: "text/csv;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `atmos-pinned-${Date.now()}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    triggerDownload(
+      exportDatasets(asExportable(pinnedDatasets), "csv", {
+        csv: { columns: ["id", "name", "description", "dataType", "status", "owner", "isPublic", "metadataFrozen", "verified", "verifiedBy", "verifiedAt", "collectionDate", "createdAt", "altitudeMin", "altitudeMax", "latitude", "longitude", "ipfsHash"] },
+      }),
+      `atmos-pinned-${Date.now()}.csv`,
+    );
     setStatusMessage(`Exported ${pinnedDatasets.length} pinned datasets (CSV).`);
   };
   const exportPinnedDatasetsGeoJson = () => {
