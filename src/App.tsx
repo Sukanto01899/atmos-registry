@@ -77,6 +77,7 @@ import { CountUp } from "./components/CountUp";
 import { DatasetCard } from "./components/DatasetCard";
 import { GeospatialExplorer } from "./components/GeospatialExplorer";
 import { KeyboardShortcutsModal } from "./components/KeyboardShortcutsModal";
+import { AltitudeHistogram } from "./components/AltitudeHistogram";
 import { NavBar } from "./components/NavBar";
 import { ToastStack, inferToastVariant, type ToastItem } from "./components/Toast";
 import { TxCenter } from "./components/TxCenter";
@@ -7395,6 +7396,18 @@ function App() {
                     </button>
                   )}
                 </div>
+                <AltitudeHistogram
+                  datasets={activeDatasets}
+                  filterMin={filters.altitudeMin}
+                  filterMax={filters.altitudeMax}
+                  onBucketClick={(min, max) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      altitudeMin: String(min),
+                      altitudeMax: String(max),
+                    }))
+                  }
+                />
                 <div className="filter-range">
                   <div className="input-clear">
                     <input
