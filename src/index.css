@@ -4660,6 +4660,12 @@ textarea:focus {
   color: #ffd666;
 }
 
+.tag--duplicate {
+  border-color: rgba(255, 90, 90, 0.4);
+  background: rgba(255, 90, 90, 0.08);
+  color: #ff8a8a;
+}
+
 .tag--pinned {
   border-color: rgba(255, 214, 102, 0.35);
   background: rgba(255, 214, 102, 0.07);

@@ -163,6 +163,7 @@ export function DatasetCard({
   notePreview,
   stewardshipSignal,
   isStewardStaked,
+  duplicateInfo,
   searchQuery,
   compareActive,
   watchActive,
@@ -256,6 +257,18 @@ export function DatasetCard({
               <span className="tag tag--staked">Steward staked</span>
             )}
             {notePreview && <span className="tag tag--note">Private note</span>}
+            {duplicateInfo && (
+              <span
+                className="tag tag--duplicate"
+                title={
+                  duplicateInfo.isCanonical
+                    ? `Matches ${duplicateInfo.groupSize - 1} other dataset(s) on name, coordinates, and IPFS hash. This record was picked as the canonical one (highest quality/completeness).`
+                    : `Matches ${duplicateInfo.groupSize - 1} other dataset(s) on name, coordinates, and IPFS hash. Another record in this group is the likely canonical one.`
+                }
+              >
+                {duplicateInfo.isCanonical ? "Canonical" : "Possible duplicate"}
+              </span>
+            )}
             {dataset.createdAt > 0 && (
               <span
                 className={`tag tag--age ${getAgeColorClass(dataset.createdAt)}`}

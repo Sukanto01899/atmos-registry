@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, pickCanonicalDataset } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -1344,6 +1344,21 @@ function App() {
     });
     return rankMap;
   }, [sortedDatasets]);
+  const duplicateInfoByDatasetId = useMemo(() => {
+    const info = new Map<number, { groupSize: number; isCanonical: boolean }>();
+    const groups = findDuplicateDatasets(
+      activeDatasets as unknown as import("../atmos-sdk/src").DatasetMetadata[],
+    );
+    for (const group of groups) {
+      const canonical = pickCanonicalDataset(group.datasets);
+      const canonicalId = (canonical as unknown as Dataset | null)?.id;
+      for (const member of group.datasets) {
+        const id = (member as unknown as Dataset).id;
+        info.set(id, { groupSize: group.datasets.length, isCanonical: id === canonicalId });
+      }
+    }
+    return info;
+  }, [activeDatasets]);
   const myStakeInfo = tokenSnapshot?.stakeInfo ?? {
     amount: 0,
     lastClaimBlock: 0,
@@ -8120,6 +8135,7 @@ function App() {
                     dataset.id,
                   )}
                   isStewardStaked={stewardshipSignalByDatasetId.has(dataset.id)}
+                  duplicateInfo={duplicateInfoByDatasetId.get(dataset.id)}
                   compareActive={compareSelectionIds.includes(
                     String(dataset.id),
                   )}
