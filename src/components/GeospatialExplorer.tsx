@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { fromMicroDegrees, nearestDatasets } from "../../atmos-sdk/src";
 import type { Dataset, GeospatialExplorerProps } from "../type";
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
@@ -154,6 +155,29 @@ export function GeospatialExplorer({
       peers,
       projected: projectDataset(selectedDataset),
     };
+  }, [datasets, selectedDataset]);
+
+  const nearestToSelected = useMemo(() => {
+    if (!selectedDataset) return [];
+    const lat = fromMicroDegrees(selectedDataset.latitude);
+    const lon = fromMicroDegrees(selectedDataset.longitude);
+    if (lat === null || lon === null) return [];
+
+    const byId = new Map(datasets.map((dataset) => [dataset.id, dataset]));
+    const candidates = datasets
+      .filter((dataset) => dataset.id !== selectedDataset.id)
+      .map((dataset) => ({
+        id: dataset.id,
+        latitude: fromMicroDegrees(dataset.latitude) ?? NaN,
+        longitude: fromMicroDegrees(dataset.longitude) ?? NaN,
+      })) as unknown as import("../../atmos-sdk/src").DatasetMetadata[];
+
+    return nearestDatasets(candidates, lat, lon, 5)
+      .filter((entry) => entry.distanceMeters !== null)
+      .map((entry) => ({
+        dataset: byId.get((entry.dataset as unknown as { id: number }).id)!,
+        distanceMeters: entry.distanceMeters as number,
+      }));
   }, [datasets, selectedDataset]);
 
   const coverageSummary = useMemo(() => {
@@ -374,6 +398,38 @@ export function GeospatialExplorer({
               </>
             )}
           </div>
+
+          {selectedDataset && nearestToSelected.length > 0 && (
+            <div className="geo-hotspots geo-nearest">
+              <div className="geo-hotspots__head">
+                <strong>Nearest datasets</strong>
+                <span>to #{selectedDataset.id}</span>
+              </div>
+              {nearestToSelected.map(({ dataset, distanceMeters }) => (
+                <button
+                  key={`nearest-${dataset.id}`}
+                  className="geo-hotspot"
+                  type="button"
+                  onClick={() => onSelectDataset(dataset.id)}
+                >
+                  <span className="geo-hotspot__count">
+                    {distanceMeters >= 1000
+                      ? `${(distanceMeters / 1000).toFixed(0)}k`
+                      : `${distanceMeters.toFixed(0)}m`}
+                  </span>
+                  <span className="geo-hotspot__body">
+                    <strong>
+                      #{dataset.id} {dataset.name}
+                    </strong>
+                    <small>
+                      {(distanceMeters / 1000).toFixed(1)} km away ·{" "}
+                      {dataset.dataType}
+                    </small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="geo-hotspots">
             <div className="geo-hotspots__head">
