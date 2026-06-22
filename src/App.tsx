@@ -4870,6 +4870,15 @@ function App() {
       },
     },
     {
+      id: "sort-recent-desc",
+      label: "Sort by Recent (Newest First)",
+      detail: "Jump to the most recently collected datasets",
+      group: "Data",
+      run: () => {
+        setSortMode("recent-desc");
+      },
+    },
+    {
       id: "copy-visible-dataset-links",
       label: "Copy Visible Dataset Links",
       detail: "Copy share links for all visible datasets",
