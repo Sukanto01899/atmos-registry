@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, pickCanonicalDataset } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, getUniqueTags, pickCanonicalDataset } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -481,6 +481,13 @@ function App() {
             .filter((type) => Boolean(type)),
         ),
       ).sort((a, b) => a.localeCompare(b)),
+    [activeDatasets],
+  );
+  const tagOptions = useMemo(
+    () =>
+      getUniqueTags(
+        activeDatasets as unknown as import("../atmos-sdk/src").DatasetMetadata[],
+      ),
     [activeDatasets],
   );
   const filteredDatasets = useMemo(() => {
@@ -7332,7 +7339,13 @@ function App() {
                     value={filters.tags}
                     onChange={updateFilterField("tags")}
                     placeholder="Tags (comma separated)"
+                    list="tag-options"
                   />
+                  <datalist id="tag-options">
+                    {tagOptions.map((tag) => (
+                      <option key={tag} value={tag} />
+                    ))}
+                  </datalist>
                   {filters.tags && (
                     <button
                       className="input-clear__btn"
