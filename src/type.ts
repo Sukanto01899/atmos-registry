@@ -188,6 +188,7 @@ export type DatasetCardProps = {
   stewardshipSignal?: string;
   isStewardStaked: boolean;
   duplicateInfo?: { groupSize: number; isCanonical: boolean };
+  isStale?: boolean;
   searchQuery?: string;
   compareActive: boolean;
   watchActive: boolean;

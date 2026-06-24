@@ -164,6 +164,7 @@ export function DatasetCard({
   stewardshipSignal,
   isStewardStaked,
   duplicateInfo,
+  isStale,
   searchQuery,
   compareActive,
   watchActive,
@@ -267,6 +268,14 @@ export function DatasetCard({
                 }
               >
                 {duplicateInfo.isCanonical ? "Canonical" : "Possible duplicate"}
+              </span>
+            )}
+            {isStale && (
+              <span
+                className="tag tag--stale"
+                title="Unverified and older than 90 days. Consider re-verifying or refreshing this record."
+              >
+                Needs review
               </span>
             )}
             {dataset.createdAt > 0 && (

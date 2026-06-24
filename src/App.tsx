@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, getUniqueTags, pickCanonicalDataset } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, getStaleDatasets, getUniqueTags, pickCanonicalDataset } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -191,6 +191,8 @@ const getStoredStacksAddress = () => {
     return "";
   }
 };
+
+const STALE_THRESHOLD_SECONDS = 90 * 24 * 60 * 60;
 
 function App() {
   const hasHydratedUrlRef = useRef(false);
@@ -1365,6 +1367,13 @@ function App() {
       }
     }
     return info;
+  }, [activeDatasets]);
+  const staleDatasetIds = useMemo(() => {
+    const stale = getStaleDatasets(
+      activeDatasets as unknown as import("../atmos-sdk/src").DatasetMetadata[],
+      STALE_THRESHOLD_SECONDS,
+    );
+    return new Set(stale.map((dataset) => (dataset as unknown as Dataset).id));
   }, [activeDatasets]);
   const myStakeInfo = tokenSnapshot?.stakeInfo ?? {
     amount: 0,
@@ -8158,6 +8167,7 @@ function App() {
                   )}
                   isStewardStaked={stewardshipSignalByDatasetId.has(dataset.id)}
                   duplicateInfo={duplicateInfoByDatasetId.get(dataset.id)}
+                  isStale={staleDatasetIds.has(dataset.id)}
                   compareActive={compareSelectionIds.includes(
                     String(dataset.id),
                   )}

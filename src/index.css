@@ -4666,6 +4666,12 @@ textarea:focus {
   color: #ff8a8a;
 }
 
+.tag--stale {
+  border-color: rgba(245, 138, 61, 0.4);
+  background: rgba(245, 138, 61, 0.08);
+  color: var(--accent);
+}
+
 .tag--pinned {
   border-color: rgba(255, 214, 102, 0.35);
   background: rgba(255, 214, 102, 0.07);
