@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toGeoUriFromMicroDegrees } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -2236,6 +2236,25 @@ function App() {
       `atmos-dataset-comparison-${Date.now()}.csv`,
     );
     setStatusMessage(`Exported ${compareDatasets.length} datasets (CSV).`);
+  };
+  const copyComparisonMarkdown = async () => {
+    if (!compareDatasets.length) {
+      setStatusMessage("No comparison datasets to copy.");
+      return;
+    }
+    const markdown = toMarkdownTable(asExportable(compareDatasets), {
+      fields: [
+        "id",
+        "name",
+        "dataType",
+        "status",
+        "verified",
+        "isPublic",
+        "owner",
+        "collectionDate",
+      ],
+    });
+    await copyText(markdown, "Comparison Markdown table");
   };
   const exportFilteredDatasets = () => {
     if (!filteredDatasets.length || typeof window === "undefined") {
@@ -7893,6 +7912,14 @@ function App() {
                     disabled={compareDatasets.length === 0}
                   >
                     Export CSV
+                  </button>
+                  <button
+                    className="ghost-btn"
+                    type="button"
+                    onClick={copyComparisonMarkdown}
+                    disabled={compareDatasets.length === 0}
+                  >
+                    Copy Markdown
                   </button>
                 </div>
               </div>
