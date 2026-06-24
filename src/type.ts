@@ -213,6 +213,7 @@ export type DatasetCardProps = {
   onCopyOwnerExplorerUrl?: () => void;
   onOpenOwnerExplorer?: () => void;
   onOpenMap?: () => void;
+  onOpenGeoApp?: () => void;
   onCopyMapUrl?: () => void;
   onOpenDetail: () => void;
   onAudit: () => void;

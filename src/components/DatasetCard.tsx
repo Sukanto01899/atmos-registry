@@ -189,6 +189,7 @@ export function DatasetCard({
   onCopyOwnerExplorerUrl,
   onOpenOwnerExplorer,
   onOpenMap,
+  onOpenGeoApp,
   onCopyMapUrl,
   onOpenDetail,
   onAudit,
@@ -532,6 +533,16 @@ export function DatasetCard({
               onClick={onOpenMap}
             >
               Open map
+            </button>
+          )}
+          {onOpenGeoApp && (
+            <button
+              className="ghost-btn dataset-foot__action dataset-foot__action--compare"
+              type="button"
+              onClick={onOpenGeoApp}
+              title="Open in your device's default maps app"
+            >
+              Open in maps app
             </button>
           )}
           {onCopyMapUrl && (

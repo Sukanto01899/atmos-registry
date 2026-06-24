@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, getStaleDatasets, getUniqueTags, pickCanonicalDataset } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toGeoUriFromMicroDegrees } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -3710,6 +3710,23 @@ function App() {
       return;
     }
     setStatusMessage("Opened Google Maps.");
+  };
+  const openGeoAppAt = (
+    latitudeMicro: number,
+    longitudeMicro: number,
+    label?: string,
+  ) => {
+    if (typeof window === "undefined") {
+      setStatusMessage("Maps app unavailable.");
+      return;
+    }
+    const uri = toGeoUriFromMicroDegrees(latitudeMicro, longitudeMicro, { label });
+    if (!uri) {
+      setStatusMessage("Coordinates are invalid.");
+      return;
+    }
+    window.location.href = uri;
+    setStatusMessage("Opening in maps app…");
   };
   const copyMapUrlAt = async (latitudeMicro: number, longitudeMicro: number) => {
     const url = buildMapUrlAt(latitudeMicro, longitudeMicro);
@@ -8196,6 +8213,9 @@ function App() {
                     )
                   }
                   onOpenMap={() => openMapAt(dataset.latitude, dataset.longitude)}
+                  onOpenGeoApp={() =>
+                    openGeoAppAt(dataset.latitude, dataset.longitude, dataset.name)
+                  }
                   onCopyMapUrl={() =>
                     copyMapUrlAt(dataset.latitude, dataset.longitude)
                   }
