@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, fromMicroDegrees, getCoordBounds, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toBboxQueryParam, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -3746,6 +3746,23 @@ function App() {
     }
     window.location.href = uri;
     setStatusMessage("Opening in maps app…");
+  };
+  const copyGeoBbox = async () => {
+    const candidates = geoDatasets.map((dataset) => ({
+      latitude: fromMicroDegrees(dataset.latitude) ?? NaN,
+      longitude: fromMicroDegrees(dataset.longitude) ?? NaN,
+    })) as unknown as import("../atmos-sdk/src").DatasetMetadata[];
+    const bbox = getCoordBounds(candidates);
+    if (!bbox) {
+      setStatusMessage("No coordinates to compute a bounding box from.");
+      return;
+    }
+    const param = toBboxQueryParam(bbox);
+    if (!param) {
+      setStatusMessage("Bounding box is invalid.");
+      return;
+    }
+    await copyText(param, "Bounding box");
   };
   const copyMapUrlAt = async (latitudeMicro: number, longitudeMicro: number) => {
     const url = buildMapUrlAt(latitudeMicro, longitudeMicro);
@@ -7870,6 +7887,7 @@ function App() {
               onOpenDetail={openDatasetDetail}
               onToggleCompare={toggleCompareDataset}
               onToggleWatch={toggleWatchlistDataset}
+              onCopyBbox={copyGeoBbox}
             />
             <div className="compare-card">
               <div className="compare-header">

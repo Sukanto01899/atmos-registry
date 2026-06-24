@@ -49,6 +49,7 @@ export function GeospatialExplorer({
   onOpenDetail,
   onToggleCompare,
   onToggleWatch,
+  onCopyBbox,
 }: GeospatialExplorerProps) {
   const [playbackActive, setPlaybackActive] = useState(false);
 
@@ -222,6 +223,15 @@ export function GeospatialExplorer({
           <span>Data types: {coverageSummary.types}</span>
           <span>Verified: {coverageSummary.verified}</span>
           {geoTimeCutoff && <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>}
+          <button
+            className="ghost-btn"
+            type="button"
+            onClick={onCopyBbox}
+            disabled={datasets.length === 0}
+            title="Copy the bounding box of all visible points (minLon,minLat,maxLon,maxLat)"
+          >
+            Copy bbox
+          </button>
         </div>
       </div>
 

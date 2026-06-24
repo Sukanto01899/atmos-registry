@@ -239,4 +239,5 @@ export type GeospatialExplorerProps = {
   onOpenDetail: (datasetId: number) => void;
   onToggleCompare: (datasetId: number) => void;
   onToggleWatch: (datasetId: number) => void;
+  onCopyBbox: () => void;
 };
