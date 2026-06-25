@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fromMicroDegrees, nearestDatasets } from "../../atmos-sdk/src";
+import { fromMicroDegrees, getDatasetTimeExtent, nearestDatasets } from "../../atmos-sdk/src";
 import type { Dataset, GeospatialExplorerProps } from "../type";
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
@@ -181,6 +181,14 @@ export function GeospatialExplorer({
       }));
   }, [datasets, selectedDataset]);
 
+  const timeCoverage = useMemo(
+    () =>
+      getDatasetTimeExtent(
+        datasets as unknown as import("../../atmos-sdk/src").DatasetMetadata[],
+      ),
+    [datasets],
+  );
+
   const coverageSummary = useMemo(() => {
     if (!datasets.length) {
       return {
@@ -223,6 +231,12 @@ export function GeospatialExplorer({
           <span>Data types: {coverageSummary.types}</span>
           <span>Verified: {coverageSummary.verified}</span>
           {geoTimeCutoff && <span>Cutoff: {formatChainValue(geoTimeCutoff)}</span>}
+          {timeCoverage && (
+            <span>
+              Coverage: {formatChainValue(timeCoverage.earliest)} –{" "}
+              {formatChainValue(timeCoverage.latest)}
+            </span>
+          )}
           <button
             className="ghost-btn"
             type="button"
