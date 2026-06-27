@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, fromMicroDegrees, getCoordBounds, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toBboxQueryParam, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, fromMicroDegrees, getCoordBounds, getDatasetFreshnessScore, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toBboxQueryParam, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -8205,6 +8205,9 @@ function App() {
                   statusClass={getStatusClass(dataset.status)}
                   rank={datasetRankById.get(dataset.id) ?? "-"}
                   qualityScore={getQualityScore(dataset)}
+                  freshnessScore={getDatasetFreshnessScore(
+                    dataset as unknown as import("../atmos-sdk/src").DatasetMetadata,
+                  )}
                   notePreview={(datasetNotes[String(dataset.id)] ?? "")
                     .trim()
                     .slice(0, 120)}

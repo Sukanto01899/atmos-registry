@@ -184,6 +184,7 @@ export type DatasetCardProps = {
   statusClass: string;
   rank: number | string;
   qualityScore: number;
+  freshnessScore: number;
   notePreview?: string;
   stewardshipSignal?: string;
   isStewardStaked: boolean;

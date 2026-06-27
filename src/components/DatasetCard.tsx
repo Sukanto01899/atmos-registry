@@ -160,6 +160,7 @@ export function DatasetCard({
   statusClass,
   rank,
   qualityScore,
+  freshnessScore,
   notePreview,
   stewardshipSignal,
   isStewardStaked,
@@ -306,6 +307,12 @@ export function DatasetCard({
         <span className="dataset-rank__score-wrap">
           <span className="dataset-rank__score" tabIndex={0}>
             {qualityScore}/100
+          </span>
+          <span
+            className="dataset-rank__score"
+            title="Recency-based freshness score, decaying over time since collection"
+          >
+            Freshness {freshnessScore}%
           </span>
           <div className="dataset-rank__breakdown" role="tooltip">
             <ul className="dataset-rank__breakdown-list">
