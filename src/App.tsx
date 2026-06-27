@@ -1342,6 +1342,16 @@ function App() {
         if (diff !== 0) return diff;
         return getQualityScore(b) - getQualityScore(a);
       }
+      if (sortMode === "freshness-desc") {
+        return (
+          getDatasetFreshnessScore(
+            b as unknown as import("../atmos-sdk/src").DatasetMetadata,
+          ) -
+          getDatasetFreshnessScore(
+            a as unknown as import("../atmos-sdk/src").DatasetMetadata,
+          )
+        );
+      }
       return getQualityScore(b) - getQualityScore(a);
     });
     return next;
@@ -4941,6 +4951,15 @@ function App() {
       },
     },
     {
+      id: "sort-freshness-desc",
+      label: "Sort by Freshness",
+      detail: "Order datasets by recency-decayed freshness score, freshest first",
+      group: "Data",
+      run: () => {
+        setSortMode("freshness-desc");
+      },
+    },
+    {
       id: "copy-visible-dataset-links",
       label: "Copy Visible Dataset Links",
       detail: "Copy share links for all visible datasets",
@@ -7636,6 +7655,7 @@ function App() {
                     <option value="status-priority">Status priority</option>
                     <option value="type-asc">Data type (A–Z)</option>
                     <option value="completeness-desc">Completeness (high to low)</option>
+                    <option value="freshness-desc">Freshness (high to low)</option>
                   </select>
                 </div>
                 <button

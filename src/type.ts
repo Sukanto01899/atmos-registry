@@ -62,7 +62,8 @@ export type SortMode =
   | "altitude-range-asc"
   | "status-priority"
   | "type-asc"
-  | "completeness-desc";
+  | "completeness-desc"
+  | "freshness-desc";
 
 export type VersionStatus = "draft" | "pending" | "approved" | "rejected";
 
