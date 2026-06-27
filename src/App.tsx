@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, fromMicroDegrees, getCoordBounds, getDatasetFreshnessScore, getRelatedTags, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toBboxQueryParam, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, fromMicroDegrees, getCoordBounds, getDatasetFreshnessScore, getOwnerLeaderboard, getRelatedTags, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toBboxQueryParam, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -501,6 +501,14 @@ function App() {
       { caseInsensitive: true, limit: 6 },
     );
   }, [activeDatasets, lastTypedTag]);
+  const ownerLeaderboard = useMemo(
+    () =>
+      getOwnerLeaderboard(
+        activeDatasets as unknown as import("../atmos-sdk/src").DatasetMetadata[],
+        { limit: 5 },
+      ),
+    [activeDatasets],
+  );
   const addTagToFilter = (tag: string) => {
     const current = filters.tags
       .split(",")
@@ -7549,6 +7557,26 @@ function App() {
                     </button>
                   )}
                 </div>
+                {ownerLeaderboard.length > 0 && (
+                  <div className="filter-chips" title="Top owners by average quality score">
+                    {ownerLeaderboard.map((entry) => (
+                      <button
+                        key={entry.owner}
+                        type="button"
+                        className="filter-chip"
+                        title={`${entry.owner} · ${entry.count} dataset(s) · avg quality ${entry.averageQualityScore}/100`}
+                        onClick={() =>
+                          setFilters((prev) => ({ ...prev, owner: entry.owner }))
+                        }
+                      >
+                        {entry.owner === "unknown"
+                          ? "unknown"
+                          : `${entry.owner.slice(0, 6)}…${entry.owner.slice(-4)}`}{" "}
+                        ({entry.count}, {entry.averageQualityScore}/100)
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <AltitudeHistogram
                   datasets={activeDatasets}
                   filterMin={filters.altitudeMin}
