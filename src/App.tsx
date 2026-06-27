@@ -59,7 +59,7 @@ import {
   unwrapResponseOk,
 } from "./lib";
 import { getSdkClient } from "./sdk";
-import { exportDatasets, findDuplicateDatasets, fromMicroDegrees, getCoordBounds, getDatasetFreshnessScore, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toBboxQueryParam, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
+import { exportDatasets, findDuplicateDatasets, fromMicroDegrees, getCoordBounds, getDatasetFreshnessScore, getRelatedTags, getStaleDatasets, getUniqueTags, pickCanonicalDataset, toBboxQueryParam, toGeoUriFromMicroDegrees, toMarkdownTable } from "../atmos-sdk/src";
 import {
   buildSwapCall,
   fetchPoolState,
@@ -492,6 +492,26 @@ function App() {
       ),
     [activeDatasets],
   );
+  const lastTypedTag = filters.tags.split(",").map((tag) => tag.trim()).filter(Boolean).pop() ?? "";
+  const relatedTagSuggestions = useMemo(() => {
+    if (!lastTypedTag) return [];
+    return getRelatedTags(
+      activeDatasets as unknown as import("../atmos-sdk/src").DatasetMetadata[],
+      lastTypedTag,
+      { caseInsensitive: true, limit: 6 },
+    );
+  }, [activeDatasets, lastTypedTag]);
+  const addTagToFilter = (tag: string) => {
+    const current = filters.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (current.some((t) => t.toLowerCase() === tag.toLowerCase())) return;
+    setFilters((prev) => ({
+      ...prev,
+      tags: [...current, tag].join(", "),
+    }));
+  };
   const filteredDatasets = useMemo(() => {
     const search = filters.search.trim().toLowerCase();
     const owner = filters.owner.trim().toLowerCase();
@@ -7445,6 +7465,20 @@ function App() {
                     >
                       Ã—
                     </button>
+                  )}
+                  {relatedTagSuggestions.length > 0 && (
+                    <div className="filter-chips" title={`Tags that co-occur with "${lastTypedTag}"`}>
+                      {relatedTagSuggestions.map(({ tag, count }) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          className="filter-chip"
+                          onClick={() => addTagToFilter(tag)}
+                        >
+                          + {tag} ({count})
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
                 <select
