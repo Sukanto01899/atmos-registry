@@ -22,6 +22,7 @@ export const SORT_MODES = [
   "status-priority",
   "type-asc",
   "completeness-desc",
+  "freshness-desc",
 ] as const;
 
 export type UrlViewState = {
