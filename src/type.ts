@@ -191,6 +191,7 @@ export type DatasetCardProps = {
   isStewardStaked: boolean;
   duplicateInfo?: { groupSize: number; isCanonical: boolean };
   isStale?: boolean;
+  isTopOwner?: boolean;
   searchQuery?: string;
   compareActive: boolean;
   watchActive: boolean;

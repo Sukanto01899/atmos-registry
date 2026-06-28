@@ -166,6 +166,7 @@ export function DatasetCard({
   isStewardStaked,
   duplicateInfo,
   isStale,
+  isTopOwner,
   searchQuery,
   compareActive,
   watchActive,
@@ -278,6 +279,14 @@ export function DatasetCard({
                 title="Unverified and older than 90 days. Consider re-verifying or refreshing this record."
               >
                 Needs review
+              </span>
+            )}
+            {isTopOwner && (
+              <span
+                className="tag tag--top-owner"
+                title="This owner ranks in the top 5 by average dataset quality score."
+              >
+                Top contributor
               </span>
             )}
             {dataset.createdAt > 0 && (

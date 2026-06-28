@@ -509,6 +509,15 @@ function App() {
       ),
     [activeDatasets],
   );
+  const topOwnerSet = useMemo(
+    () =>
+      new Set(
+        ownerLeaderboard
+          .filter((entry) => entry.owner !== "unknown")
+          .map((entry) => entry.owner),
+      ),
+    [ownerLeaderboard],
+  );
   const addTagToFilter = (tag: string) => {
     const current = filters.tags
       .split(",")
@@ -8315,6 +8324,7 @@ function App() {
                   isStewardStaked={stewardshipSignalByDatasetId.has(dataset.id)}
                   duplicateInfo={duplicateInfoByDatasetId.get(dataset.id)}
                   isStale={staleDatasetIds.has(dataset.id)}
+                  isTopOwner={topOwnerSet.has(dataset.owner)}
                   compareActive={compareSelectionIds.includes(
                     String(dataset.id),
                   )}
